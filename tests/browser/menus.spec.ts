@@ -11,7 +11,7 @@ async function expectNoWalking(page: Page, milliseconds = 400) {
   expect(Math.hypot(after.x - before.x, after.z - before.z)).toBeLessThan(.025);
 }
 
-test('production startup has no errors, Escape exposes Resume, and pause clears held movement', async ({ page }) => {
+test('production startup has no errors, Escape exposes Resume, and pause clears held movement', { tag: '@deployment' }, async ({ page }) => {
   const errors: string[] = [];
   const failures: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -100,7 +100,7 @@ test('New Game cancel preserves a saved build and confirmation clears the collec
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY)).toEqual(newGame());
 });
 
-test('graphics initialization failure presents a readable retry screen', async ({ page }) => {
+test('graphics initialization failure presents a readable retry screen', { tag: '@deployment' }, async ({ page }) => {
   await page.addInitScript(() => {
     const getContext = HTMLCanvasElement.prototype.getContext;
     Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {

@@ -98,7 +98,7 @@ test('tablet touch-only restoration, simultaneous driving controls, town loop, r
   writeFileSync(`${output}/touch-acceptance.json`, JSON.stringify({ testedURL: page.url(), viewport: page.viewportSize(), deviceScaleFactor: 2, nativeTouch: true, keyboardEvents: 0, pointerLockRequests: 0, lapSeconds, state: before.state, errors, failed, external }, null, 2));
 });
 
-test('tablet independent fingers, cancel, lost capture, pause and rotation clear held input', async ({ page }) => {
+test('tablet independent fingers, cancel, lost capture, pause and rotation clear held input', { tag: '@deployment' }, async ({ page }) => {
   const touch = await bootTablet(page);
   await touch.joystick(0, -1);
   await expect.poll(async () => (await read(page)).touchInput.moveForward).toBeGreaterThan(.9);

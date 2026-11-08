@@ -4,6 +4,7 @@ const localBaseURL='http://127.0.0.1:4173/junkyard-drivers/';
 export default defineConfig({
   testDir:'./tests/browser', timeout:420_000, expect:{timeout:10000}, workers:1,
   reporter:'list',
+  maxFailures:process.env.CI?1:0,
   use:{ actionTimeout:15000, navigationTimeout:30000, baseURL:publicBaseURL||localBaseURL, viewport:process.env.CI?{width:960,height:600}:{width:1440,height:900},
     launchOptions:{args:process.platform==='darwin'?['--use-angle=metal']:[],executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined},
     screenshot:'only-on-failure', trace:'retain-on-failure',

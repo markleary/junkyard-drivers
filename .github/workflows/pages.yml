@@ -29,10 +29,18 @@ jobs:
       - run: npm run check
       - name: Install browser test dependencies
         run: npx playwright install --with-deps chromium
-      - name: Test the production site under a repository subpath
-        run: npm run test:browser
+      - name: Check startup, assets, and touch input under the repository subpath
+        run: npm run test:browser:ci
         env:
           VITE_BASE_PATH: /junkyard-drivers/
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-evidence
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Select the deployment base
         env:
           REPOSITORY_NAME: ${{ github.event.repository.name }}

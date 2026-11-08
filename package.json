@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "test:browser:ci": "playwright test --grep @deployment",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
