@@ -1,0 +1,11 @@
+{
+  "viewport": "1440x900",
+  "fps": 60.0020000666689,
+  "maxFrameMs": 16.800000000000182,
+  "elapsedMs": 3011.8999999999996,
+  "metersMoved": 18.002825789096416,
+  "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "drawCalls": 1421,
+  "graphicsQuality": "detailed",
+  "errors": []
+}

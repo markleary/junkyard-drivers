@@ -1,0 +1,16 @@
+{
+  "viewport": "1440x900",
+  "yard": {
+    "fps": 60.00200006666888,
+    "maxFrameMs": 16.80000000000109,
+    "drawCalls": 1343,
+    "quality": "detailed"
+  },
+  "store": {
+    "fps": 60,
+    "maxFrameMs": 16.799999999999272,
+    "drawCalls": 1623,
+    "quality": "detailed"
+  },
+  "errors": []
+}

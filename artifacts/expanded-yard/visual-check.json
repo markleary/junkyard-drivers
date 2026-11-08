@@ -1,0 +1,172 @@
+{
+  "errors": [],
+  "final": {
+    "state": {
+      "version": 1,
+      "seed": 642019,
+      "purchasedListings": [],
+      "cars": [],
+      "inventory": [],
+      "paints": []
+    },
+    "mode": "foot",
+    "paused": true,
+    "panelKind": "rack",
+    "position": {
+      "x": 11.99998950958252,
+      "y": 0.9048735499382019,
+      "z": 11.85094928741455
+    },
+    "yaw": -4.432218481120742e-16,
+    "pitch": -0.07919999999999999,
+    "speed": 0,
+    "steering": 0,
+    "rotation": null,
+    "activeTarget": "store-counter",
+    "lapIndex": 0,
+    "lapComplete": false,
+    "lapElapsed": 0,
+    "loop": [
+      {
+        "x": -20,
+        "z": 30
+      },
+      {
+        "x": -20,
+        "z": 44
+      },
+      {
+        "x": 144,
+        "z": 44
+      },
+      {
+        "x": 144,
+        "z": 151
+      },
+      {
+        "x": -20,
+        "z": 151
+      },
+      {
+        "x": -20,
+        "z": 44
+      },
+      {
+        "x": -20,
+        "z": 30
+      }
+    ],
+    "roads": [
+      {
+        "id": "garage-driveway",
+        "a": {
+          "x": -20,
+          "z": -6
+        },
+        "b": {
+          "x": -20,
+          "z": 30
+        },
+        "width": 10
+      },
+      {
+        "id": "yard-gate",
+        "a": {
+          "x": -20,
+          "z": 30
+        },
+        "b": {
+          "x": -20,
+          "z": 44
+        },
+        "width": 10
+      },
+      {
+        "id": "foundry-west",
+        "a": {
+          "x": -20,
+          "z": 44
+        },
+        "b": {
+          "x": 62,
+          "z": 44
+        },
+        "width": 11
+      },
+      {
+        "id": "foundry-east",
+        "a": {
+          "x": 62,
+          "z": 44
+        },
+        "b": {
+          "x": 144,
+          "z": 44
+        },
+        "width": 11
+      },
+      {
+        "id": "east-avenue",
+        "a": {
+          "x": 144,
+          "z": 44
+        },
+        "b": {
+          "x": 144,
+          "z": 151
+        },
+        "width": 11
+      },
+      {
+        "id": "water-west",
+        "a": {
+          "x": -20,
+          "z": 151
+        },
+        "b": {
+          "x": 62,
+          "z": 151
+        },
+        "width": 11
+      },
+      {
+        "id": "water-east",
+        "a": {
+          "x": 62,
+          "z": 151
+        },
+        "b": {
+          "x": 144,
+          "z": 151
+        },
+        "width": 11
+      },
+      {
+        "id": "west-avenue",
+        "a": {
+          "x": -20,
+          "z": 44
+        },
+        "b": {
+          "x": -20,
+          "z": 151
+        },
+        "width": 11
+      },
+      {
+        "id": "market-street",
+        "a": {
+          "x": 62,
+          "z": 44
+        },
+        "b": {
+          "x": 62,
+          "z": 151
+        },
+        "width": 11
+      }
+    ],
+    "drawCalls": 1159,
+    "graphicsQuality": "detailed"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "seed": 642019,
+  "cars": [
+    {
+      "id": "car-hachiro",
+      "shellId": "hachiro",
+      "engineId": "instance-part-i4-performance",
+      "wheelsId": "instance-part-sport-1",
+      "paint": "#e7ad36"
+    },
+    {
+      "id": "car-veloce",
+      "shellId": "veloce",
+      "engineId": "instance-part-v12-stock",
+      "wheelsId": "instance-part-street-2",
+      "paint": "#e7ad36"
+    }
+  ],
+  "receipts": [
+    "shell-hachiro",
+    "part-i4-stock",
+    "part-i4-performance",
+    "part-v8-stock",
+    "part-v12-stock",
+    "part-street-1",
+    "part-sport-1",
+    "part-street-2",
+    "part-paint-saffron",
+    "shell-veloce"
+  ],
+  "lapSeconds": 60.0465,
+  "errors": [],
+  "failed": [],
+  "external": []
+}

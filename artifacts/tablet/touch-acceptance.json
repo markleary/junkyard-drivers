@@ -1,0 +1,47 @@
+{
+  "testedURL": "http://127.0.0.1:4173/junkyard-drivers/?qa=1",
+  "viewport": {
+    "width": 1180,
+    "height": 820
+  },
+  "deviceScaleFactor": 2,
+  "nativeTouch": true,
+  "keyboardEvents": 0,
+  "pointerLockRequests": 0,
+  "lapSeconds": 56.88040000009537,
+  "state": {
+    "version": 1,
+    "seed": 642019,
+    "purchasedListings": [
+      "shell-hachiro",
+      "part-i4-stock",
+      "part-street-1",
+      "part-paint-saffron"
+    ],
+    "cars": [
+      {
+        "id": "car-hachiro",
+        "shellId": "hachiro",
+        "engineId": "instance-part-i4-stock",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#e7ad36"
+      }
+    ],
+    "inventory": [
+      {
+        "id": "instance-part-i4-stock",
+        "partId": "i4-stock"
+      },
+      {
+        "id": "instance-part-street-1",
+        "partId": "street-1"
+      }
+    ],
+    "paints": [
+      "paint-saffron"
+    ]
+  },
+  "errors": [],
+  "failed": [],
+  "external": []
+}

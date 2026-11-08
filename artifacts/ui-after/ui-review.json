@@ -1,0 +1,684 @@
+{
+  "visualFixtures": true,
+  "baseURL": "http://127.0.0.1:5173/",
+  "captures": [
+    {
+      "name": "startup",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "unloaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "on-foot",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "pause-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 800,
+          "height": 600,
+          "scrollHeight": 600
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 785
+        }
+      ]
+    },
+    {
+      "name": "salvage-parts",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 894
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 1028
+        }
+      ]
+    },
+    {
+      "name": "store-paint",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 785
+        }
+      ]
+    },
+    {
+      "name": "store-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 390,
+          "height": 572,
+          "scrollHeight": 613
+        }
+      ]
+    },
+    {
+      "name": "garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 785
+        }
+      ]
+    },
+    {
+      "name": "garage-paint",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 470,
+          "height": 793,
+          "scrollHeight": 785
+        }
+      ]
+    },
+    {
+      "name": "garage-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 390,
+          "height": 572,
+          "scrollHeight": 564
+        }
+      ]
+    },
+    {
+      "name": "incomplete-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 390,
+          "height": 572,
+          "scrollHeight": 564
+        }
+      ]
+    },
+    {
+      "name": "driving",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fonts": [
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "800",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        }
+      ],
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "external": []
+}

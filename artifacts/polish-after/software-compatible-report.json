@@ -1,0 +1,15 @@
+{
+  "viewport": "960x600",
+  "fps": 13.696396543290396,
+  "maxFrameMs": 116.59999999999854,
+  "elapsedMs": 3055.499999904632,
+  "metersMoved": 18.802814990958236,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+  "drawCalls": 276,
+  "graphicsQuality": "compatible",
+  "drawingBuffer": [
+    576,
+    360
+  ],
+  "errors": []
+}

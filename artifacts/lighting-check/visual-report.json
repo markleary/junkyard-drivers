@@ -1,0 +1,37 @@
+{
+  "visualFixture": true,
+  "baseURL": "http://127.0.0.1:4183/",
+  "captured": [
+    "entrance",
+    "scrapyard",
+    "garage-fixture",
+    "town-fixture"
+  ],
+  "reports": {
+    "yard": {
+      "fps": 60,
+      "maxFrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "drawCalls": 1369
+    },
+    "garage": {
+      "fps": 60.0020000666689,
+      "maxFrameMs": 16.80000000000109,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "drawCalls": 1075
+    },
+    "town": {
+      "fps": 60.00200006666886,
+      "maxFrameMs": 16.80000000000291,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "drawCalls": 721
+    },
+    "finalPosition": {
+      "x": 66.59024810791016,
+      "y": 0.7638440132141113,
+      "z": 46.37852096557617
+    }
+  },
+  "errors": [],
+  "failures": []
+}

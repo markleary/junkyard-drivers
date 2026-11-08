@@ -1,0 +1,26 @@
+{
+  "toastBox": {
+    "x": 18,
+    "y": 530,
+    "width": 360,
+    "height": 52
+  },
+  "panelBox": {
+    "x": 396,
+    "y": 14,
+    "width": 390,
+    "height": 572
+  },
+  "toastHiddenInPause": true,
+  "gaugeNumbers": "0\n80\n160",
+  "needle": "-70.875deg",
+  "errors": [],
+  "failures": [],
+  "toastFirstFrameBox": {
+    "x": 18,
+    "y": 530,
+    "width": 360,
+    "height": 52
+  },
+  "toastVerifiedAfterTransitionFix": true
+}

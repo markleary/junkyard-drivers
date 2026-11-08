@@ -1,0 +1,354 @@
+{
+  "visualFixtures": true,
+  "baseURL": "http://127.0.0.1:5173/",
+  "captures": [
+    {
+      "name": "startup",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "on-foot",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "reset",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 1440,
+          "height": 900,
+          "scrollHeight": 900
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "pause-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": false,
+          "width": 800,
+          "height": 600,
+          "scrollHeight": 600
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 750
+        }
+      ]
+    },
+    {
+      "name": "salvage-parts",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 750
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 858
+        }
+      ]
+    },
+    {
+      "name": "store-paint",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 750
+        }
+      ]
+    },
+    {
+      "name": "store-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 400,
+          "height": 480,
+          "scrollHeight": 589
+        }
+      ]
+    },
+    {
+      "name": "garage",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 750
+        }
+      ]
+    },
+    {
+      "name": "garage-paint",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 460,
+          "height": 752,
+          "scrollHeight": 750
+        }
+      ]
+    },
+    {
+      "name": "garage-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 400,
+          "height": 480,
+          "scrollHeight": 478
+        }
+      ]
+    },
+    {
+      "name": "incomplete-800",
+      "viewport": {
+        "width": 800,
+        "height": 600
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": false,
+          "width": 400,
+          "height": 480,
+          "scrollHeight": 478
+        }
+      ]
+    },
+    {
+      "name": "driving",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "panels": [
+        {
+          "id": "menu",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        },
+        {
+          "id": "panel",
+          "hidden": true,
+          "width": 0,
+          "height": 0,
+          "scrollHeight": 0
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "external": []
+}

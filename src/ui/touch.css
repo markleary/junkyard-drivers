@@ -1,0 +1,193 @@
+/* Tablet controls are separate from the printed paperwork, and only appear in play. */
+.touch-only { display: none; }
+body[data-input="touch"] .desktop-only { display: none !important; }
+body[data-input="touch"] .touch-only { display: inline; }
+body[data-input="touch"] .entry-controls.touch-only { display: flex; }
+body[data-input="touch"] .controls.touch-only { display: grid; }
+body[data-input="touch"] p.touch-only { display: block; }
+
+html, body { overscroll-behavior: none; }
+#app { width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; }
+#world { width: 100%; height: 100%; touch-action: none; }
+body[data-input="touch"] { -webkit-user-select: none; -webkit-touch-callout: none; }
+body[data-input="touch"] button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+#touch-controls { position: fixed; z-index: 4; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+body:not([data-input="touch"]) #touch-controls,
+body:not([data-screen="foot"]):not([data-screen="drive"]) #touch-controls { display: none; }
+#touch-controls button, #touch-stick { pointer-events: auto; touch-action: none; }
+#touch-controls button:active { transform: none; }
+#touch-controls button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 4px; }
+body[data-screen="foot"] .touch-drive-help,
+body[data-screen="drive"] .touch-foot-help { display: none !important; }
+
+/* A rubber boot in a worn metal gate gives the thumbstick a physical edge. */
+.touch-stick-group { position: absolute; left: max(28px, env(safe-area-inset-left)); bottom: max(36px, calc(env(safe-area-inset-bottom) + 20px)); width: 176px; }
+#touch-stick { --stick-x: 0px; --stick-y: 0px; position: relative; width: 176px; height: 176px; border: 2px solid #c5cab283; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #131e2366 0 27%, #3f4b47a8 28% 31%, #1c292ca8 32% 64%, #788279bb 65% 67%, #142226d9 68%); box-shadow: inset 0 0 0 5px #1b282aa6, 3px 4px 0 #12202655; }
+.touch-stick-gate { position: absolute; inset: 30px; border: 1px dashed #d2d2b64d; border-radius: 50%; }
+.touch-stick-direction { position: absolute; color: #dedcc3b8; font: 12px/1 var(--mono); }
+.touch-stick-up { top: 12px; left: calc(50% - 6px); }
+.touch-stick-down { bottom: 11px; left: calc(50% - 6px); }
+.touch-stick-left { left: 11px; top: calc(50% - 6px); }
+.touch-stick-right { right: 11px; top: calc(50% - 6px); }
+#touch-stick-knob { position: absolute; left: calc(50% - 32px); top: calc(50% - 32px); width: 64px; height: 64px; border: 3px solid #b7bdac; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #626b60, #344340 60%, #1c2a2c 61%); box-shadow: inset 0 0 0 3px #203032, 1px 4px 7px #0a141b8a; transform: translate(var(--stick-x), var(--stick-y)); pointer-events: none; }
+#touch-stick-knob i { position: absolute; inset: 19px; border: 1px solid #b7bdac73; border-radius: 50%; background: #293c3e; }
+#touch-stick[data-held="true"] { border-color: #f0d58d; }
+#touch-stick[data-held="true"] #touch-stick-knob { border-color: #e7bf62; }
+.touch-stick-caption { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 10px; color: #f0ead4; text-shadow: 0 1px 3px #14232c; }
+.touch-stick-caption b { font: 700 19px/1 var(--display); letter-spacing: .8px; }
+.touch-stick-caption span { font: 8px/1.3 var(--mono); }
+body[data-screen="drive"] #touch-stick .touch-stick-up,
+body[data-screen="drive"] #touch-stick .touch-stick-down { opacity: .2; }
+
+.touch-look-note { position: absolute; top: max(94px, calc(env(safe-area-inset-top) + 76px)); right: max(28px, env(safe-area-inset-right)); padding: 8px 12px; color: var(--paper-light); background: #1c292bb8; border-left: 2px solid #c9b87e; text-align: right; }
+.touch-look-note span { display: block; font: 8px/1.4 var(--mono); letter-spacing: .7px; color: #d4ceb6; }
+.touch-look-note b { display: block; margin-top: 4px; font: 700 19px/1.05 var(--display); }
+
+/* The action tag changes between inspecting a find and getting out at the Garage. */
+#touch-interact { position: absolute; right: max(28px, env(safe-area-inset-right)); bottom: max(74px, calc(env(safe-area-inset-bottom) + 58px)); display: flex; align-items: center; gap: 12px; width: 244px; min-height: 82px; padding: 13px 15px; border: 1px solid #e3c780; border-left: 5px solid var(--yellow); background: #ecdfbeef; color: var(--ink); box-shadow: 3px 4px 0 #1220266b; text-align: left; }
+.touch-action-symbol { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 36px; color: var(--rust); }
+.touch-action-symbol .ui-icon { width: 28px; height: 28px; }
+.touch-action-copy { display: block; min-width: 0; }
+#touch-action-label { display: block; font: 700 25px/1 var(--display); text-transform: uppercase; }
+#touch-action-detail { display: block; margin-top: 5px; font: 10px/1.4 var(--mono); }
+#touch-interact:disabled { background: #293638d9; border-color: #abb39d77; color: #d6d7c5; box-shadow: 2px 3px 0 #12202645; }
+#touch-interact:disabled .touch-action-symbol { color: #d6d7c5; opacity: .55; }
+#touch-interact:not(:disabled):active { background: #f4d78a; }
+body[data-screen="drive"] #touch-interact { bottom: max(271px, calc(env(safe-area-inset-bottom) + 255px)); width: 220px; min-height: 58px; padding: 10px 12px; gap: 8px; }
+body[data-screen="drive"] #touch-action-label { font-size: 21px; }
+body[data-screen="drive"] #touch-action-detail { font-size: 9px; }
+body[data-screen="drive"] .touch-action-symbol { flex-basis: 24px; width: 24px; }
+body[data-screen="drive"] .touch-action-symbol .ui-icon { width: 22px; height: 22px; }
+
+.touch-pedals { position: absolute; right: max(28px, env(safe-area-inset-right)); bottom: max(36px, calc(env(safe-area-inset-bottom) + 20px)); display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 12px; width: 220px; height: 152px; }
+.touch-pedals button { position: relative; height: 132px; padding: 12px 7px 11px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; border: 2px solid #b7bba9; color: var(--paper-light); background: #1c292be8; box-shadow: inset 0 0 0 3px #0f1b20, 3px 4px 0 #0c1a206b; border-radius: 8px 8px 14px 14px; }
+.touch-pedals #touch-throttle { height: 152px; border-color: #d4ba78; background: #3c4438ee; }
+.pedal-ribs { position: absolute; inset: 12px 13px 58px; opacity: .7; background: repeating-linear-gradient(0deg, #0d191c 0 5px, #6f786a 5px 8px, #1c292b 8px 15px); border: 1px solid #aeb5a247; border-radius: 2px; pointer-events: none; }
+.touch-pedals b { position: relative; font: 700 20px/1 var(--display); }
+.touch-pedals small { position: relative; margin-top: 6px; color: #d3d1ba; font: 7px/1.4 var(--mono); white-space: nowrap; }
+.touch-pedals button[data-held="true"], .touch-pedals button:active { background: #74623ceF; border-color: var(--yellow); box-shadow: inset 0 0 0 3px #312c20, 1px 2px 0 #0c1a206b; }
+.touch-pedals #touch-brake[data-held="true"], .touch-pedals #touch-brake:active { background: #7b3d2eeF; border-color: #e8b48e; }
+#touch-handbrake { position: absolute; right: max(28px, env(safe-area-inset-right)); bottom: max(204px, calc(env(safe-area-inset-bottom) + 188px)); display: flex; align-items: center; justify-content: center; gap: 10px; width: 220px; min-height: 52px; padding: 10px 12px; border: 1px solid #c8bd9f; background: #e9ddc2ed; color: var(--ink); box-shadow: 3px 3px 0 #1220266b; }
+.handbrake-symbol { display: grid; place-items: center; width: 26px; height: 26px; flex: 0 0 26px; border: 2px solid var(--rust); border-radius: 50%; color: var(--rust); font: 700 20px/1 var(--display); }
+#touch-handbrake b { font: 700 20px/1 var(--display); }
+#touch-handbrake small { color: #68695b; font: 8px/1 var(--mono); }
+#touch-handbrake[data-held="true"], #touch-handbrake:active { background: #e1b566; border-color: #f0cc77; }
+
+/* Move instruments above the thumbs, keeping the road ahead and center unobstructed. */
+body[data-input="touch"] #hud { inset: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) auto max(28px, env(safe-area-inset-left)); }
+body[data-input="touch"] #pause-button { min-width: 92px; min-height: 48px; padding: 11px 14px; font-size: 11px; }
+body[data-input="touch"] #pause-button kbd,
+body[data-input="touch"] #recover kbd,
+body[data-input="touch"] #hint { display: none !important; }
+body[data-input="touch"] #objective { top: max(88px, calc(env(safe-area-inset-top) + 68px)); left: max(28px, env(safe-area-inset-left)); width: 270px; }
+body[data-input="touch"] #objective p { font-size: 13px; }
+body[data-input="touch"] #speed { right: max(28px, env(safe-area-inset-right)); top: max(84px, calc(env(safe-area-inset-top) + 64px)); bottom: auto; width: 145px; min-height: 145px; padding: 10px 10px 8px; }
+body[data-input="touch"] #speed .speed-ticks { height: 51px; margin-top: 5px; }
+body[data-input="touch"] #speed .speed-needle { height: 40px; top: 32px; }
+body[data-input="touch"] #speed .speed-readout { margin: 4px 0 5px; }
+body[data-input="touch"] #speed .speed-readout strong { font-size: 30px; letter-spacing: -1.5px; }
+body[data-input="touch"] #speed .instrument-top { font-size: 8px; }
+body[data-input="touch"] #speed .instrument-bottom { font-size: 6px; }
+body[data-input="touch"] #speed::after { box-shadow: -122px 0 0 #cad1c5, 0 119px 0 #cad1c5, -122px 119px 0 #cad1c5; }
+body[data-input="touch"] #recover { top: max(241px, calc(env(safe-area-inset-top) + 221px)); right: max(28px, env(safe-area-inset-right)); bottom: auto; width: 178px; min-height: 48px; justify-content: center; font-size: 10px; }
+body[data-input="touch"] #route { left: 50%; bottom: max(40px, calc(env(safe-area-inset-bottom) + 24px)); max-width: 230px; width: max-content; padding: 10px 12px; transform: translateX(-50%); gap: 10px; }
+body[data-input="touch"] #route b { font-size: 17px; }
+body[data-input="touch"] #route div > span { font-size: 9px; gap: 10px; }
+body[data-input="touch"] #footer { left: 50%; right: auto; bottom: max(13px, env(safe-area-inset-bottom)); transform: translateX(-50%); max-width: 260px; width: max-content; text-align: center; font-size: 8px; }
+body[data-input="touch"]:is([data-screen="foot"], [data-screen="drive"]) #toast { bottom: max(277px, calc(env(safe-area-inset-bottom) + 261px)); max-width: min(430px, calc(100vw - 450px)); font-size: 11px; }
+
+/* Paperwork keeps its identity, with a single primary scroll region for touch. */
+body[data-input="touch"] #menu { padding: max(18px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); touch-action: pan-y pinch-zoom; -webkit-overflow-scrolling: touch; }
+body[data-input="touch"] #menu:has(.intro) { padding-left: max(5vw, 28px, env(safe-area-inset-left)); }
+body[data-input="touch"] .intro { width: min(550px, calc(100vw - 48px)); max-width: 100%; }
+.touch-key { padding: 4px 6px; color: var(--ink); border: 1px solid #8d8d80; background: #eee5ce; font: 500 10px/1.2 var(--mono); }
+.touch-layout-tip { margin: 11px 0 0; font: 10px/1.4 var(--mono); color: #64695c; }
+body[data-input="touch"] .entry-controls { font-size: 10px; }
+body[data-input="touch"] .intro .primary,
+body[data-input="touch"] .pause-card button { min-height: 50px; }
+body[data-input="touch"] .pause-card { width: min(500px, calc(100vw - 40px)); max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+body[data-input="touch"] .controls { margin: 19px 0; }
+body[data-input="touch"] .controls > div { padding: 9px 0; }
+body[data-input="touch"] .controls span { font-size: 13px; }
+.controls .touch-control-name { display: block; min-width: 104px; padding-right: 12px; color: var(--rust); font: 700 19px/1 var(--display); text-transform: uppercase; }
+body[data-input="touch"] .pause-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+body[data-input="touch"] .pause-actions button { padding: 10px; font-size: 11px; }
+body[data-input="touch"] #panel { top: max(18px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); bottom: max(18px, env(safe-area-inset-bottom)); width: min(480px, calc(100vw - 40px)); max-width: none; padding: 24px; touch-action: pan-y pinch-zoom; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+body[data-input="touch"] #panel .document-head { top: 0; padding: 0 0 16px; margin-bottom: 16px; min-height: 76px; }
+body[data-input="touch"] #panel .document-type { padding-right: 58px; }
+body[data-input="touch"] #panel .document-head h2 { margin: 10px 56px 0 0; font-size: 35px; }
+body[data-input="touch"] #panel .document-head .close { width: 48px; height: 48px; top: 0; right: 0; }
+body[data-input="touch"] #panel button { min-height: 48px; }
+body[data-input="touch"] #panel > .primary { min-height: 52px; font-size: 22px; }
+body[data-input="touch"] .shop-item { grid-template-columns: 18px 26px minmax(0, 1fr) 82px; gap: 10px; }
+body[data-input="touch"] .shop-item h3 { font-size: 22px; }
+body[data-input="touch"] .shop-item p { font-size: 12px; }
+body[data-input="touch"] .shop-tabs button { font-size: 18px; }
+body[data-input="touch"] .shop-tabs button > span { display: none; }
+body[data-input="touch"] .garage-tabs { gap: 6px; }
+body[data-input="touch"] .garage-tabs > button { font-size: 17px; padding: 9px 10px; }
+body[data-input="touch"] .garage-panel > .build-scroll { min-height: 100px; padding-right: 6px; touch-action: pan-y pinch-zoom; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+body[data-input="touch"] .inventory { max-height: none; overflow: visible; padding-right: 0; }
+body[data-input="touch"] .inventory > button { min-height: 62px; font-size: 13px; padding: 11px; }
+body[data-input="touch"] .inventory > button small { font-size: 11px; }
+body[data-input="touch"] .build-slot h3 { font-size: 24px; }
+body[data-input="touch"] .swatches { gap: 10px; }
+body[data-input="touch"] .swatches button { width: 92px; min-height: 76px; padding: 6px; font-size: 10px; }
+body[data-input="touch"] .swatches .paint-chip { height: 34px; }
+body[data-input="touch"] .build-status p { font-size: 12px; }
+body[data-input="touch"]:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { left: max(20px, env(safe-area-inset-left)); bottom: max(25px, env(safe-area-inset-bottom)); max-width: calc(100vw - 540px); }
+
+@media (orientation: portrait) {
+  body[data-input="touch"] #menu:has(.intro) { justify-content: center; padding-left: max(24px, env(safe-area-inset-left)); }
+  body[data-input="touch"] #panel { width: min(440px, calc(100vw - 40px)); }
+  body[data-input="touch"] #panel .document-head h2 { font-size: 32px; }
+  body[data-input="touch"] .shop-item { grid-template-columns: 16px 24px minmax(0, 1fr) 78px; gap: 8px; }
+  body[data-input="touch"] .shop-item h3 { font-size: 20px; }
+  body[data-input="touch"]:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { max-width: calc(100vw - 500px); }
+}
+@media (max-width: 900px) {
+  .touch-stick-group { left: max(24px, env(safe-area-inset-left)); }
+  #touch-interact, .touch-pedals, #touch-handbrake { right: max(24px, env(safe-area-inset-right)); }
+  body[data-input="touch"] #hud { left: max(24px, env(safe-area-inset-left)); right: max(24px, env(safe-area-inset-right)); }
+  body[data-input="touch"] #speed, body[data-input="touch"] #recover { right: max(24px, env(safe-area-inset-right)); }
+  body[data-input="touch"] #objective { left: max(24px, env(safe-area-inset-left)); width: 250px; }
+  body[data-input="touch"] #route { max-width: 210px; gap: 8px; }
+  body[data-input="touch"] #route .route-arrow { display: none; }
+  body[data-input="touch"]:is([data-screen="foot"], [data-screen="drive"]) #toast { max-width: calc(100vw - 420px); }
+}
+@media (max-height: 680px) {
+  .touch-stick-group, .touch-pedals { bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px)); }
+  #touch-handbrake { bottom: max(188px, calc(env(safe-area-inset-bottom) + 176px)); }
+  body[data-screen="drive"] #touch-interact { left: max(28px, env(safe-area-inset-left)); right: auto; bottom: max(242px, calc(env(safe-area-inset-bottom) + 230px)); width: 176px; min-height: 58px; }
+  body[data-screen="drive"] .touch-action-symbol { display: none; }
+  body[data-input="touch"] .pause-card { padding: 20px 24px; }
+  body[data-input="touch"] .controls { margin: 14px 0; }
+  body[data-input="touch"] .controls > div { padding: 7px 0; }
+  body[data-input="touch"] #panel { padding: 18px 22px; }
+  body[data-input="touch"] #panel .document-head { min-height: 65px; padding-bottom: 9px; margin-bottom: 10px; }
+  body[data-input="touch"] #panel .document-head h2 { font-size: 29px; }
+  body[data-input="touch"] #panel .work-order { padding-bottom: 9px; }
+  body[data-input="touch"] .garage-tabs { margin-bottom: 8px; }
+  body[data-input="touch"] #panel .build-status { margin-top: 8px; padding: 9px; }
+  body[data-input="touch"] #panel .build-status p { font-size: 11px; }
+}
+@media (max-width: 620px) {
+  .touch-stick-group { left: 16px; width: 144px; }
+  #touch-stick { width: 144px; height: 144px; }
+  .touch-stick-caption span { display: none; }
+  #touch-interact { right: 16px; width: 190px; }
+  .touch-pedals, #touch-handbrake { right: 16px; width: 188px; }
+  .touch-pedals { gap: 8px; }
+  .touch-pedals b { font-size: 18px; }
+  .touch-pedals small { font-size: 6px; }
+  #touch-handbrake b { font-size: 18px; }
+  #touch-handbrake small { display: none; }
+  body[data-screen="drive"] #touch-interact { right: 16px; width: 188px; }
+  body[data-input="touch"] #route { bottom: max(238px, calc(env(safe-area-inset-bottom) + 226px)); left: 16px; max-width: 160px; transform: none; }
+  body[data-input="touch"] #route b { font-size: 14px; }
+  body[data-input="touch"] #route div > span { font-size: 8px; gap: 4px; }
+  body[data-input="touch"] #panel { width: calc(100vw - 24px); right: 12px; }
+  body[data-input="touch"] #objective { width: 210px; }
+  body[data-input="touch"] #toast { max-width: calc(100vw - 32px); }
+}

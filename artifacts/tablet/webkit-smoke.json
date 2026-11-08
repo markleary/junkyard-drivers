@@ -1,0 +1,30 @@
+{
+  "baseURL": "http://127.0.0.1:4173/junkyard-drivers/",
+  "engine": "Playwright WebKit on macOS",
+  "browserVersion": "27.2",
+  "physicalIPad": false,
+  "nativeTaps": true,
+  "movementInput": "Synthetic PointerEvent; native multi-touch is verified separately in Chromium",
+  "positionBefore": {
+    "x": -20,
+    "y": 0.9972749948501587,
+    "z": 26
+  },
+  "positionAfter": {
+    "x": -19.999906539916992,
+    "y": 0.8965532183647156,
+    "z": 22.100082397460938
+  },
+  "portraitViewport": {
+    "width": 820,
+    "height": 1180,
+    "canvasWidth": 820,
+    "canvasHeight": 1180
+  },
+  "touchEnabled": true,
+  "paused": false,
+  "quality": "detailed",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
+  "errors": [],
+  "failed": []
+}

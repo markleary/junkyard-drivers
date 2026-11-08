@@ -1,0 +1,91 @@
+import { test, expect } from '@playwright/test';
+import { boot, read, walk, look, inspect, closePanel, stop } from './helpers';
+import { mkdirSync } from 'node:fs';
+
+test('walks from asphalt to yard surfaces and back at ordinary walking speed', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await boot(page);
+  await walk(page, -20, 20, .4, false);
+  for (let pass = 0; pass < 2; pass++) {
+    // Both edges of the slightly raised driveway, with a stop off the asphalt.
+    await walk(page, -29, 20, .4, false);
+    await page.waitForTimeout(250);
+    await walk(page, -20, 20, .4, false);
+    await walk(page, -11, 20, .4, false);
+    await page.waitForTimeout(250);
+    await walk(page, -20, 20, .4, false);
+  }
+  // The concrete workshop threshold joins the asphalt at a different height.
+  await walk(page, -24, -3, .4, false);
+  await walk(page, -24, -11, .4, false);
+  await walk(page, -24, -3, .4, false);
+  await walk(page, -20, 20, .4, false);
+  expect((await read(page)).position.y).toBeGreaterThan(.7);
+  expect(errors).toEqual([]);
+});
+
+test('walks to Auto Parts, buys new stock, builds with it, and reloads the saved build', async ({ page }) => {
+  const errors: string[] = [], failed: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('requestfailed', request => failed.push(request.url()));
+  mkdirSync('artifacts', { recursive: true });
+  await boot(page);
+  await walk(page, -18.2, 14.1);
+  await inspect(page, -15, 12, 'shell-hachiro');
+  await page.locator('[data-buy="shell-hachiro"]').click();
+  await closePanel(page);
+  await walk(page, -20, 26);
+  await walk(page, -20, 34);
+  await walk(page, 12, 34);
+  await look(page, 0, 0);
+  await page.screenshot({ path: 'artifacts/auto-parts-exterior.png' });
+  await walk(page, 12, 23, .5, false);
+  await walk(page, 12, 11.2, .5, false);
+  await inspect(page, 12, 8, 'store-counter');
+  await expect(page.locator('#panel')).toContainText('HOLLOWAY AUTO PARTS');
+  await expect(page.locator('[data-buy="part-i4-stock"]')).toHaveCount(0);
+  const buy = page.locator('[data-buy="part-crate-i4-performance"]');
+  await buy.click();
+  await expect(buy).toBeDisabled();
+  await page.keyboard.press('KeyE');
+  await page.keyboard.press('KeyE');
+  expect((await read(page)).state.inventory).toHaveLength(1);
+  await page.locator('[data-category="wheels"]').click();
+  await page.locator('[data-buy="part-new-sport-1"]').click();
+  await page.locator('[data-category="paint"]').click();
+  await page.locator('[data-buy="part-paint-cobalt"]').click();
+  await page.screenshot({ path: 'artifacts/auto-parts-interior.png' });
+  await closePanel(page);
+  await walk(page, 12, 23, .5, false);
+  await walk(page, 12, 34, .5, false);
+  await walk(page, -20, 34);
+  await walk(page, -20, 26);
+  await walk(page, -24, -3);
+  await walk(page, -24, -13.5);
+  await inspect(page, -26.4, -15, 'workbench');
+  await page.locator('[data-install="instance-part-crate-i4-performance"]').click();
+  await page.locator('[data-install="instance-part-new-sport-1"]').click();
+  await page.locator('[data-paint="paint-cobalt"]').click();
+  await expect(page.locator('.build-status')).toContainText('READY FOR THE ROAD');
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: 'artifacts/store-built-car.png' });
+  await closePanel(page);
+  await walk(page, -22.6, -13);
+  await inspect(page, -20, -13, 'garage-car');
+  expect((await read(page)).mode).toBe('drive');
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(2000);
+  await page.keyboard.up('KeyW');
+  expect((await read(page)).speed).toBeGreaterThan(3);
+  await page.keyboard.press('KeyR');
+  await stop(page);
+  await page.keyboard.press('KeyE');
+  const before = (await read(page)).state;
+  await page.reload();
+  await expect(page.locator('#begin')).toBeEnabled();
+  expect((await read(page)).state).toEqual(before);
+  expect(errors).toEqual([]);
+  expect(failed).toEqual([]);
+});
