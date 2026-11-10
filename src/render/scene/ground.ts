@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { flat, puddle } from '../materials';
 import { surface } from '../surfaces';
 import { createGroundMark, createPuddleMask, type Vegetation } from '../vegetation';
-import { YARD_BOUNDS, distanceToRoad, type Point, type Road } from '../../world/layout';
+import { YARD_BOUNDS, distanceToRoad, overlapsBox, type Point, type Road } from '../../world/layout';
 import { C, lightPool, type SceneContext } from './kit';
 
 export interface GroundMarks { oil: THREE.Material; dust: THREE.Material; tracks: THREE.Material; crack: THREE.Material; leaves: THREE.Material; skid: THREE.Material }
@@ -41,6 +41,27 @@ export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks 
     junctions.get(key)!.roads.push(road);
   }
 
+  // Where each pavement slab goes. Individual slabs leave each junction and lot driveway unobstructed.
+  interface Slab { road: Road; x: number; z: number; side: number; px: number; pz: number; w: number; d: number; driveway: boolean }
+  const slabsOf = (road: Road): Slab[] => {
+    const horizontal = road.a.z === road.b.z, length = Math.hypot(road.b.x - road.a.x, road.b.z - road.a.z), found: Slab[] = [];
+    for (let offset = 6; offset < length - 5; offset += 4) {
+      const x = road.a.x + (road.b.x - road.a.x) * offset / length, z = road.a.z + (road.b.z - road.a.z) * offset / length;
+      for (const side of [-1, 1]) {
+        const px = horizontal ? x : x + side * (road.width / 2 + 1.65);
+        const pz = horizontal ? z + side * (road.width / 2 + 1.65) : z;
+        if (layout.roads.some(other => other !== road && distanceToRoad({ x: px, z: pz }, other) < other.width / 2 + 2.5)) continue;
+        const driveway = layout.lots.some(lot => lot.driveways.some(d => Math.hypot(d.x - px, d.z - pz) < 3.6));
+        found.push({ road, x, z, side, px, pz, w: horizontal ? 3.95 : 3, d: horizontal ? 3 : 3.95, driveway });
+      }
+    }
+    return found;
+  };
+  const slabs = new Map(layout.roads.filter(road => !isService(road)).map(road => [road, slabsOf(road)]));
+  // Slabs of two streets cross at some corners. They share a plane there, so they are given one tint: the same
+  // surface drawn twice in one place cannot be told apart, where two tints would shimmer.
+  const meetsAnother = (slab: Slab) => [...slabs.values()].some(others => others.some(other => other.road !== slab.road && overlapsBox({ x: slab.px, z: slab.pz, w: slab.w, d: slab.d }, { x: other.px, z: other.pz, w: other.w, d: other.d })));
+
   for (const road of layout.roads) {
     const horizontal = road.a.z === road.b.z;
     const length = Math.hypot(road.b.x - road.a.x, road.b.z - road.a.z);
@@ -49,38 +70,44 @@ export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks 
       const x = road.a.x + (road.b.x - road.a.x) * t, z = road.a.z + (road.b.z - road.a.z) * t;
       return horizontal ? [x, z + side] : [x + side, z];
     };
-    b.box(asphalt, cx, .026, cz, horizontal ? length + road.width : road.width, .052, horizontal ? road.width : length + road.width,
-      { color: isService(road) ? C.asphaltWorn : C.asphalt, collide: true, cast: false, global: true });
+    // A service lane is drawn only as far as the edge of the street it joins: the two road surfaces are in one
+    // plane and differ in tint. Its collider keeps the original footprint.
+    const reach = (end: Point) => {
+      const streets = isService(road) ? (junctions.get(`${end.x},${end.z}`)?.roads ?? []).filter(other => !isService(other)) : [];
+      return streets.length ? -Math.max(...streets.map(street => street.width)) / 2 : road.width / 2;
+    };
+    const before = reach(road.a), after = reach(road.b), drawn = length + before + after, shift = (after - before) / 2;
+    b.box(asphalt, cx + (road.b.x - road.a.x) / length * shift, .026, cz + (road.b.z - road.a.z) / length * shift, horizontal ? drawn : road.width, .052, horizontal ? road.width : drawn,
+      { color: isService(road) ? C.asphaltWorn : C.asphalt, cast: false, global: true });
+    b.solidBox(cx, .026, cz, horizontal ? length + road.width : road.width, .052, horizontal ? road.width : length + road.width);
     if (isService(road)) continue;
 
-    // Individual slabs leave each junction and lot driveway unobstructed.
-    for (let offset = 6; offset < length - 5; offset += 4) {
-      const [x, z] = along(offset / length);
-      for (const side of [-1, 1]) {
-        const px = horizontal ? x : x + side * (road.width / 2 + 1.65);
-        const pz = horizontal ? z + side * (road.width / 2 + 1.65) : z;
-        if (layout.roads.some(other => other !== road && distanceToRoad({ x: px, z: pz }, other) < other.width / 2 + 2.5)) continue;
-        const driveway = layout.lots.some(lot => lot.driveways.some(d => Math.hypot(d.x - px, d.z - pz) < 3.6));
-        const shade = .96 + rng() * .08;
-        const tint = new THREE.Color(0xb1ada1).multiplyScalar(shade).getHex();
-        if (driveway) {
-          // Dropped kerb: a flush ramp the car can cross without a jolt.
-          b.box(concrete, px, .03, pz, horizontal ? 4 : 3.3, .06, horizontal ? 3.3 : 4, { color: 0x9f9b90, collide: true, cast: false });
-          continue;
-        }
-        b.box(concrete, px, .08, pz, horizontal ? 3.95 : 3, .16, horizontal ? 3 : 3.95, { color: tint, collide: true, cast: false });
-        b.box(concrete, horizontal ? x : x + side * (road.width / 2 + .12), .12, horizontal ? z + side * (road.width / 2 + .12) : z,
-          horizontal ? 3.95 : .24, .24, horizontal ? .24 : 3.95, { color: 0xbab6aa, collide: true, cast: false });
-        // Leaves and grit collect in the gutter.
-        if (rng() > .82) b.quad(marks.leaves, horizontal ? x : x + side * (road.width / 2 - .5), .058, horizontal ? z + side * (road.width / 2 - .5) : z, 1.6, 1.6, { yaw: rng() * 6 });
-        if (rng() > .55 && ctx.quality.density > .2) {
-          const gx = horizontal ? x + (rng() - .5) * 3 : x + side * (road.width / 2 + 3.5), gz = horizontal ? z + side * (road.width / 2 + 3.5) : z + (rng() - .5) * 3;
-          plants.tuft(gx, 0, gz, .3 + rng() * .25);
-        }
+    for (const slab of slabs.get(road)!) {
+      const { x, z, side, px, pz } = slab;
+      const shade = .96 + rng() * .08;
+      const tint = meetsAnother(slab) ? 0xb1ada1 : new THREE.Color(0xb1ada1).multiplyScalar(shade).getHex();
+      if (slab.driveway) {
+        // Dropped kerb: a flush ramp the car can cross without a jolt.
+        b.box(concrete, px, .03, pz, horizontal ? 4 : 3.3, .06, horizontal ? 3.3 : 4, { color: 0x9f9b90, collide: true, cast: false });
+        continue;
+      }
+      // The slab is drawn from the back of the kerb outward, so its ends and the kerb's do not share a face.
+      const inset = side * .045;
+      b.box(concrete, horizontal ? px : px + inset, .08, horizontal ? pz + inset : pz, horizontal ? 3.95 : 2.91, .16, horizontal ? 2.91 : 3.95, { color: tint, cast: false });
+      b.solidBox(px, .08, pz, horizontal ? 3.95 : 3, .16, horizontal ? 3 : 3.95);
+      b.box(concrete, horizontal ? x : x + side * (road.width / 2 + .12), .12, horizontal ? z + side * (road.width / 2 + .12) : z,
+        horizontal ? 3.95 : .24, .24, horizontal ? .24 : 3.95, { color: 0xbab6aa, collide: true, cast: false });
+      // Leaves and grit collect in the gutter.
+      if (rng() > .82) b.quad(marks.leaves, horizontal ? x : x + side * (road.width / 2 - .5), .058, horizontal ? z + side * (road.width / 2 - .5) : z, 1.6, 1.6, { yaw: rng() * 6 });
+      if (rng() > .55 && ctx.quality.density > .2) {
+        const gx = horizontal ? x + (rng() - .5) * 3 : x + side * (road.width / 2 + 3.5), gz = horizontal ? z + side * (road.width / 2 + 3.5) : z + (rng() - .5) * 3;
+        plants.tuft(gx, 0, gz, .3 + rng() * .25);
       }
     }
-    // Centre dashes, edge lines and the darker lanes that tires polish.
-    for (let offset = 10; offset < length - 8; offset += 9) {
+    // Centre dashes, edge lines and the darker lanes that tires polish. The dashes stop short of the crossing at
+    // each end, as painted ones do; overlapping it, the two coats of paint would share a plane.
+    const crossing = road.width / 2 + 3.7;
+    for (let offset = crossing + 2.8; offset <= length - crossing - 2; offset += 9) {
       const [x, z] = along(offset / length);
       b.box(flat.marking, x, .056, z, horizontal ? 4 : .14, .006, horizontal ? .14 : 4, { color: 0xd9b24f, cast: false });
     }
@@ -96,11 +123,12 @@ export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks 
     for (let d = 19; d < length - 12; d += 37) {
       const side = rng() > .5 ? 1 : -1;
       const [px, pz] = along(d / length, side * 2.6);
-      b.box(surface('asphalt', 'overlay'), px, .055, pz, horizontal ? 3.6 : 1.4, .002, horizontal ? 1.4 : 3.6, { color: 0x4e4f50, cast: false });
+      b.box(surface('asphalt', 'overlay'), px, .0562, pz, horizontal ? 3.6 : 1.4, .002, horizontal ? 1.4 : 3.6, { color: 0x4e4f50, cast: false });
       b.quad(marks.crack, px + (rng() - .5) * 6, .058, pz + (rng() - .5) * 6, 3.4, 3.4, { yaw: rng() * 6 });
       const [mx, mz] = along((d + 14) / length, -side * 1.9);
       b.cylinder(flat.metal, mx, .054, mz, .36, .012, { color: 0x3a3d3c, segments: 14, cast: false });
-      b.cylinder(flat.marking, mx, .056, mz, .29, .008, { color: 0x2c2f2e, segments: 14, cast: false });
+      // The lid stands clear of any road paint it lands on.
+      b.cylinder(flat.marking, mx, .0575, mz, .29, .01, { color: 0x2c2f2e, segments: 14, cast: false });
     }
     for (let d = 26; d < length - 20; d += 41) {
       const [px, pz] = along(d / length, (rng() - .5) * 5);
@@ -122,7 +150,9 @@ export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks 
       for (let stripe = -4; stripe <= 4; stripe++) {
         b.box(flat.marking, px + (horizontal ? 0 : stripe * 1.08), .0565, pz + (horizontal ? stripe * 1.08 : 0), horizontal ? 2.2 : .56, .006, horizontal ? .56 : 2.2, { color: 0xd4d4c8, cast: false });
       }
-      b.box(flat.marking, px + dx * 2.1 + (horizontal ? 0 : 2.6 * Math.sign(dz)), .0565, pz + dz * 2.1 + (horizontal ? -2.6 * Math.sign(dx) : 0), horizontal ? .4 : 5, .006, horizontal ? 5 : .4, { color: 0xd4d4c8, cast: false });
+      // The stop bar spans one lane, from the centre line to just inside the edge line.
+      const bar = road.width / 2 - .7, mid = .1 + bar / 2;
+      b.box(flat.marking, px + dx * 2.1 + (horizontal ? 0 : mid * Math.sign(dz)), .0565, pz + dz * 2.1 + (horizontal ? -mid * Math.sign(dx) : 0), horizontal ? .4 : bar, .006, horizontal ? bar : .4, { color: 0xd4d4c8, cast: false });
     }
   }
 

@@ -12,4 +12,5 @@ artifacts/live-*/
 artifacts/overhaul-before/*.png
 artifacts/overhaul-after/*.png
 artifacts/overhaul-after/mobile/*.png
+artifacts/overhaul-after/flicker/*.png
 .DS_Store

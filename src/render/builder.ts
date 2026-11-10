@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
+import type { Audit, Vec3 } from './coplanar';
 
 /**
  * Static scenery is baked into one mesh per material per map cell. A whole
@@ -101,6 +102,22 @@ function templateFrom(geometry: THREE.BufferGeometry): Template {
 
 const UP = new THREE.Vector3(0, 1, 0);
 
+// Outlines of the flat faces of each primitive in its own unit space, used only by the overlap audit.
+const BOX_FACES: { corners: Vec3[]; axis: Vec3 }[] = [0, 1, 2].flatMap(axis => [-1, 1].map(sign => {
+  const b = (axis + 1) % 3, c = (axis + 2) % 3;
+  const corner = (u: number, v: number): Vec3 => { const p: Vec3 = [0, 0, 0]; p[axis] = sign * .5; p[b] = u; p[c] = v; return p; };
+  const normal: Vec3 = [0, 0, 0];
+  normal[axis] = sign;
+  return { corners: [corner(-.5, -.5), corner(.5, -.5), corner(.5, .5), corner(-.5, .5)], axis: normal };
+}));
+const QUAD_FACE: { corners: Vec3[]; axis: Vec3 }[] = [{ corners: [[-.5, 0, -.5], [.5, 0, -.5], [.5, 0, .5], [-.5, 0, .5]], axis: [0, 1, 0] }];
+function cylinderEnds(segments: number, taper: number): { corners: Vec3[]; axis: Vec3 }[] {
+  const ring = (radius: number, y: number): Vec3[] => Array.from({ length: segments }, (_, i): Vec3 => [Math.sin(i / segments * Math.PI * 2) * radius, y, Math.cos(i / segments * Math.PI * 2) * radius]);
+  const ends = [{ corners: ring(1, -.5), axis: [0, -1, 0] as Vec3 }];
+  if (taper > 1e-6) ends.push({ corners: ring(taper, .5), axis: [0, 1, 0] as Vec3 });
+  return ends;
+}
+
 function releaseArray(this: THREE.BufferAttribute) {
   (this as { array: unknown }).array = null;
 }
@@ -118,11 +135,54 @@ export class WorldBuilder {
   private direction = new THREE.Vector3();
   readonly stats = { meshes: 0, instancedMeshes: 0, triangles: 0, colliders: 0 };
 
-  constructor(readonly root: THREE.Object3D, readonly physics: RAPIER.World, private cell = 44) {
+  /**
+   * `audit`, when given, receives the flat faces of every box, ground mark and cylinder end placed, for the
+   * coplanar-overlap check. Lofted shapes (car bodies, roofs, plants) are not listed. Normal play passes none.
+   */
+  constructor(readonly root: THREE.Object3D, readonly physics: RAPIER.World, private cell = 44, private audit?: Audit) {
     this.templates.set('box', templateFrom(new THREE.BoxGeometry(1, 1, 1)));
     const quad = new THREE.PlaneGeometry(1, 1);
     quad.rotateX(-Math.PI / 2);
     this.templates.set('quad', templateFrom(quad));
+  }
+
+  /**
+   * List the flat faces of one placed shape for the overlap audit. `outline` holds each face as local corner points
+   * plus the local axis it faces along. A box that blocks the view is also listed as a solid, so that faces buried
+   * inside it are not reported.
+   */
+  private record(kind: string, material: THREE.Material, matrix: THREE.Matrix4, options: PlaceOptions | undefined, outline: { corners: Vec3[]; axis: Vec3 }[], solid = false) {
+    if (!this.audit) return;
+    const e = matrix.elements;
+    const point = ([x, y, z]: Vec3): Vec3 => [e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]];
+    let owner = -1;
+    if (solid && !material.transparent) {
+      const min: Vec3 = [Infinity, Infinity, Infinity], max: Vec3 = [-Infinity, -Infinity, -Infinity];
+      for (const sx of [-.5, .5]) for (const sy of [-.5, .5]) for (const sz of [-.5, .5]) {
+        const corner = point([sx, sy, sz]);
+        for (let axis = 0; axis < 3; axis++) { min[axis] = Math.min(min[axis], corner[axis]); max[axis] = Math.max(max[axis], corner[axis]); }
+      }
+      owner = this.audit.solids.length;
+      this.audit.solids.push({ inverse: matrix.clone().invert().toArray(), min, max });
+    }
+    const standard = material as THREE.MeshStandardMaterial;
+    const look = `${material.uuid}|${options?.color ?? ''}|${options?.shade ?? 1}`;
+    const size = [Math.hypot(e[0], e[1], e[2]), Math.hypot(e[4], e[5], e[6]), Math.hypot(e[8], e[9], e[10])];
+    const tint = options?.color === undefined ? '' : ` #${options.color.toString(16).padStart(6, '0')}`;
+    const label = `${material.name || material.type}${tint} ${kind}`;
+    const place = `at ${e[12].toFixed(2)}, ${e[13].toFixed(3)}, ${e[14].toFixed(2)} size ${size.map(value => value.toFixed(2)).join(' x ')}`;
+    for (const { corners, axis } of outline) {
+      // Faces stay perpendicular to their own axis under rotation and per-axis scale.
+      const nx = e[0] * axis[0] + e[4] * axis[1] + e[8] * axis[2], ny = e[1] * axis[0] + e[5] * axis[1] + e[9] * axis[2], nz = e[2] * axis[0] + e[6] * axis[1] + e[10] * axis[2];
+      const length = Math.hypot(nx, ny, nz);
+      if (length < 1e-9) continue;
+      this.audit.faces.push({
+        normal: [nx / length, ny / length, nz / length], corners: corners.map(point), look, label, place, owner,
+        bias: standard.polygonOffset ? standard.polygonOffsetFactor : 0,
+        writesDepth: material.depthWrite,
+        doubleSided: material.side === THREE.DoubleSide,
+      });
+    }
   }
 
   private cellKey(x: number, z: number, global?: boolean) {
@@ -201,6 +261,7 @@ export class WorldBuilder {
 
   box(material: THREE.Material, x: number, y: number, z: number, w: number, h: number, d: number, options?: PlaceOptions) {
     this.append(this.templates.get('box')!, material, this.compose(x, y, z, w, h, d, options), options);
+    if (this.audit) this.record('box', material, this.matrix, options, BOX_FACES, true);
     if (options?.collide) this.solidBox(x, y, z, w, h, d, options);
   }
 
@@ -208,6 +269,7 @@ export class WorldBuilder {
   cylinder(material: THREE.Material, x: number, y: number, z: number, radius: number, height: number, options?: CylinderOptions) {
     const template = this.cylinderTemplate(options?.segments ?? 12, options?.taper ?? 1, options?.open ?? false);
     this.append(template, material, this.compose(x, y, z, radius, height, radius, options), options);
+    if (this.audit && !options?.open) this.record('cylinder', material, this.matrix, options, cylinderEnds(options?.segments ?? 12, options?.taper ?? 1));
     if (options?.collide) {
       const collider = RAPIER.ColliderDesc.cylinder(height / 2, radius).setTranslation(x, y, z);
       if (options.friction !== undefined) collider.setFriction(options.friction);
@@ -229,6 +291,7 @@ export class WorldBuilder {
   /** A flat mark lying on the ground, with 0..1 texture coordinates. */
   quad(material: THREE.Material, x: number, y: number, z: number, w: number, d: number, options?: PlaceOptions) {
     this.append(this.templates.get('quad')!, material, this.compose(x, y, z, w, 1, d, options), { cast: false, ...options });
+    if (this.audit) this.record('mark', material, this.matrix, options, QUAD_FACE);
   }
 
   /** Bake any geometry in place. Geometry vertex colours multiply the tint. */
