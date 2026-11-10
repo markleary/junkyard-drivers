@@ -1,0 +1,249 @@
+{
+  "summary": {
+    "images": 17,
+    "colorEntropyBits": 4.785,
+    "edgeDensity": 0.186,
+    "luminanceContrast": 173.841,
+    "dominantColorShare": 0.17
+  },
+  "images": {
+    "detail-bison": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 246,
+      "colorEntropyBits": 5.05,
+      "edgeDensity": 0.212,
+      "luminance": {
+        "mean": 130.9,
+        "p5": 12.9,
+        "p95": 190.6,
+        "contrast": 177.8
+      },
+      "dominantColorShare": 0.139
+    },
+    "detail-hachiro": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 212,
+      "colorEntropyBits": 4.86,
+      "edgeDensity": 0.195,
+      "luminance": {
+        "mean": 135.7,
+        "p5": 12.6,
+        "p95": 192.2,
+        "contrast": 179.6
+      },
+      "dominantColorShare": 0.155
+    },
+    "detail-veloce": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 225,
+      "colorEntropyBits": 4.89,
+      "edgeDensity": 0.196,
+      "luminance": {
+        "mean": 134.9,
+        "p5": 12.9,
+        "p95": 189.9,
+        "contrast": 177.1
+      },
+      "dominantColorShare": 0.159
+    },
+    "garage": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 182,
+      "colorEntropyBits": 3.92,
+      "edgeDensity": 0.115,
+      "luminance": {
+        "mean": 151.2,
+        "p5": 17.1,
+        "p95": 191.3,
+        "contrast": 174.2
+      },
+      "dominantColorShare": 0.37
+    },
+    "restored-bison": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 225,
+      "colorEntropyBits": 4.83,
+      "edgeDensity": 0.164,
+      "luminance": {
+        "mean": 141.9,
+        "p5": 16.8,
+        "p95": 191.5,
+        "contrast": 174.7
+      },
+      "dominantColorShare": 0.166
+    },
+    "restored-hachiro": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 205,
+      "colorEntropyBits": 4.79,
+      "edgeDensity": 0.158,
+      "luminance": {
+        "mean": 143.3,
+        "p5": 16.8,
+        "p95": 192.2,
+        "contrast": 175.4
+      },
+      "dominantColorShare": 0.166
+    },
+    "restored-veloce": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 224,
+      "colorEntropyBits": 4.8,
+      "edgeDensity": 0.16,
+      "luminance": {
+        "mean": 142.8,
+        "p5": 16.8,
+        "p95": 191.5,
+        "contrast": 174.7
+      },
+      "dominantColorShare": 0.167
+    },
+    "salvage-engines": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 169,
+      "colorEntropyBits": 5.28,
+      "edgeDensity": 0.25,
+      "luminance": {
+        "mean": 132.3,
+        "p5": 21.2,
+        "p95": 235.8,
+        "contrast": 214.6
+      },
+      "dominantColorShare": 0.121
+    },
+    "salvage-wheels": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 171,
+      "colorEntropyBits": 5.1,
+      "edgeDensity": 0.281,
+      "luminance": {
+        "mean": 129.9,
+        "p5": 17.4,
+        "p95": 234.9,
+        "contrast": 217.5
+      },
+      "dominantColorShare": 0.144
+    },
+    "scrapyard": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 182,
+      "colorEntropyBits": 4.78,
+      "edgeDensity": 0.178,
+      "luminance": {
+        "mean": 155.1,
+        "p5": 65.5,
+        "p95": 234.9,
+        "contrast": 169.4
+      },
+      "dominantColorShare": 0.177
+    },
+    "store-displays": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 150,
+      "colorEntropyBits": 5.05,
+      "edgeDensity": 0.153,
+      "luminance": {
+        "mean": 117.7,
+        "p5": 13.8,
+        "p95": 191,
+        "contrast": 177.2
+      },
+      "dominantColorShare": 0.118
+    },
+    "store-engine-detail": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 105,
+      "colorEntropyBits": 4.48,
+      "edgeDensity": 0.133,
+      "luminance": {
+        "mean": 123.5,
+        "p5": 48.2,
+        "p95": 162.4,
+        "contrast": 114.2
+      },
+      "dominantColorShare": 0.098
+    },
+    "store-exterior": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 151,
+      "colorEntropyBits": 4.38,
+      "edgeDensity": 0.14,
+      "luminance": {
+        "mean": 173,
+        "p5": 66.9,
+        "p95": 237,
+        "contrast": 170.2
+      },
+      "dominantColorShare": 0.26
+    },
+    "town-street": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 207,
+      "colorEntropyBits": 4.88,
+      "edgeDensity": 0.237,
+      "luminance": {
+        "mean": 153.9,
+        "p5": 64.7,
+        "p95": 228.3,
+        "contrast": 163.6
+      },
+      "dominantColorShare": 0.161
+    },
+    "unrestored-hachiro": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 183,
+      "colorEntropyBits": 4.97,
+      "edgeDensity": 0.207,
+      "luminance": {
+        "mean": 136.4,
+        "p5": 74.4,
+        "p95": 227.2,
+        "contrast": 152.9
+      },
+      "dominantColorShare": 0.147
+    },
+    "unrestored-veloce": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 191,
+      "colorEntropyBits": 5.03,
+      "edgeDensity": 0.22,
+      "luminance": {
+        "mean": 150.6,
+        "p5": 60.4,
+        "p95": 226.5,
+        "contrast": 166.1
+      },
+      "dominantColorShare": 0.132
+    },
+    "water-tower": {
+      "width": 1440,
+      "height": 900,
+      "colorBuckets": 178,
+      "colorEntropyBits": 4.25,
+      "edgeDensity": 0.16,
+      "luminance": {
+        "mean": 174.4,
+        "p5": 57.5,
+        "p95": 233.6,
+        "contrast": 176.1
+      },
+      "dominantColorShare": 0.215
+    }
+  }
+}

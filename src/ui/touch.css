@@ -191,3 +191,51 @@ body[data-input="touch"]:is([data-screen="inspect"], [data-screen="rack"], [data
   body[data-input="touch"] #objective { width: 210px; }
   body[data-input="touch"] #toast { max-width: calc(100vw - 32px); }
 }
+
+/* --- Overhaul additions: map, car switches, banners and photo controls placed around the thumbs. --- */
+body[data-input="touch"] #minimap { left: 50%; bottom: auto; top: max(18px, env(safe-area-inset-top)); width: 118px; height: 118px; transform: translateX(-50%); }
+body[data-input="touch"] #banner { top: max(150px, calc(env(safe-area-inset-top) + 144px)); }
+body[data-input="touch"] #recover { top: max(256px, calc(env(safe-area-inset-top) + 236px)); }
+body[data-input="touch"] .rev-bar { height: 6px; margin-top: 5px; }
+body[data-input="touch"] .gear { min-width: 19px; height: 22px; font-size: 17px; }
+/* Camera, lamps and horn: three small switches beside the stick, under the left thumb's reach. */
+.touch-switches { position: absolute; left: max(224px, calc(env(safe-area-inset-left) + 220px)); bottom: max(46px, calc(env(safe-area-inset-bottom) + 30px)); display: grid; gap: 8px; }
+.touch-switches button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 62px; height: 52px; padding: 5px; color: var(--paper-light); background: #1c292be0; border: 1px solid #b7bba999; border-radius: 6px; box-shadow: inset 0 0 0 2px #0f1b20, 2px 3px 0 #0c1a206b; }
+.touch-switches button .ui-icon { width: 20px; height: 20px; }
+.touch-switches button small { margin: 0; color: #d3d1ba; font: 7px/1 var(--mono); letter-spacing: .5px; }
+.touch-switches button:active, .touch-switches button[data-held="true"] { background: #74623cef; border-color: var(--yellow); }
+body[data-input="touch"] #photo-bar { bottom: max(22px, env(safe-area-inset-bottom)); gap: 10px; padding: 12px 14px; }
+body[data-input="touch"] #photo-bar button { min-height: 48px; padding: 10px 14px; font-size: 11px; }
+body[data-input="touch"] .pause-links button { min-height: 58px; }
+body[data-input="touch"] .logbook-card { width: min(600px, calc(100vw - 40px)); }
+body[data-input="touch"] .finish-options button, body[data-input="touch"] .stripe-options button { min-height: 52px; }
+@media (max-height: 680px) {
+  .touch-switches { bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); gap: 6px; }
+  .touch-switches button { height: 46px; }
+}
+@media (max-width: 900px) {
+  .touch-switches { left: max(214px, calc(env(safe-area-inset-left) + 210px)); }
+  body[data-input="touch"] #minimap { width: 104px; height: 104px; }
+}
+@media (max-width: 620px) {
+  /* Narrow screens have no free top centre: the map sits under the job note on foot, and in its place while driving. */
+  body[data-input="touch"] #minimap { left: 16px; top: max(196px, calc(env(safe-area-inset-top) + 180px)); width: 92px; height: 92px; transform: none; }
+  body[data-input="touch"][data-screen="drive"] #minimap { top: max(76px, calc(env(safe-area-inset-top) + 60px)); }
+  .touch-switches { left: 16px; bottom: max(228px, calc(env(safe-area-inset-bottom) + 212px)); display: flex; gap: 6px; }
+  .touch-switches button { width: 44px; height: 44px; }
+  .touch-switches button small { display: none; }
+  body[data-input="touch"] #route { bottom: max(284px, calc(env(safe-area-inset-bottom) + 272px)); }
+}
+/* While driving on a tablet, messages sit under the map instead of on the car. */
+body[data-input="touch"][data-screen="drive"] #toast { top: max(150px, calc(env(safe-area-inset-top) + 144px)); bottom: auto; }
+body[data-input="touch"][data-screen="drive"] #banner { top: max(214px, calc(env(safe-area-inset-top) + 208px)); }
+.touch-switches button small { font-size: 8px; }
+body[data-input="touch"] .instrument-bottom, body[data-input="touch"] #speed .instrument-bottom { font-size: 7.5px; }
+/* Second review: the pause sheet's link captions stay on their own line, and the driving glass is less crowded. */
+body[data-input="touch"] .pause-links small.touch-only { display: block; }
+body[data-input="touch"] .instrument-bottom .touch-only { display: none; }
+body[data-input="touch"] #route { left: max(28px, env(safe-area-inset-left)); top: max(88px, calc(env(safe-area-inset-top) + 68px)); bottom: auto; transform: none; }
+@media (max-width: 900px) { body[data-input="touch"] #route { left: max(24px, env(safe-area-inset-left)); } }
+@media (max-width: 620px) {
+  body[data-input="touch"] #route { left: 16px; top: max(178px, calc(env(safe-area-inset-top) + 162px)); bottom: auto; }
+}

@@ -427,3 +427,14 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+================================================================================
+GENERATED SOUND RECORDINGS
+
+The sound clips bundled with this game (engines, starters, horns, tires, wind,
+ambience, footsteps, tools, interface and reward sounds) were generated on
+November 9, 2026 with the ElevenLabs sound-effects API (https://elevenlabs.io)
+from text prompts written for Junkyard Drivers, then trimmed, levelled, filtered
+and prepared for looping locally. No third-party recording or sample library was
+used as an input. Rights to this output follow the ElevenLabs terms for the
+account that generated it. The game does not contact ElevenLabs at run time.

@@ -1,5 +1,5 @@
 {
-  "testedURL": "http://127.0.0.1:4173/junkyard-drivers/?qa=1",
+  "testedURL": "http://127.0.0.1:4317/junkyard-drivers/?qa=1",
   "viewport": {
     "width": 1180,
     "height": 820
@@ -8,7 +8,7 @@
   "nativeTouch": true,
   "keyboardEvents": 0,
   "pointerLockRequests": 0,
-  "lapSeconds": 56.88040000009537,
+  "lapSeconds": 57.21666666666343,
   "state": {
     "version": 1,
     "seed": 642019,

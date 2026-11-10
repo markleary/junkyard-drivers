@@ -1,5 +1,5 @@
 {
-  "baseURL": "http://127.0.0.1:4173/junkyard-drivers/",
+  "baseURL": "http://127.0.0.1:5173/",
   "engine": "Playwright WebKit on macOS",
   "browserVersion": "27.2",
   "physicalIPad": false,
@@ -12,8 +12,8 @@
   },
   "positionAfter": {
     "x": -19.999906539916992,
-    "y": 0.8965532183647156,
-    "z": 22.100082397460938
+    "y": 0.8966512680053711,
+    "z": 22.00008201599121
   },
   "portraitViewport": {
     "width": 820,
@@ -23,7 +23,7 @@
   },
   "touchEnabled": true,
   "paused": false,
-  "quality": "detailed",
+  "quality": "medium",
   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Safari/605.1.15",
   "errors": [],
   "failed": []

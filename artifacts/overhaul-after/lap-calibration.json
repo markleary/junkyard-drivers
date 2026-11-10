@@ -1,0 +1,114 @@
+{
+  "seed": 642019,
+  "driver": "pure pursuit on the fixed acceptance line (10 m corner radius), real keyboard events, in-page at frame rate",
+  "paces": {
+    "brisk": {
+      "vmaxMs": 22,
+      "lateralMs2": 5.5,
+      "brakingMs2": 5
+    },
+    "fast": {
+      "vmaxMs": 45,
+      "lateralMs2": 9,
+      "brakingMs2": 7.5
+    }
+  },
+  "laps": [
+    {
+      "shell": "hachiro",
+      "engine": "i4-stock",
+      "wheels": "street-1",
+      "pace": "brisk",
+      "lap": 65.38,
+      "topKmh": 47
+    },
+    {
+      "shell": "hachiro",
+      "engine": "i4-stock",
+      "wheels": "street-1",
+      "pace": "fast",
+      "lap": 53.6,
+      "topKmh": 47
+    },
+    {
+      "shell": "hachiro",
+      "engine": "crate-i4-performance",
+      "wheels": "new-sport-1",
+      "pace": "brisk",
+      "lap": 62.27,
+      "topKmh": 71
+    },
+    {
+      "shell": "hachiro",
+      "engine": "crate-i4-performance",
+      "wheels": "new-sport-1",
+      "pace": "fast",
+      "lap": 50.15,
+      "topKmh": 71
+    },
+    {
+      "shell": "bison",
+      "engine": "v8-stock",
+      "wheels": "street-1",
+      "pace": "brisk",
+      "lap": 64.9,
+      "topKmh": 50
+    },
+    {
+      "shell": "bison",
+      "engine": "v8-stock",
+      "wheels": "street-1",
+      "pace": "fast",
+      "lap": 52.8,
+      "topKmh": 51
+    },
+    {
+      "shell": "bison",
+      "engine": "crate-v8-performance",
+      "wheels": "new-sport-1",
+      "pace": "brisk",
+      "lap": 62.23,
+      "topKmh": 71
+    },
+    {
+      "shell": "bison",
+      "engine": "crate-v8-performance",
+      "wheels": "new-sport-1",
+      "pace": "fast",
+      "lap": 50.12,
+      "topKmh": 71
+    },
+    {
+      "shell": "veloce",
+      "engine": "v12-stock",
+      "wheels": "street-1",
+      "pace": "brisk",
+      "lap": 62.68,
+      "topKmh": 70
+    },
+    {
+      "shell": "veloce",
+      "engine": "v12-stock",
+      "wheels": "street-1",
+      "pace": "fast",
+      "lap": 50.72,
+      "topKmh": 68
+    },
+    {
+      "shell": "veloce",
+      "engine": "crate-v12-performance",
+      "wheels": "new-sport-1",
+      "pace": "brisk",
+      "lap": 60.9,
+      "topKmh": 79
+    },
+    {
+      "shell": "veloce",
+      "engine": "crate-v12-performance",
+      "wheels": "new-sport-1",
+      "pace": "fast",
+      "lap": 48.87,
+      "topKmh": 90
+    }
+  ]
+}

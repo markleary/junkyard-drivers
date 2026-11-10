@@ -1,0 +1,75 @@
+{
+  "base": "http://127.0.0.1:4317/junkyard-drivers/",
+  "viewport": {
+    "width": 960,
+    "height": 600
+  },
+  "runs": [
+    {
+      "renderer": "gpu",
+      "beginUsableMs": 913,
+      "playingAfterClickMs": 200,
+      "fps": 60.3,
+      "tier": "high",
+      "drawCalls": 788,
+      "programs": 44,
+      "memory": {
+        "geometries": 486,
+        "textures": 104
+      },
+      "world": {
+        "meshes": 877,
+        "instancedMeshes": 559,
+        "triangles": 583040,
+        "colliders": 992,
+        "buildMs": 583
+      },
+      "marks": {
+        "boot": 25,
+        "physics": 29,
+        "lighting": 47,
+        "fonts": 49,
+        "world": 632,
+        "ready": 702,
+        "frame-1": 888,
+        "frame-2": 904,
+        "frame-3": 908
+      },
+      "gl": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "errors": []
+    },
+    {
+      "renderer": "software",
+      "beginUsableMs": 6225,
+      "playingAfterClickMs": 159,
+      "fps": 18.9,
+      "tier": "compatible",
+      "drawCalls": 321,
+      "programs": 24,
+      "memory": {
+        "geometries": 315,
+        "textures": 57
+      },
+      "world": {
+        "meshes": 697,
+        "instancedMeshes": 325,
+        "triangles": 471019,
+        "colliders": 938,
+        "buildMs": 593
+      },
+      "marks": {
+        "boot": 1159,
+        "physics": 1163,
+        "lighting": 1171,
+        "fonts": 1172,
+        "world": 1766,
+        "ready": 1845,
+        "frame-1": 5454,
+        "frame-2": 5461,
+        "frame-3": 6222
+      },
+      "gl": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,403 @@
+{
+  "baseURL": "http://127.0.0.1:5173/",
+  "clips": 47,
+  "loops": [
+    {
+      "name": "amb-day",
+      "seconds": 17.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -27.4,
+      "seamStepDb": 1.1,
+      "usualStepDb": 2.7,
+      "seamClick": 0.74
+    },
+    {
+      "name": "amb-night",
+      "seconds": 17.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -27.2,
+      "seamStepDb": 0.8,
+      "usualStepDb": 1.7,
+      "seamClick": 0.69
+    },
+    {
+      "name": "amb-garage",
+      "seconds": 11.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -32,
+      "seamStepDb": 0.9,
+      "usualStepDb": 5.6,
+      "seamClick": 0.74
+    },
+    {
+      "name": "amb-yard",
+      "seconds": 13.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -27.8,
+      "seamStepDb": 0.3,
+      "usualStepDb": 4.8,
+      "seamClick": 0.12
+    },
+    {
+      "name": "roll-asphalt",
+      "seconds": 5.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -24.3,
+      "seamStepDb": 0.8,
+      "usualStepDb": 1.3,
+      "seamClick": 0.62
+    },
+    {
+      "name": "roll-gravel",
+      "seconds": 5.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -27.7,
+      "seamStepDb": 0,
+      "usualStepDb": 7.4,
+      "seamClick": 1.14
+    },
+    {
+      "name": "skid",
+      "seconds": 3.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -22.4,
+      "seamStepDb": 0.5,
+      "usualStepDb": 2.2,
+      "seamClick": 0.55
+    },
+    {
+      "name": "wind",
+      "seconds": 7.52,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -26.2,
+      "seamStepDb": 0.8,
+      "usualStepDb": 2.3,
+      "seamClick": 0.48
+    },
+    {
+      "name": "engine-i4-idle",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.3,
+      "seamStepDb": 4.6,
+      "usualStepDb": 4.6,
+      "seamClick": 0.22
+    },
+    {
+      "name": "engine-i4-rev",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 0.1,
+      "usualStepDb": 1.5,
+      "seamClick": 0.61
+    },
+    {
+      "name": "engine-v8-idle",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.3,
+      "seamStepDb": 1.3,
+      "usualStepDb": 3.5,
+      "seamClick": 0.55
+    },
+    {
+      "name": "engine-v8-rev",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 2.6,
+      "usualStepDb": 5,
+      "seamClick": 0.46
+    },
+    {
+      "name": "engine-v12-idle",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 2.5,
+      "usualStepDb": 2.8,
+      "seamClick": 0.75
+    },
+    {
+      "name": "engine-v12-rev",
+      "seconds": 4.79,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 1,
+      "usualStepDb": 0.6,
+      "seamClick": 0.62
+    }
+  ],
+  "engines": [
+    {
+      "family": "i4",
+      "power": 110,
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -26.2,
+          "crossingsHz": 210
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -26.9,
+          "crossingsHz": 1132
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -23.7,
+          "crossingsHz": 1482
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -25.5,
+          "crossingsHz": 1916
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -24.1,
+          "crossingsHz": 2146
+        }
+      ],
+      "peak": 0.33,
+      "pitchRises": true,
+      "levelRangeDb": 4.8,
+      "largestStepDb": 1.5,
+      "liftOffDropDb": 9.7,
+      "idleAfterDb": -29
+    },
+    {
+      "family": "v8",
+      "power": 290,
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -26.2,
+          "crossingsHz": 112
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -25.2,
+          "crossingsHz": 158
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -21.8,
+          "crossingsHz": 146
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -21.4,
+          "crossingsHz": 154
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -22.2,
+          "crossingsHz": 230
+        }
+      ],
+      "peak": 0.23,
+      "pitchRises": false,
+      "levelRangeDb": 4.8,
+      "largestStepDb": 2.7,
+      "liftOffDropDb": 8.8,
+      "idleAfterDb": -26.5
+    },
+    {
+      "family": "v12",
+      "power": 440,
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -23.3,
+          "crossingsHz": 148
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -23.6,
+          "crossingsHz": 1588
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -21.2,
+          "crossingsHz": 2466
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -21,
+          "crossingsHz": 2966
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -21,
+          "crossingsHz": 3434
+        }
+      ],
+      "peak": 0.42,
+      "pitchRises": true,
+      "levelRangeDb": 2.7,
+      "largestStepDb": 1.2,
+      "liftOffDropDb": 9.3,
+      "idleAfterDb": -25.2
+    }
+  ],
+  "horns": [
+    {
+      "family": "i4",
+      "recorded": true,
+      "heldLevelDb": -19.1,
+      "heldSpreadDb": 0.2,
+      "afterReleaseDb": -180,
+      "source": 0.38
+    },
+    {
+      "family": "v8",
+      "recorded": true,
+      "heldLevelDb": -19.5,
+      "heldSpreadDb": 0.2,
+      "afterReleaseDb": -180,
+      "source": 0.77
+    },
+    {
+      "family": "v12",
+      "recorded": true,
+      "heldLevelDb": -18.1,
+      "heldSpreadDb": 0.4,
+      "afterReleaseDb": -180,
+      "source": 0.88
+    }
+  ],
+  "steps": [
+    {
+      "kind": "gravel",
+      "footfalls": 7,
+      "meanMs": 400,
+      "gains": [
+        4.1,
+        3.24,
+        2.1,
+        3.54,
+        0.72,
+        4.08,
+        1.81
+      ]
+    },
+    {
+      "kind": "hard",
+      "footfalls": 7,
+      "meanMs": 394,
+      "gains": [
+        0.79,
+        0.91,
+        0.73,
+        0.87,
+        0.89,
+        0.92,
+        0.97
+      ]
+    },
+    {
+      "kind": "grass",
+      "footfalls": 4,
+      "meanMs": 400,
+      "gains": [
+        0.95,
+        1.72,
+        1.63,
+        0.51
+      ]
+    }
+  ],
+  "effects": {
+    "click": "recorded",
+    "open": "recorded",
+    "close": "recorded",
+    "buy": "recorded",
+    "install": "recorded",
+    "ratchet": "recorded",
+    "paint": "recorded",
+    "stamp": "recorded",
+    "error": "recorded",
+    "enterCar": "recorded",
+    "exitCar": "recorded",
+    "ignition": "recorded",
+    "shutdown": "recorded",
+    "recover": "recorded",
+    "checkpoint": "recorded",
+    "lapComplete": "recorded",
+    "medal": "recorded",
+    "find": "recorded",
+    "unlock": "recorded",
+    "handbrake": "recorded",
+    "thud": "recorded",
+    "scrape": "recorded",
+    "lightSwitch": "recorded",
+    "shutter": "recorded",
+    "gearShift": "recorded"
+  },
+  "inGame": {
+    "beforeFirstClick": {
+      "ready": false,
+      "muted": false,
+      "clips": 0,
+      "recorded": []
+    },
+    "afterFirstClick": {
+      "ready": true,
+      "muted": false,
+      "clips": 47,
+      "recorded": [
+        "road",
+        "ambience",
+        "steps",
+        "horn"
+      ]
+    },
+    "clipRequests": 47,
+    "clipRequestsOffOrigin": []
+  },
+  "errors": []
+}
