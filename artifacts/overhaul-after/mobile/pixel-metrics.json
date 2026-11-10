@@ -1,0 +1,221 @@
+{
+  "summary": {
+    "images": 15,
+    "colorEntropyBits": 6.059,
+    "edgeDensity": 0.298,
+    "luminanceContrast": 154.207,
+    "dominantColorShare": 0.093
+  },
+  "images": {
+    "back-lot-rows": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 345,
+      "colorEntropyBits": 6.68,
+      "edgeDensity": 0.328,
+      "luminance": {
+        "mean": 126.5,
+        "p5": 42.3,
+        "p95": 197.2,
+        "contrast": 154.9
+      },
+      "dominantColorShare": 0.075
+    },
+    "car-lot": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 387,
+      "colorEntropyBits": 6.56,
+      "edgeDensity": 0.351,
+      "luminance": {
+        "mean": 114,
+        "p5": 46,
+        "p95": 195.5,
+        "contrast": 149.5
+      },
+      "dominantColorShare": 0.124
+    },
+    "fuel": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 313,
+      "colorEntropyBits": 6.38,
+      "edgeDensity": 0.334,
+      "luminance": {
+        "mean": 104.6,
+        "p5": 31.3,
+        "p95": 202.4,
+        "contrast": 171.1
+      },
+      "dominantColorShare": 0.103
+    },
+    "garage": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 252,
+      "colorEntropyBits": 5.93,
+      "edgeDensity": 0.299,
+      "luminance": {
+        "mean": 96,
+        "p5": 23.4,
+        "p95": 176.8,
+        "contrast": 153.5
+      },
+      "dominantColorShare": 0.052
+    },
+    "park": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 349,
+      "colorEntropyBits": 6.59,
+      "edgeDensity": 0.367,
+      "luminance": {
+        "mean": 123.2,
+        "p5": 48.1,
+        "p95": 196.6,
+        "contrast": 148.5
+      },
+      "dominantColorShare": 0.067
+    },
+    "restored-bison": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 266,
+      "colorEntropyBits": 5.79,
+      "edgeDensity": 0.249,
+      "luminance": {
+        "mean": 101.2,
+        "p5": 33.8,
+        "p95": 185.9,
+        "contrast": 152
+      },
+      "dominantColorShare": 0.058
+    },
+    "restored-hachiro": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 249,
+      "colorEntropyBits": 5.78,
+      "edgeDensity": 0.25,
+      "luminance": {
+        "mean": 102.5,
+        "p5": 33.6,
+        "p95": 185.9,
+        "contrast": 152.3
+      },
+      "dominantColorShare": 0.057
+    },
+    "restored-veloce": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 264,
+      "colorEntropyBits": 5.77,
+      "edgeDensity": 0.249,
+      "luminance": {
+        "mean": 101.9,
+        "p5": 34,
+        "p95": 185.9,
+        "contrast": 151.8
+      },
+      "dominantColorShare": 0.057
+    },
+    "salvage-engines": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 261,
+      "colorEntropyBits": 6.05,
+      "edgeDensity": 0.321,
+      "luminance": {
+        "mean": 85.8,
+        "p5": 20.1,
+        "p95": 185.5,
+        "contrast": 165.4
+      },
+      "dominantColorShare": 0.129
+    },
+    "scrapyard": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 300,
+      "colorEntropyBits": 6.29,
+      "edgeDensity": 0.33,
+      "luminance": {
+        "mean": 105.9,
+        "p5": 44.4,
+        "p95": 187.8,
+        "contrast": 143.4
+      },
+      "dominantColorShare": 0.104
+    },
+    "store-exterior": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 345,
+      "colorEntropyBits": 6.7,
+      "edgeDensity": 0.308,
+      "luminance": {
+        "mean": 100.4,
+        "p5": 25.8,
+        "p95": 192.5,
+        "contrast": 166.8
+      },
+      "dominantColorShare": 0.06
+    },
+    "town-night": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 198,
+      "colorEntropyBits": 4.29,
+      "edgeDensity": 0.239,
+      "luminance": {
+        "mean": 34.5,
+        "p5": 7.5,
+        "p95": 162.7,
+        "contrast": 155.2
+      },
+      "dominantColorShare": 0.239
+    },
+    "town-street": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 327,
+      "colorEntropyBits": 6.43,
+      "edgeDensity": 0.269,
+      "luminance": {
+        "mean": 107.2,
+        "p5": 32.3,
+        "p95": 195.8,
+        "contrast": 163.5
+      },
+      "dominantColorShare": 0.075
+    },
+    "unrestored-hachiro": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 323,
+      "colorEntropyBits": 6.16,
+      "edgeDensity": 0.387,
+      "luminance": {
+        "mean": 99.5,
+        "p5": 43.3,
+        "p95": 193.2,
+        "contrast": 149.9
+      },
+      "dominantColorShare": 0.138
+    },
+    "yard-night": {
+      "width": 2360,
+      "height": 1640,
+      "colorBuckets": 187,
+      "colorEntropyBits": 5.49,
+      "edgeDensity": 0.192,
+      "luminance": {
+        "mean": 51.7,
+        "p5": 7.7,
+        "p95": 143,
+        "contrast": 135.3
+      },
+      "dominantColorShare": 0.064
+    }
+  }
+}

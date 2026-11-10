@@ -1,15 +1,37 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { createEngineModel, type EngineFamily } from './parts';
 
 type ShellId = 'hachiro' | 'bison' | 'veloce';
-export interface CarAppearance { paint?: string; restored?: boolean; wheels?: boolean }
+export type PaintFinish = 'gloss' | 'metallic' | 'matte' | 'pearl';
+export interface FittedEngine { family: EngineFamily; salvage: boolean; performance: boolean }
+export interface CarAppearance {
+  paint?: string;
+  /** Fresh paint rather than the oxidised skin the shell was found in. */
+  restored?: boolean;
+  wheels?: boolean;
+  finish?: PaintFinish;
+  /** Twin stripe colour, or null for plain paint. */
+  stripe?: string | null;
+  /** Shown in the bay when the bonnet is raised. */
+  engine?: FittedEngine | null;
+}
+export interface CarLamps { head: number; brake: number; reverse: number }
 export interface CarVisual {
   group: THREE.Group;
   /** Front left, front right, rear left, rear right. Forward is local -Z. */
   wheels: THREE.Group[];
+  /** Local positions of the two headlamps, for the beams that follow the car at night. */
+  headlamps: THREE.Vector3[];
+  /** Local positions of the tailpipes, for exhaust haze. */
+  exhausts: THREE.Vector3[];
   setAppearance(options: CarAppearance): void;
   animateWheels(steering: number, rotation: number, suspension?: number[]): void;
+  /** 0 shut, 1 fully raised. Front bonnet, or the engine cover on the mid-engined car. */
+  setBonnet(open: number): void;
+  /** Lamp brightness, each 0..1. */
+  setLamps(lamps: CarLamps): void;
   /** Release only resources owned by this car; shared factory assets stay alive. */
   dispose(): void;
 }
@@ -131,23 +153,24 @@ type BodySection = {z:number;y:number;width:number};
 const crownProfile = [-1, -.96, -.85, -.62, 0, .62, .85, .96, 1];
 const crownRise = [0, .014, .025, .033, .038, .033, .025, .014, 0];
 function panelHeight(sections: BodySection[], x: number, z: number) {
-  const index = Math.max(0, sections.findIndex((section, i) => i < sections.length - 1 && z <= sections[i + 1].z));
+  const index = Math.max(0, sections.findIndex((_, i) => i < sections.length - 1 && z <= sections[i + 1].z));
   const a = sections[index], b = sections[index + 1];
   const t = THREE.MathUtils.clamp((z - a.z) / (b.z - a.z), 0, 1);
   const width = THREE.MathUtils.lerp(a.width,b.width,t), u = THREE.MathUtils.clamp(x / width,-1,1);
-  const col = Math.max(0, crownProfile.findIndex((value, i) => i < crownProfile.length - 1 && u <= crownProfile[i + 1]));
+  const col = Math.max(0, crownProfile.findIndex((_, i) => i < crownProfile.length - 1 && u <= crownProfile[i + 1]));
   return THREE.MathUtils.lerp(a.y,b.y,t) + THREE.MathUtils.lerp(crownRise[col],crownRise[col + 1],(u - crownProfile[col]) / (crownProfile[col + 1] - crownProfile[col]));
 }
 
 /** Crowned hood, boot and roof surfaces meet their adjoining panels at the edges. */
-function loft(parent: THREE.Object3D, material: THREE.Material, sections: BodySection[]) {
+function loft(parent: THREE.Object3D, material: THREE.Material, sections: BodySection[], firstColumn = 0, lastColumn = crownProfile.length - 1, origin?: { y: number; z: number }) {
   const vertices: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
-  const profile = crownProfile, crown = crownRise;
+  const profile = crownProfile.slice(firstColumn, lastColumn + 1), crown = crownRise.slice(firstColumn, lastColumn + 1);
   for (const section of sections) {
     profile.forEach((u, i) => {
-      vertices.push(section.width * u, section.y + crown[i], section.z);
+      // Texture coordinates stay in body space, so a hinged panel's finish lines up with its neighbours.
+      vertices.push(section.width * u, section.y + crown[i] - (origin?.y ?? 0), section.z - (origin?.z ?? 0));
       uvs.push((u + 1) / 2, (section.z + 2.3) / 4.6);
     });
   }
@@ -411,16 +434,55 @@ function createWheel(style: ShellId, side: number) {
   return { pivot, spin };
 }
 
+/** Paint over a crowned panel: thin quads that follow its curve a few millimetres proud. */
+function stripes(parent: THREE.Object3D, material: THREE.Material, sections: BodySection[], halfWidth: number, from: number, to: number, origin?: { y: number; z: number }) {
+  const positions: number[] = [], indices: number[] = [];
+  const steps = Math.max(2, Math.round((to - from) / .14));
+  for (const side of [-1, 1]) {
+    const inner = side * halfWidth * .08, outer = side * halfWidth * .3, base = positions.length / 3;
+    for (let i = 0; i <= steps; i++) {
+      const z = from + (to - from) * i / steps;
+      for (const x of [inner, outer]) positions.push(x, panelHeight(sections, x, z) + .0035 - (origin?.y ?? 0), z - (origin?.z ?? 0));
+      if (i < steps) {
+        const a = base + i * 2;
+        if (side > 0) indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); else indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices); geometry.computeVertexNormals();
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+}
+
+const FINISHES: Record<PaintFinish, { metalness: number; roughness: number; clearcoat: number; clearcoatRoughness: number; iridescence: number; flake: number; reflection: number }> = {
+  // `reflection` scales how strongly the sky shows in the paint. The scene's own reflection level is kept low
+  // in the afternoon for the sake of the shadows, so the cars ask for more of it than anything else does.
+  gloss: { metalness: .19, roughness: .26, clearcoat: .92, clearcoatRoughness: .08, iridescence: 0, flake: .0007, reflection: 2.3 },
+  metallic: { metalness: .58, roughness: .3, clearcoat: 1, clearcoatRoughness: .05, iridescence: 0, flake: .0022, reflection: 3.3 },
+  matte: { metalness: .08, roughness: .74, clearcoat: 0, clearcoatRoughness: .6, iridescence: 0, flake: .0004, reflection: 1.2 },
+  pearl: { metalness: .3, roughness: .24, clearcoat: 1, clearcoatRoughness: .05, iridescence: .85, flake: .0012, reflection: 2.7 },
+};
+
 export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVisual {
   const group = new THREE.Group(); group.name = `car-${shellId}`;
   const initialPaint = { hachiro: '#e8d9b0', bison: '#d28037', veloce: '#b83d30' }[shellId];
-  const appearance = { paint: options.paint ?? initialPaint, restored: options.restored ?? false, wheels: options.wheels ?? false };
-  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.paint, metalness: .19, roughness: .28, clearcoat: .88, clearcoatRoughness: .1, bumpMap: fineFinish(), bumpScale: .0007, side: THREE.DoubleSide });
+  const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe'>> & { engine: FittedEngine | null; stripe: string | null } = {
+    paint: options.paint ?? initialPaint, restored: options.restored ?? false, wheels: options.wheels ?? false,
+    finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null,
+  };
+  const paint = new THREE.MeshPhysicalMaterial({ color: appearance.paint, metalness: .19, roughness: .28, clearcoat: .88, clearcoatRoughness: .1, bumpMap: fineFinish(), bumpScale: .0007, side: THREE.DoubleSide, envMapIntensity: 1.25 });
+  const stripePaint = new THREE.MeshPhysicalMaterial({ color: '#f1ece0', metalness: .1, roughness: .3, clearcoat: .9, clearcoatRoughness: .1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   if (!lamp.map) {
     lamp.map = lensFinish(); lamp.needsUpdate = true;
     tailLamp.map = lamp.map; tailLamp.needsUpdate = true;
     amber.map = lamp.map; amber.needsUpdate = true;
   }
+  // Each car owns its lamp materials so one can brake or switch on its lights without lighting the others.
+  const headMaterial = lamp.clone(), tailMaterial = tailLamp.clone();
+  const reverseMaterial = new THREE.MeshStandardMaterial({ color: '#e9eae4', emissive: '#f4f6ff', emissiveIntensity: 0, roughness: .2, map: lamp.map });
   const isMuscle = shellId === 'bison', isSuper = shellId === 'veloce';
   const halfWidth = isMuscle ? 0.98 : isSuper ? 0.99 : 0.91;
   const front = isMuscle ? -2.3 : isSuper ? -2.2 : -2.12;
@@ -442,7 +504,24 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     {z:rear - 0.16,y:shoulder,width:halfWidth}, {z:rear,y:shoulder - 0.04,width:halfWidth * 0.93}];
   sidePanel(group, paint, -halfWidth, front, rear, shoulder, hoodSections, bootSections);
   sidePanel(group, paint, halfWidth, front, rear, shoulder, hoodSections, bootSections);
-  loft(group, paint, hoodSections); loft(group, paint, bootSections);
+
+  // The engine sits under whichever panel lifts: the bonnet, or the rear deck of the mid-engined car.
+  // That panel is its own hinged piece; the wings either side of it stay with the body.
+  const bonnet = new THREE.Group(); bonnet.name = 'Bonnet';
+  const liftSections = isSuper ? bootSections.slice(0, 2) : hoodSections.slice(1);
+  const hinge = isSuper ? { y: bootSections[0].y, z: rearBottomZ } : { y: hoodSections[3].y, z: windscreenBottomZ };
+  bonnet.position.set(0, hinge.y, hinge.z);
+  group.add(bonnet);
+  if (isSuper) {
+    loft(group, paint, hoodSections);
+    loft(group, paint, bootSections, 0, 2); loft(group, paint, bootSections, 6, 8);
+    loft(group, paint, bootSections.slice(1), 2, 6);
+  } else {
+    loft(group, paint, hoodSections, 0, 2); loft(group, paint, hoodSections, 6, 8);
+    loft(group, paint, hoodSections.slice(0, 2), 2, 6);
+    loft(group, paint, bootSections);
+  }
+  loft(bonnet, paint, liftSections, 2, 6, hinge);
   endBand(group, paint, hoodSections[0], -.12, -1);
   endBand(group, paint, bootSections.at(-1)!, -.12, 1);
   roundedBox(group, paint, [0, isSuper ? -.085 : -.04, front + .06], [halfWidth * 1.80, isSuper ? .24 : .34, .15], .035);
@@ -470,24 +549,36 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
       }
     }
   }
-  // The narrow hood and boot gaps separate stamped panels without changing the silhouette.
-  for (const side of [-1,1]) {
-    for (const [sections, from, to] of [[hoodSections,front + .07,windscreenBottomZ - .025],[bootSections,rearBottomZ + .025,rear - .22]] as const) {
-      const x = side * halfWidth * .80;
-      for (let i = 0; i < 24; i++) {
-        const a = THREE.MathUtils.lerp(from,to,i / 24), b = THREE.MathUtils.lerp(from,to,(i + 1) / 24);
-        strip(group, darkMetal, new THREE.Vector3(x,panelHeight(sections,x,a) + .002,a), new THREE.Vector3(x,panelHeight(sections,x,b) + .002,b), .004);
-      }
-    }
+  // Narrow shut lines separate the stamped panels. Those around the lifting panel travel with it.
+  const liftFrom = isSuper ? rearBottomZ + .025 : front + .27, liftTo = isSuper ? rear - .2 : windscreenBottomZ - .025;
+  const fixedSections = isSuper ? hoodSections : bootSections;
+  const fixedFrom = isSuper ? front + .07 : rearBottomZ + .025, fixedTo = isSuper ? windscreenBottomZ - .025 : rear - .22;
+  for (const side of [-1,1]) for (let i = 0; i < 24; i++) {
+    const fx = side * halfWidth * .80;
+    const a = THREE.MathUtils.lerp(fixedFrom,fixedTo,i / 24), b = THREE.MathUtils.lerp(fixedFrom,fixedTo,(i + 1) / 24);
+    strip(group, darkMetal, new THREE.Vector3(fx,panelHeight(fixedSections,fx,a) + .002,a), new THREE.Vector3(fx,panelHeight(fixedSections,fx,b) + .002,b), .004);
+    const lx = side * halfWidth * .845;
+    const c = THREE.MathUtils.lerp(liftFrom,liftTo,i / 24), d = THREE.MathUtils.lerp(liftFrom,liftTo,(i + 1) / 24);
+    strip(group, black, new THREE.Vector3(lx,panelHeight(liftSections,lx,c) + .0015,c), new THREE.Vector3(lx,panelHeight(liftSections,lx,d) + .0015,d), .006);
   }
-  for (const [sections,z] of [[hoodSections,front + .07],[bootSections,rear - .22]] as const) {
-    for (let i = 0; i < 24; i++) {
-      const a = THREE.MathUtils.lerp(-halfWidth * .8,halfWidth * .8,i / 24), b = THREE.MathUtils.lerp(-halfWidth * .8,halfWidth * .8,(i + 1) / 24);
-      strip(group,darkMetal,new THREE.Vector3(a,panelHeight(sections,a,z) + .002,z),new THREE.Vector3(b,panelHeight(sections,b,z) + .002,z),.004);
-    }
+  const crossZ = isSuper ? front + .07 : rear - .22;
+  for (let i = 0; i < 24; i++) {
+    const a = THREE.MathUtils.lerp(-halfWidth * .8,halfWidth * .8,i / 24), b = THREE.MathUtils.lerp(-halfWidth * .8,halfWidth * .8,(i + 1) / 24);
+    strip(group,darkMetal,new THREE.Vector3(a,panelHeight(fixedSections,a,crossZ) + .002,crossZ),new THREE.Vector3(b,panelHeight(fixedSections,b,crossZ) + .002,crossZ),.004);
   }
   const filler = new THREE.Mesh(new THREE.TorusGeometry(.071,.003,4,24), darkMetal);
   filler.rotation.y = Math.PI / 2; filler.position.set(bodyWidth(halfWidth,1.77,.09,front,rear,shoulder) + .003,.09,1.77); group.add(filler);
+
+  // Engine bay: a dark tub that is only ever seen with the panel raised.
+  const bayFront = isSuper ? rearBottomZ + .04 : front + .32, bayBack = isSuper ? rear - .2 : windscreenBottomZ - .04;
+  // The tub stays inboard of the tires, so it never shows through a steered wheel.
+  box(group, interior, [0, -.02, bayFront], [halfWidth * 1.24, .4, .03]);
+  box(group, interior, [0, -.02, bayBack], [halfWidth * 1.24, .4, .03]);
+  for (const side of [-1, 1]) box(group, interior, [side * halfWidth * .62, -.02, (bayFront + bayBack) / 2], [.03, .4, Math.abs(bayBack - bayFront)]);
+  box(group, black, [0, -.158, (bayFront + bayBack) / 2], [halfWidth * 1.24, .012, Math.abs(bayBack - bayFront)]);
+  const engineSlot = new THREE.Group(); engineSlot.name = 'Engine bay';
+  engineSlot.position.set(0, -.15, (bayFront + bayBack) / 2);
+  group.add(engineSlot);
 
   // Tinted windows are independent surfaces bounded by painted pillars.
   const windowMaterial = glass.clone(); windowMaterial.side = THREE.DoubleSide;
@@ -509,6 +600,8 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     strip(group, paint, new THREE.Vector3(topX,roof - 0.02,windscreenTopZ),new THREE.Vector3(topX,roof - 0.02,rearTopZ),0.05);
     strip(group, darkMetal, new THREE.Vector3(bottomX,shoulder + 0.035,0.38),new THREE.Vector3(topX,roof - 0.035,0.38),0.035);
     strip(group, darkMetal, new THREE.Vector3(bottomX,shoulder + 0.025,windscreenBottomZ),new THREE.Vector3(bottomX,shoulder + 0.025,rearBottomZ),0.035);
+    // Bright trim along the gutter and waist, as on any car of the period.
+    strip(group, metal, new THREE.Vector3(bottomX + side * .012,shoulder + 0.012,windscreenBottomZ + .02),new THREE.Vector3(bottomX + side * .012,shoulder + 0.012,rearBottomZ - .04),0.014);
     roundedBox(group, paint, [side * (halfWidth + 0.075), shoulder + 0.11, windscreenBottomZ + 0.16], [0.18, 0.085, 0.20], .03);
     box(group, glass, [side * (halfWidth + 0.075), shoulder + 0.11, windscreenBottomZ + 0.266], [0.13, 0.055, 0.008]);
   }
@@ -527,36 +620,48 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   // Slim wipers sit on the lower glass edge and give the windshield a useful scale cue.
   for (const side of [-1, 1]) strip(group, black, new THREE.Vector3(side * .51,shoulder + .061,windscreenBottomZ + .018), new THREE.Vector3(side * .18,shoulder + .105,windscreenBottomZ + .09), .012);
 
+  // Pieces that ride on the lifting panel are placed relative to its hinge.
+  const onBonnet = (material: THREE.Material, position: number[], size: number[], rotation?: number[]) =>
+    box(bonnet, material, [position[0], position[1] - hinge.y, position[2] - hinge.z], size, rotation);
+  const headlamps: THREE.Vector3[] = [];
   if (isMuscle) {
     // Long hood, chrome grille, paired round lamps, and a narrow black hood scoop.
     box(group, darkMetal, [0, -0.01, front - 0.031], [1.77, 0.24, 0.045]);
     for (let i = 0; i < 11; i++) box(group, metal, [(i - 5) * 0.075, -0.01, front - 0.059], [0.018, 0.16, 0.015]);
-    for (const side of [-1, 1]) for (const offset of [0, 0.24]) {
-      const light = new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.10,0.035,24), lamp);
-      light.rotation.x = Math.PI / 2; light.position.set(side * (0.56 + offset),0.012,front - 0.045); group.add(light);
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.105,0.012,6,24), metal);
-      ring.position.copy(light.position); ring.position.z -= 0.026; group.add(ring);
+    for (const side of [-1, 1]) {
+      for (const offset of [0, 0.24]) {
+        const light = new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.10,0.035,24), headMaterial);
+        light.rotation.x = Math.PI / 2; light.position.set(side * (0.56 + offset),0.012,front - 0.045); group.add(light);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.105,0.012,6,24), metal);
+        ring.position.copy(light.position); ring.position.z -= 0.026; group.add(ring);
+      }
+      headlamps.push(new THREE.Vector3(side * .68, .012, front - .08));
     }
     box(group, metal, [0, -0.20, front - 0.08], [1.90, 0.085, 0.11]);
     box(group, metal, [0, -0.19, rear + 0.055], [1.92, 0.085, 0.10]);
-    box(group, darkMetal, [0, shoulder + 0.085, -1.12], [0.46,0.11,0.69],[-0.045,0,0]);
-    box(group, black, [0, shoulder + 0.11, -1.47], [0.37,0.055,0.02]);
-    for (const side of [-1,1]) box(group, tailLamp,[side * 0.62,0.035,rear + 0.035],[0.43,0.12,0.035]);
+    onBonnet(darkMetal, [0, shoulder + 0.085, -1.12], [0.46,0.11,0.69],[-0.045,0,0]);
+    onBonnet(black, [0, shoulder + 0.11, -1.47], [0.37,0.055,0.02]);
+    for (const side of [-1,1]) {
+      box(group, tailMaterial,[side * 0.62,0.035,rear + 0.035],[0.43,0.12,0.035]);
+      box(group, reverseMaterial,[side * 0.3,0.035,rear + 0.036],[0.13,0.1,0.035]);
+    }
   } else if (isSuper) {
     // Low wedge nose, outlined pop-up lamps, large intake openings, and vented engine cover.
     for (const side of [-1,1]) {
       box(group, darkMetal,[side * 0.61,0.15,-1.73],[0.40,0.018,0.36],[-0.07,0,0]);
       box(group, paint,[side * 0.61,0.167,-1.73],[0.37,0.016,0.33],[-0.07,0,0]);
-      box(group,lamp,[side * 0.66,-0.09,front - 0.03],[0.37,0.07,0.03]);
+      box(group,headMaterial,[side * 0.66,-0.09,front - 0.03],[0.37,0.07,0.03]);
+      headlamps.push(new THREE.Vector3(side * .66, -.09, front - .07));
       box(group,black,[side * 0.53,-0.19,front - 0.04],[0.40,0.085,0.035]);
       box(group,black,[side * (halfWidth + 0.005),0.07,0.69],[0.018,0.15,0.32]);
       for (let i = 0; i < 3; i++) box(group,paint,[side * (halfWidth + 0.02),0.025 + i * 0.055,0.69],[0.026,0.013,0.32]);
       for (const offset of [0,0.25]) {
-        const light = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.03,24),tailLamp);
+        const light = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.03,24),tailMaterial);
         light.rotation.x = Math.PI / 2; light.position.set(side * (0.53 + offset),0.02,rear + 0.05);group.add(light);
       }
+      box(group, reverseMaterial,[side * 0.28,0.02,rear + 0.052],[0.12,0.07,0.03]);
     }
-    for (let i = 0; i < 8; i++) box(group,darkMetal,[0,shoulder + 0.055,1.22 + i * 0.085],[1.24,0.018,0.035]);
+    for (let i = 0; i < 8; i++) onBonnet(darkMetal,[0,shoulder + 0.055,1.22 + i * 0.085],[1.24,0.018,0.035]);
     box(group,paint,[0,0.46,1.92],[1.83,0.055,0.23]);
     for (const side of [-1,1]) box(group,darkMetal,[side * 0.58,0.34,1.93],[0.045,0.22,0.10]);
     box(group,black,[0,-0.23,rear + 0.03],[1.72,0.13,0.10]);
@@ -564,9 +669,11 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     // Eighties notchback: broad rectangular lights, slim black bumpers, tidy lip spoiler.
     box(group,darkMetal,[0,-0.04,front - 0.025],[1.70,0.20,0.07]);
     for (const side of [-1,1]) {
-      box(group,lamp,[side * 0.58,0.02,front - 0.07],[0.49,0.105,0.025]);
+      box(group,headMaterial,[side * 0.58,0.02,front - 0.07],[0.49,0.105,0.025]);
+      headlamps.push(new THREE.Vector3(side * .58, .02, front - .1));
       box(group,amber,[side * 0.84,0.02,front - 0.065],[0.07,0.10,0.027]);
-      box(group,tailLamp,[side * 0.59,0.04,rear + 0.025],[0.53,0.12,0.035]);
+      box(group,tailMaterial,[side * 0.59,0.04,rear + 0.025],[0.53,0.12,0.035]);
+      box(group,reverseMaterial,[side * 0.25,0.04,rear + 0.026],[0.13,0.1,0.035]);
     }
     for (let i = 0; i < 4; i++) box(group,black,[0,-0.045 + i * 0.034,front - 0.067],[0.54,0.014,0.02]);
     box(group,darkMetal,[0,-0.19,front - 0.08],[1.78,0.085,0.12]);
@@ -583,11 +690,13 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   rearBadge.position.set(0,0.16,rear + 0.045);group.add(rearBadge);
   const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.36,0.10),label('JNK-YRD','#ddd5b9','#36403a'));
   plate.position.set(0,-0.065,rear + 0.062);group.add(plate);
+  const exhausts: THREE.Vector3[] = [];
   for (const side of isMuscle || isSuper ? [-1,1] : [1]) {
     const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(.047,.043,.21,20,1,true),metal);
     exhaust.rotation.x = Math.PI / 2;exhaust.position.set(side * .59,-.28,rear);group.add(exhaust);
     const bore = new THREE.Mesh(new THREE.CircleGeometry(.041,20),black);
     bore.position.set(side * .59,-.28,rear + .065);group.add(bore);
+    exhausts.push(new THREE.Vector3(side * .59, -.28, rear + .14));
   }
 
   const wheelMeshes: THREE.Group[] = [], spins: THREE.Group[] = [];
@@ -616,31 +725,96 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     for (const dz of [-0.105,0.105]) box(supports, black, [x + Math.sign(x) * 0.171,-0.48,z + dz], [0.003,0.24,0.105]);
   }
   group.add(supports);
-  batchAssembly(hubs); batchAssembly(supports); batchAssembly(group);
 
+  // Twin stripes over bonnet, roof and tail, shown only when the owner has chosen them.
+  const stripeGroup = new THREE.Group(); stripeGroup.name = 'Stripes';
+  const bonnetStripes = new THREE.Group();
+  if (isSuper) {
+    stripes(stripeGroup, stripePaint, hoodSections, halfWidth, front + .04, windscreenBottomZ - .02);
+    stripes(bonnetStripes, stripePaint, liftSections, halfWidth, rearBottomZ + .03, rear - .18, hinge);
+    stripes(stripeGroup, stripePaint, bootSections.slice(1), halfWidth, rear - .15, rear - .01);
+  } else {
+    stripes(stripeGroup, stripePaint, hoodSections.slice(0, 2), halfWidth, front + .03, front + .25);
+    stripes(bonnetStripes, stripePaint, liftSections, halfWidth, front + .26, windscreenBottomZ - .02, hinge);
+    stripes(stripeGroup, stripePaint, bootSections, halfWidth, rearBottomZ + .02, rear - .01);
+  }
+  stripes(stripeGroup, stripePaint, roofSections, roofWidth, windscreenTopZ - .01, rearTopZ + .01);
+  group.add(stripeGroup); bonnet.add(bonnetStripes);
+  batchAssembly(hubs); batchAssembly(supports); batchAssembly(bonnet); batchAssembly(stripeGroup); batchAssembly(bonnetStripes); batchAssembly(group);
+  // A prop rod holds the panel while it is up. Added after baking, so it stays a separate, movable piece.
+  const prop = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, 1, 6), metal);
+  prop.visible = false; prop.castShadow = true; group.add(prop);
+
+  let engineModel: THREE.Group | undefined, engineKey = '';
   const setAppearance = (next: CarAppearance) => {
     Object.assign(appearance,next);
+    const finish = FINISHES[appearance.finish];
     paint.color.set(appearance.restored ? appearance.paint : '#ffffff');
     paint.map = appearance.restored ? null : weathering(shellId);
-    paint.roughness = appearance.restored ? .28 : .88;
-    paint.metalness = appearance.restored ? .19 : .08;
-    paint.clearcoat = appearance.restored ? .88 : .04;
-    paint.clearcoatRoughness = appearance.restored ? .1 : .7;
-    paint.bumpScale = appearance.restored ? .0007 : .008;
+    paint.roughness = appearance.restored ? finish.roughness : .88;
+    paint.metalness = appearance.restored ? finish.metalness : .08;
+    paint.clearcoat = appearance.restored ? finish.clearcoat : .04;
+    paint.clearcoatRoughness = appearance.restored ? finish.clearcoatRoughness : .7;
+    paint.iridescence = appearance.restored ? finish.iridescence : 0;
+    paint.envMapIntensity = appearance.restored ? finish.reflection : .8;
+    paint.iridescenceIOR = 1.6;
+    paint.bumpScale = appearance.restored ? finish.flake : .008;
     paint.needsUpdate = true;
+    const striped = appearance.restored && !!appearance.stripe;
+    stripeGroup.visible = bonnetStripes.visible = striped;
+    if (appearance.stripe) stripePaint.color.set(appearance.stripe);
     wheelMeshes.forEach(wheel => { wheel.visible = appearance.wheels; });
     hubs.visible = !appearance.wheels;
     supports.visible = !appearance.wheels;
     windowMaterial.roughness = appearance.restored ? .065 : .28;
     windowMaterial.opacity = appearance.restored ? .42 : .88;
     windowMaterial.color.set(appearance.restored ? '#788f93' : '#626e65');
+    const key = appearance.engine ? `${appearance.engine.family}-${appearance.engine.salvage}-${appearance.engine.performance}` : '';
+    if (key !== engineKey) {
+      if (engineModel) engineSlot.remove(engineModel);
+      engineModel = undefined; engineKey = key;
+      if (appearance.engine) {
+        engineModel = createEngineModel(appearance.engine.family, { condition: appearance.engine.salvage ? 'salvage' : 'new', performance: appearance.engine.performance });
+        // The display models are bench sized; in the car they are scaled to sit below the closed panel.
+        engineModel.scale.setScalar(isSuper ? .4 : .5);
+        engineModel.rotation.y = isSuper ? 0 : Math.PI;
+        engineModel.traverse(object => { object.userData.sharedPart = true; });
+        engineSlot.add(engineModel);
+      }
+    }
+    engineSlot.visible = bonnetOpen > .02;
+  };
+  let bonnetOpen = 0;
+  const lift = new THREE.Vector3(), base = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const setBonnet = (open: number) => {
+    bonnetOpen = THREE.MathUtils.clamp(open, 0, 1);
+    const eased = bonnetOpen * bonnetOpen * (3 - 2 * bonnetOpen);
+    bonnet.rotation.x = (isSuper ? -1 : 1) * eased * .98;
+    engineSlot.visible = bonnetOpen > .02;
+    prop.visible = bonnetOpen > .5;
+    if (prop.visible) {
+      // From the lip of the bay to a point two thirds along the raised panel.
+      const reach = (isSuper ? 1 : -1) * Math.abs(liftTo - liftFrom) * .66, angle = bonnet.rotation.x;
+      lift.set(halfWidth * .56, hinge.y - reach * Math.sin(angle), hinge.z + reach * Math.cos(angle));
+      base.set(halfWidth * .6, shoulder - .04, hinge.z + reach * .96);
+      prop.position.copy(base).add(lift).multiplyScalar(.5);
+      prop.scale.set(1, base.distanceTo(lift), 1);
+      prop.quaternion.setFromUnitVectors(up, lift.sub(base).normalize());
+    }
+  };
+  const setLamps = (lamps: CarLamps) => {
+    headMaterial.emissiveIntensity = .08 + lamps.head * 4.2;
+    tailMaterial.emissiveIntensity = .13 + lamps.head * 1.1 + lamps.brake * 4.4;
+    reverseMaterial.emissiveIntensity = lamps.reverse * 3;
   };
   setAppearance(options);
+  setBonnet(0);
   let disposed = false;
   return {
     group,
     wheels:wheelMeshes,
-    setAppearance,
+    headlamps, exhausts,
+    setAppearance, setBonnet, setLamps,
     animateWheels(steering,rotation,suspension) {
       wheelMeshes.forEach((wheel,index) => {
         wheel.rotation.y = index < 2 ? steering : 0;
@@ -656,7 +830,8 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
       const textures = new Set<THREE.Texture>();
       const sharedTextures = new Set<THREE.Texture>([...rustTextures.values(), ...surfaceTextures.values()]);
       group.traverse(object => {
-        if (!(object instanceof THREE.Mesh)) return;
+        // The fitted engine borrows the parts factory's cached geometry and materials.
+        if (!(object instanceof THREE.Mesh) || object.userData.sharedPart) return;
         if (object.geometry !== boxGeometry && object.geometry !== lugGeometry) geometries.add(object.geometry);
         const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
         for (const material of objectMaterials) {
@@ -670,6 +845,7 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
       textures.forEach(texture => texture.dispose());
       materials.forEach(material => material.dispose());
       geometries.forEach(geometry => geometry.dispose());
+      stripePaint.dispose();
       group.removeFromParent();
       group.clear();
     },

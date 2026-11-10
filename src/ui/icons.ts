@@ -14,6 +14,15 @@ const drawings = {
   bolt: '<path d="M18 2 6 18h9l-2 12 13-17h-9l1-11Z"/>',
   badge: '<circle cx="16" cy="16" r="14"/><circle cx="16" cy="16" r="5"/><path d="M4 16h7m10 0h7M16 21v7M7 6l5 5m8 0 5-5"/>',
   shop: '<path d="M3 12h26L25 4H7l-4 8Zm2 0v16h22V12M12 28V17h8v11M9 4l-2 8m9-8v8m7-8 2 8"/>',
+  camera: '<path d="M4 9h6l2-3h8l2 3h6v17H4V9Z"/><circle cx="16" cy="17" r="5.5"/><path d="M24 12h1"/>',
+  lamp: '<path d="M13 8c-5 0-9 3.6-9 8s4 8 9 8h2V8h-2Z"/><path d="M19 9l9-2m-9 7h10m-10 5 9 2m-9 3 7 3"/>',
+  horn: '<path d="M4 13h5l9-6v18l-9-6H4v-6Z"/><path d="M22 12c1.5 1 2.4 2.4 2.4 4s-.9 3-2.4 4m3-12c3 2 4.6 4.8 4.6 8s-1.6 6-4.6 8"/>',
+  medal: '<path d="M10 3 16 13 22 3M12.6 3l3.4 6 3.4-6"/><circle cx="16" cy="21" r="8"/><path d="m16 16.5 1.4 2.9 3.1.4-2.3 2.2.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.2 3.1-.4 1.4-2.9Z"/>',
+  find: '<circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="4"/><path d="M16 4v8m0 8v8M4 16h8m8 0h8M7.5 7.5l5.6 5.6m5.8 5.8 5.6 5.6m0-17-5.6 5.6m-5.8 5.8-5.6 5.6"/>',
+  book: '<path d="M5 5h10c1 0 1 1 1 2v20c0-1-1-2-2-2H5V5Zm22 0H17c-1 0-1 1-1 2v20c0-1 1-2 2-2h9V5Z"/><path d="M8 10h5m-5 4h5m6-4h5m-5 4h5"/>',
+  clock: '<circle cx="16" cy="16" r="12"/><path d="M16 8v8l5 4"/>',
+  map: '<path d="m4 8 8-3 8 3 8-3v19l-8 3-8-3-8 3V8Z"/><path d="M12 5v19m8-16v19"/>',
+  gauge: '<path d="M5 22a11 11 0 1 1 22 0"/><path d="m16 22 6-9"/><circle cx="16" cy="22" r="1.6"/>',
 } as const;
 
 export type IconName = keyof typeof drawings;

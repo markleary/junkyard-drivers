@@ -1,0 +1,1149 @@
+{
+  "visualFixtures": true,
+  "capturedAt": "2026-11-10T05:44:26.236Z",
+  "baseURL": "http://127.0.0.1:5173/",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "mobile": false,
+  "seed": 642019,
+  "instrumentation": "Review camera and clock through the ?qa=1 hooks; no player state is changed.",
+  "performanceScope": "Stationary 1.2 second samples after warm-up; frame pacing is vsync-limited. Draw calls and triangles include every pass.",
+  "captures": [
+    {
+      "name": "scrapyard",
+      "position": [
+        -22,
+        3.2,
+        24
+      ],
+      "target": [
+        -27,
+        1.2,
+        0
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.699999999999818,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 786,
+        "triangles": 711939,
+        "memory": {
+          "geometries": 493,
+          "textures": 104
+        },
+        "mainThreadMs": 3.3226258225043876,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "yard-gate-out",
+      "position": [
+        -20,
+        2.4,
+        12
+      ],
+      "target": [
+        -20,
+        3.2,
+        44
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999891,
+        "p95FrameMs": 16.799999999999272,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1040,
+        "triangles": 604745,
+        "memory": {
+          "geometries": 842,
+          "textures": 138
+        },
+        "mainThreadMs": 2.928530219693693,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "unrestored-hachiro",
+      "position": [
+        -19,
+        2.25,
+        16.2
+      ],
+      "target": [
+        -15,
+        0.95,
+        12
+      ],
+      "perf": {
+        "fps": 60.0050004167015,
+        "medianFrameMs": 16.700000000000728,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 833,
+        "triangles": 677179,
+        "memory": {
+          "geometries": 895,
+          "textures": 146
+        },
+        "mainThreadMs": 3.347413671191553,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "unrestored-veloce",
+      "position": [
+        -41.8,
+        2.2,
+        -18
+      ],
+      "target": [
+        -38,
+        0.95,
+        -23
+      ],
+      "perf": {
+        "fps": 60.0050004167015,
+        "medianFrameMs": 16.700000000000728,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 632,
+        "triangles": 470803,
+        "memory": {
+          "geometries": 895,
+          "textures": 146
+        },
+        "mainThreadMs": 3.0766644246982855,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "salvage-engines",
+      "position": [
+        -32.7,
+        2.2,
+        5.2
+      ],
+      "target": [
+        -37,
+        1.2,
+        2
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 611,
+        "triangles": 626566,
+        "memory": {
+          "geometries": 901,
+          "textures": 146
+        },
+        "mainThreadMs": 3.041717585757077,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "salvage-wheels",
+      "position": [
+        -32.7,
+        2,
+        11.1
+      ],
+      "target": [
+        -37,
+        1.2,
+        8
+      ],
+      "perf": {
+        "fps": 60.00500041670132,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 622,
+        "triangles": 654524,
+        "memory": {
+          "geometries": 903,
+          "textures": 146
+        },
+        "mainThreadMs": 3.0229769137890172,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "back-lot",
+      "position": [
+        -50,
+        4.5,
+        8
+      ],
+      "target": [
+        -70,
+        1.5,
+        -20
+      ],
+      "perf": {
+        "fps": 60.00500041670132,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 563,
+        "triangles": 461164,
+        "memory": {
+          "geometries": 903,
+          "textures": 146
+        },
+        "mainThreadMs": 3.0172164740174297,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "back-lot-rows",
+      "position": [
+        -47,
+        2.2,
+        -8
+      ],
+      "target": [
+        -58,
+        1.8,
+        -34
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 496,
+        "triangles": 385848,
+        "memory": {
+          "geometries": 903,
+          "textures": 146
+        },
+        "mainThreadMs": 2.9549888242738187,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 15.5
+      }
+    },
+    {
+      "name": "store-exterior",
+      "position": [
+        26,
+        2.4,
+        35
+      ],
+      "target": [
+        12,
+        2,
+        23
+      ],
+      "perf": {
+        "fps": 60.00500041670132,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 956,
+        "triangles": 837263,
+        "memory": {
+          "geometries": 908,
+          "textures": 150
+        },
+        "mainThreadMs": 3.638863646162627,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "store-displays",
+      "position": [
+        12,
+        2.2,
+        19
+      ],
+      "target": [
+        9,
+        1.3,
+        6
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 723,
+        "triangles": 627887,
+        "memory": {
+          "geometries": 908,
+          "textures": 150
+        },
+        "mainThreadMs": 3.4272662716065865,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 13
+      }
+    },
+    {
+      "name": "store-engine-detail",
+      "position": [
+        8.6,
+        1.9,
+        9.8
+      ],
+      "target": [
+        6.2,
+        1,
+        6.1
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 702,
+        "triangles": 619725,
+        "memory": {
+          "geometries": 908,
+          "textures": 150
+        },
+        "mainThreadMs": 3.2924024872096926,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 13
+      }
+    },
+    {
+      "name": "town-street",
+      "position": [
+        38,
+        2.2,
+        45
+      ],
+      "target": [
+        90,
+        2.3,
+        49
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000004366,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 846,
+        "triangles": 355856,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.128614277686498,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "town-noon",
+      "position": [
+        38,
+        2.2,
+        45
+      ],
+      "target": [
+        90,
+        2.3,
+        49
+      ],
+      "perf": {
+        "fps": 59.99999999999964,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 755,
+        "triangles": 294342,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.1575672499179976,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 12.5
+      }
+    },
+    {
+      "name": "town-dusk",
+      "position": [
+        38,
+        2.2,
+        45
+      ],
+      "target": [
+        90,
+        2.3,
+        49
+      ],
+      "perf": {
+        "fps": 60.005000416701684,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 945,
+        "triangles": 530860,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.2704291532389833,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 19.549999999999997
+      }
+    },
+    {
+      "name": "town-night",
+      "position": [
+        38,
+        2.2,
+        45
+      ],
+      "target": [
+        90,
+        2.3,
+        49
+      ],
+      "perf": {
+        "fps": 60.00500041670095,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.80000000000291,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 748,
+        "triangles": 291438,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.049690008006706,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 23
+      }
+    },
+    {
+      "name": "yard-night",
+      "position": [
+        -22,
+        3.2,
+        24
+      ],
+      "target": [
+        -27,
+        1.2,
+        0
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.79999999998836,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 752,
+        "triangles": 708523,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.4208823670408575,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 23
+      }
+    },
+    {
+      "name": "yard-morning",
+      "position": [
+        -22,
+        3.2,
+        24
+      ],
+      "target": [
+        -27,
+        1.2,
+        0
+      ],
+      "perf": {
+        "fps": 60.005000416701684,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.79999999998836,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 787,
+        "triangles": 718062,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.3471475408558238,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 8.299999999999997
+      }
+    },
+    {
+      "name": "water-tower",
+      "position": [
+        151,
+        3,
+        147
+      ],
+      "target": [
+        170,
+        11,
+        176
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.79999999998836,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 398,
+        "triangles": 107741,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 2.7221731724941165,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "overview",
+      "position": [
+        -20,
+        46,
+        78
+      ],
+      "target": [
+        -22,
+        0,
+        -4
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1022,
+        "triangles": 832571,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 3.7162145857503237,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "debug-east",
+      "position": [
+        -18,
+        2.5,
+        8
+      ],
+      "target": [
+        -9,
+        1,
+        -3
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.80000000000291,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 742,
+        "triangles": 618150,
+        "memory": {
+          "geometries": 1140,
+          "textures": 169
+        },
+        "mainThreadMs": 2.859649510454179,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "yard-crane",
+      "position": [
+        -49,
+        2.2,
+        6
+      ],
+      "target": [
+        -66,
+        4,
+        10
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 556,
+        "triangles": 493802,
+        "memory": {
+          "geometries": 1159,
+          "textures": 169
+        },
+        "mainThreadMs": 2.872370403751878,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "yard-office",
+      "position": [
+        -24,
+        2.2,
+        21
+      ],
+      "target": [
+        -34,
+        1.6,
+        27
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 701,
+        "triangles": 544670,
+        "memory": {
+          "geometries": 1159,
+          "textures": 169
+        },
+        "mainThreadMs": 2.9541898294124103,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "fuel",
+      "position": [
+        147.1,
+        3.2,
+        106.5
+      ],
+      "target": [
+        125.1,
+        1.6,
+        97.5
+      ],
+      "perf": {
+        "fps": 60.005000416701684,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.79999999998836,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1382,
+        "triangles": 641850,
+        "memory": {
+          "geometries": 1161,
+          "textures": 169
+        },
+        "mainThreadMs": 4.125026283529868,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "fuel-night",
+      "position": [
+        147.1,
+        3.2,
+        106.5
+      ],
+      "target": [
+        125.1,
+        1.6,
+        97.5
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.69999999999709,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1289,
+        "triangles": 606316,
+        "memory": {
+          "geometries": 1161,
+          "textures": 169
+        },
+        "mainThreadMs": 4.041706557164817,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 22.5
+      }
+    },
+    {
+      "name": "car-lot",
+      "position": [
+        -23.1,
+        3.2,
+        88.5
+      ],
+      "target": [
+        -2.1000000000000014,
+        1.6,
+        97.5
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1040,
+        "triangles": 361919,
+        "memory": {
+          "geometries": 1162,
+          "textures": 169
+        },
+        "mainThreadMs": 3.3564260628118996,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "park",
+      "position": [
+        58.900000000000006,
+        3.2,
+        88.5
+      ],
+      "target": [
+        82.9,
+        1.6,
+        97.5
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 687,
+        "triangles": 184307,
+        "memory": {
+          "geometries": 1162,
+          "textures": 169
+        },
+        "mainThreadMs": 2.932621175348903,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 15
+      }
+    },
+    {
+      "name": "houses",
+      "position": [
+        147,
+        2.2,
+        70
+      ],
+      "target": [
+        170,
+        3,
+        86
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.699999999982538,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 517,
+        "triangles": 143431,
+        "memory": {
+          "geometries": 1162,
+          "textures": 169
+        },
+        "mainThreadMs": 3.0364696297392153,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "sky-sunward",
+      "position": [
+        -20,
+        3,
+        10
+      ],
+      "target": [
+        -60,
+        22,
+        40
+      ],
+      "perf": {
+        "fps": 60.005000416701684,
+        "medianFrameMs": 16.699999999982538,
+        "p95FrameMs": 16.70000000001164,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 737,
+        "triangles": 645662,
+        "memory": {
+          "geometries": 1162,
+          "textures": 169
+        },
+        "mainThreadMs": 3.1477817982797713,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "sky-noon",
+      "position": [
+        -20,
+        3,
+        10
+      ],
+      "target": [
+        20,
+        30,
+        60
+      ],
+      "perf": {
+        "fps": 60.005000416701684,
+        "medianFrameMs": 16.699999999982538,
+        "p95FrameMs": 16.79999999998836,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1247,
+        "triangles": 719886,
+        "memory": {
+          "geometries": 1162,
+          "textures": 169
+        },
+        "mainThreadMs": 3.569688350983555,
+        "jsHeapBytes": 167000000,
+        "quality": "high",
+        "hour": 12.5
+      }
+    },
+    {
+      "name": "restored-hachiro",
+      "position": [
+        -24.3,
+        2.6,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.1,
+        -13
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.699999999999818,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 692,
+        "triangles": 595058,
+        "memory": {
+          "geometries": 534,
+          "textures": 104
+        },
+        "mainThreadMs": 3.1882071656700703,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "detail-hachiro",
+      "position": [
+        -22.5,
+        1.35,
+        -9.55
+      ],
+      "target": [
+        -20,
+        1.05,
+        -12.4
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999891,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 688,
+        "triangles": 597752,
+        "memory": {
+          "geometries": 541,
+          "textures": 104
+        },
+        "mainThreadMs": 2.957410603319461,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "garage",
+      "position": [
+        -24.6,
+        3.1,
+        -4.4
+      ],
+      "target": [
+        -19.5,
+        1.3,
+        -15
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.700000000000728,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 682,
+        "triangles": 591908,
+        "memory": {
+          "geometries": 541,
+          "textures": 104
+        },
+        "mainThreadMs": 3.2728048912115484,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "garage-bench",
+      "position": [
+        -21.5,
+        2.2,
+        -13
+      ],
+      "target": [
+        -28,
+        1.5,
+        -15.5
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.700000000000728,
+        "p95FrameMs": 16.799999999999272,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 621,
+        "triangles": 578326,
+        "memory": {
+          "geometries": 554,
+          "textures": 104
+        },
+        "mainThreadMs": 3.249508979195021,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 13
+      }
+    },
+    {
+      "name": "garage-out",
+      "position": [
+        -20,
+        2.4,
+        -19
+      ],
+      "target": [
+        -20,
+        1.6,
+        10
+      ],
+      "perf": {
+        "fps": 60.00500041670132,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.799999999999272,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 1345,
+        "triangles": 960845,
+        "memory": {
+          "geometries": 972,
+          "textures": 146
+        },
+        "mainThreadMs": 3.7463310087600887,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "garage-night",
+      "position": [
+        -23,
+        2.6,
+        6
+      ],
+      "target": [
+        -20,
+        2.2,
+        -14
+      ],
+      "perf": {
+        "fps": 60.00500041670132,
+        "medianFrameMs": 16.69999999999709,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 718,
+        "triangles": 630477,
+        "memory": {
+          "geometries": 972,
+          "textures": 146
+        },
+        "mainThreadMs": 3.2624644810313495,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 23
+      }
+    },
+    {
+      "name": "restored-bison",
+      "position": [
+        -24.3,
+        2.6,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.1,
+        -13
+      ],
+      "perf": {
+        "fps": 60.00500041670141,
+        "medianFrameMs": 16.699999999999818,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 694,
+        "triangles": 595622,
+        "memory": {
+          "geometries": 534,
+          "textures": 104
+        },
+        "mainThreadMs": 3.116425355896598,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "detail-bison",
+      "position": [
+        -22.5,
+        1.35,
+        -9.55
+      ],
+      "target": [
+        -20,
+        1.05,
+        -12.4
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.69999999999891,
+        "p95FrameMs": 16.799999999999272,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 690,
+        "triangles": 598316,
+        "memory": {
+          "geometries": 541,
+          "textures": 104
+        },
+        "mainThreadMs": 2.850654556906654,
+        "jsHeapBytes": 188000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "restored-veloce",
+      "position": [
+        -24.3,
+        2.6,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.1,
+        -13
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.699999999999818,
+        "p95FrameMs": 16.799999999999272,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 693,
+        "triangles": 594590,
+        "memory": {
+          "geometries": 534,
+          "textures": 104
+        },
+        "mainThreadMs": 3.102267682866281,
+        "jsHeapBytes": 177000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    },
+    {
+      "name": "detail-veloce",
+      "position": [
+        -22.5,
+        1.35,
+        -9.55
+      ],
+      "target": [
+        -20,
+        1.05,
+        -12.4
+      ],
+      "perf": {
+        "fps": 60,
+        "medianFrameMs": 16.700000000000728,
+        "p95FrameMs": 16.700000000000728,
+        "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+        "drawCalls": 689,
+        "triangles": 597284,
+        "memory": {
+          "geometries": 541,
+          "textures": 104
+        },
+        "mainThreadMs": 3.124140905732662,
+        "jsHeapBytes": 177000000,
+        "quality": "high",
+        "hour": 17.700000000000003
+      }
+    }
+  ],
+  "errors": [],
+  "failures": [],
+  "external": []
+}

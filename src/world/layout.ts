@@ -1,7 +1,9 @@
 export interface Point { x: number; z: number }
 export interface Road { id: string; a: Point; b: Point; width: number }
 export interface Building extends Point { w: number; d: number; h: number; color: number; style: number }
-export interface TownLayout { seed: number; roads: Road[]; buildings: Building[]; trees: Point[]; loop: Point[]; landmark: Point }
+/** A paved plot beside a street, entered across dropped kerbs. Axis-aligned; `face` points at its road. */
+export interface Lot extends Point { kind: 'fuel' | 'usedCars' | 'park'; w: number; d: number; face: Point; driveways: Point[] }
+export interface TownLayout { seed: number; roads: Road[]; buildings: Building[]; trees: Point[]; loop: Point[]; landmark: Point; lots: Lot[] }
 
 export const GARAGE = { x: -20, z: -13 };
 export const YARD_SPAWN = { x: -20, z: 26 };
@@ -81,6 +83,8 @@ export function generateTown(seed: number): TownLayout {
     place(east + 25, z, 22, 19);
     place(-45, z, 19, 19);
   }
+  const landmark = { x: east + 26, z: north + 25 };
+  const lots = placeLots(roads, buildings, landmark);
   const trees: Point[] = [];
   for (let i = 0; i < 110; i++) {
     const p = { x: -75 + random() * 275, z: -45 + random() * 250 };
@@ -89,11 +93,64 @@ export function generateTown(seed: number): TownLayout {
     if (roads.some(r => distanceToRoad(p, r) < r.width / 2 + 6)) continue;
     if (buildings.some(b => Math.abs(p.x - b.x) < b.w / 2 + 3 && Math.abs(p.z - b.z) < b.d / 2 + 3)) continue;
     if (Math.hypot(p.x - (east + 26), p.z - (north + 25)) < 12) continue;
+    // Each candidate draws the same two numbers whether or not it is kept, so
+    // clearing the lots leaves every other tree exactly where older saves had it.
+    if (lots.some(lot => overlapsBox({ ...p, w: 2, d: 2 }, lot, 2.5))) continue;
     trees.push(p);
   }
   return {
     seed, roads, buildings, trees,
     loop: [{ x: -20, z: 30 }, { x: -20, z: 44 }, { x: east, z: 44 }, { x: east, z: north }, { x: -20, z: north }, { x: -20, z: 44 }, { x: -20, z: 30 }],
-    landmark: { x: east + 26, z: north + 25 },
+    landmark, lots,
   };
+}
+
+type Frontage = [road: string, side: 1 | -1];
+// Sides are relative to the road's a-to-b direction: +1 is its left (east of a northbound street). Each lot
+// prefers the inside of the block the test loop runs around, then falls back.
+const LOT_PLAN: { kind: Lot['kind']; along: number; depth: number; frontage: Frontage[] }[] = [
+  // On the left as the loop climbs East Avenue.
+  { kind: 'fuel', along: 27, depth: 18, frontage: [['east-avenue', -1], ['market-street', 1], ['market-street', -1], ['west-avenue', 1]] },
+  // On the home straight down West Avenue.
+  { kind: 'usedCars', along: 25, depth: 16, frontage: [['west-avenue', 1], ['market-street', -1], ['market-street', 1], ['east-avenue', -1]] },
+  { kind: 'park', along: 28, depth: 22, frontage: [['market-street', 1], ['market-street', -1], ['west-avenue', 1], ['east-avenue', -1]] },
+];
+
+/**
+ * Lots take whatever frontage the generated buildings left free. They draw no
+ * random numbers, so roads, buildings and trees for a saved seed are unchanged.
+ */
+function placeLots(roads: Road[], buildings: Building[], landmark: Point): Lot[] {
+  const lots: Lot[] = [];
+  for (const plan of LOT_PLAN) {
+    let found: Lot | undefined;
+    for (const [roadId, side] of plan.frontage) {
+      const road = roads.find(item => item.id === roadId);
+      if (!road || found) continue;
+      const length = Math.hypot(road.b.x - road.a.x, road.b.z - road.a.z);
+      const dx = (road.b.x - road.a.x) / length, dz = (road.b.z - road.a.z) / length;
+      const nx = dz * side, nz = -dx * side;
+      const offset = road.width / 2 + 4.4 + plan.depth / 2;
+      const middle = length / 2;
+      // Search outward from the middle of the block, alternating either way.
+      for (let step = 0; step <= middle - plan.along / 2 - 16 && !found; step += 3) for (const direction of step ? [1, -1] : [1]) {
+        const t = middle + step * direction;
+        const lot: Lot = {
+          kind: plan.kind, x: road.a.x + dx * t + nx * offset, z: road.a.z + dz * t + nz * offset,
+          w: Math.abs(dx) * plan.along + Math.abs(dz) * plan.depth, d: Math.abs(dz) * plan.along + Math.abs(dx) * plan.depth,
+          face: { x: -nx, z: -nz },
+          driveways: [-.3, .3].map(f => ({ x: road.a.x + dx * (t + plan.along * f) + nx * (road.width / 2 + 1.65), z: road.a.z + dz * (t + plan.along * f) + nz * (road.width / 2 + 1.65) })),
+        };
+        if (roads.some(item => roadIntersectsBox(item, lot, 3))) continue;
+        if (buildings.some(building => overlapsBox(lot, building, 3))) continue;
+        if (overlapsBox(lot, STORE_LOT, 4) || lots.some(other => overlapsBox(lot, other, 4))) continue;
+        if (lot.x - lot.w / 2 < -5 && lot.z - lot.d / 2 < 36) continue;
+        if (Math.abs(lot.x - landmark.x) < lot.w / 2 + 10 && Math.abs(lot.z - landmark.z) < lot.d / 2 + 10) continue;
+        found = lot;
+        break;
+      }
+    }
+    if (found) lots.push(found);
+  }
+  return lots;
 }

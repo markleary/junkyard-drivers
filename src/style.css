@@ -489,3 +489,215 @@ body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+/* --- Overhaul additions: clock, job stamps, survey map, tachometer, lap card, banners, photo mode, logbook. --- */
+.yard-mark > .yard-clock { margin-left: 8px; padding: 6px 9px; color: var(--paper-light); background: #20292dd9; border: 1px solid #e5dabe55; font: 500 10px/1 var(--mono); letter-spacing: .6px; text-shadow: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.yard-clock:empty { display: none; }
+.job-steps { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
+.job-steps li { display: flex; align-items: center; gap: 3px; padding: 3px 5px; color: #6b6a5c; border: 1px dashed #6d6b5b99; font: 500 8px/1.2 var(--mono); letter-spacing: .4px; text-transform: uppercase; white-space: nowrap; }
+.job-steps li.done { color: var(--green); border: 1px solid var(--green); background: #345d4314; }
+.job-steps .ui-icon { width: 9px; height: 9px; }
+
+/* A pocket survey map in the same steel bezel as the speedometer. Ahead is always up. */
+#minimap { position: fixed; z-index: 2; left: 28px; bottom: 39px; width: 156px; height: 156px; border-radius: 50%; pointer-events: none; filter: drop-shadow(3px 4px 0 #17232870); }
+#minimap canvas { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.minimap-ring { position: absolute; inset: 0; border: 3px solid #8a918a; border-radius: 50%; box-shadow: inset 0 0 0 2px #101c21, inset 0 0 20px #0b151970; }
+.minimap-ring::after { content: ''; position: absolute; left: calc(50% - 5px); top: -8px; border: 5px solid transparent; border-top: 8px solid var(--yellow); }
+body:not([data-screen="foot"]):not([data-screen="drive"]) #minimap,
+body:not([data-screen="foot"]):not([data-screen="drive"]) #banner { display: none; }
+body:not([data-input="touch"]) #minimap:not([hidden]) ~ #route { bottom: 209px; }
+
+/* Tachometer strip, gear and lamp tell-tale on the instrument pod. Rivets are drawn at the corners so the pod can grow. */
+#speed { background: radial-gradient(circle at 8px 8px, #cad1c5 0 2px, transparent 2.6px), radial-gradient(circle at calc(100% - 8px) 8px, #cad1c5 0 2px, transparent 2.6px), radial-gradient(circle at 8px calc(100% - 8px), #cad1c5 0 2px, transparent 2.6px), radial-gradient(circle at calc(100% - 8px) calc(100% - 8px), #cad1c5 0 2px, transparent 2.6px), #1e282dec; }
+#speed::after { display: none; }
+.rev-bar { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; height: 7px; margin: 7px 3px 0; }
+.rev-bar i { --lit: #d9d4bd; background: #37454a; border-radius: 1px; }
+.rev-bar i:nth-child(n + 9) { --lit: var(--yellow); }
+.rev-bar i:nth-child(n + 11) { --lit: #e3613c; }
+.rev-bar[data-revs="1"] i:nth-child(-n + 1), .rev-bar[data-revs="2"] i:nth-child(-n + 2), .rev-bar[data-revs="3"] i:nth-child(-n + 3), .rev-bar[data-revs="4"] i:nth-child(-n + 4),
+.rev-bar[data-revs="5"] i:nth-child(-n + 5), .rev-bar[data-revs="6"] i:nth-child(-n + 6), .rev-bar[data-revs="7"] i:nth-child(-n + 7), .rev-bar[data-revs="8"] i:nth-child(-n + 8),
+.rev-bar[data-revs="9"] i:nth-child(-n + 9), .rev-bar[data-revs="10"] i:nth-child(-n + 10), .rev-bar[data-revs="11"] i:nth-child(-n + 11), .rev-bar[data-revs="12"] i { background: var(--lit); box-shadow: 0 0 4px color-mix(in srgb, var(--lit) 55%, transparent); }
+.speed-dial { position: relative; }
+.speed-needle { top: auto !important; bottom: 5px; }
+.gear { display: grid; place-items: center; align-self: center; min-width: 22px; height: 26px; margin-right: 3px; color: var(--yellow); border: 1px solid #a5b0a780; font: 700 20px/1 var(--display); }
+.tell-tale { color: #a4e08f; letter-spacing: .5px; }
+#recover { bottom: 243px; }
+
+/* Lap card: a running stopwatch and the time to beat. */
+#route div > .route-times { margin-top: 6px; padding-top: 5px; border-top: 1px dotted #6d716270; }
+.route-timer { color: #77745f; font: 500 16px/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
+#route.running .route-timer { color: var(--ink); }
+#route-best { color: #6a6957; font: 500 9px/1 var(--mono); letter-spacing: .5px; white-space: nowrap; }
+
+/* Stamped cards for medals, finds and unlocks drop in under the header. */
+#banner { position: fixed; z-index: 5; left: 50%; top: 86px; opacity: 0; transform: translate(-50%, -16px); transition: opacity .25s, transform .25s cubic-bezier(.2, 1.4, .4, 1); pointer-events: none; }
+#banner.visible { opacity: 1; transform: translate(-50%, 0); }
+.banner-card { display: flex; align-items: center; gap: 13px; min-width: 270px; max-width: min(460px, calc(100vw - 40px)); padding: 12px 20px 12px 14px; color: var(--ink); background-color: var(--paper); background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, #544b3306 4px); border: 1px solid var(--paper-edge); border-left: 6px solid var(--ink); box-shadow: 4px 5px 0 #14212860; transform: rotate(-.6deg); }
+.banner-card > .ui-icon { width: 36px; height: 36px; flex: 0 0 36px; }
+.banner-card .eyebrow { font-size: 9px; color: #6a6957; }
+.banner-card b { display: block; margin-top: 2px; font: 700 28px/1 var(--display); letter-spacing: .2px; text-transform: uppercase; white-space: nowrap; }
+.banner-card small { margin-top: 4px; font-size: 10px; }
+.banner-card.gold { border-left-color: #c8962b; }
+.banner-card.gold > .ui-icon { color: #b0801a; }
+.banner-card.silver { border-left-color: #89949a; }
+.banner-card.silver > .ui-icon { color: #6f7b82; }
+.banner-card.bronze { border-left-color: #a9683c; }
+.banner-card.bronze > .ui-icon { color: #99592f; }
+.banner-card.find { border-left-color: var(--blue); }
+.banner-card.find > .ui-icon { color: var(--blue); }
+
+/* Photo mode: the world, one dark strip of controls, nothing else. */
+#photo-bar { position: fixed; z-index: 9; left: 50%; bottom: 26px; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; width: max-content; max-width: calc(100vw - 32px); padding: 10px 14px 9px; color: var(--paper-light); background: #1d272bee; border: 1px solid #d4cbb34a; box-shadow: 3px 3px 0 #10202644; }
+.photo-title { display: flex; align-items: center; gap: 7px; margin-right: 6px; font: 700 19px/1 var(--display); letter-spacing: .7px; }
+.photo-title .ui-icon { width: 20px; height: 20px; color: var(--yellow); }
+.photo-title b { font-weight: 700; }
+#photo-bar button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 7px 11px; color: var(--paper-light); background: transparent; border: 1px solid #e5dabe55; font: 500 10px/1.2 var(--mono); letter-spacing: .4px; text-transform: uppercase; }
+#photo-bar button:hover { background: #354145; }
+#photo-bar button b { font-weight: 500; color: var(--yellow); }
+#photo-bar button .ui-icon { width: 14px; height: 14px; }
+#photo-bar .photo-save { background: var(--rust); border-color: var(--rust-dark); }
+#photo-bar .photo-save:hover { background: #bf4b36; }
+.photo-help { flex-basis: 100%; color: #c9c7b4; font: 8px/1.3 var(--mono); letter-spacing: 1px; text-align: center; }
+body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[data-screen="photo"] #hint { display: none !important; }
+
+/* Pause sheet: two extra pages, a two-column key list, and more switches. */
+.pause-card { width: 540px; }
+.pause-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pause-links button { display: flex; align-items: center; gap: 10px; padding: 9px 11px; color: var(--ink); background: #f8f0dd80; border: 1px solid #8c948477; text-align: left; }
+.pause-links button:hover:not(:disabled) { border-color: var(--rust); background: #f8edd2; }
+.pause-links button:disabled { opacity: .5; }
+.pause-links .ui-icon { width: 24px; height: 24px; color: var(--rust); }
+.pause-links span { font: 700 19px/1 var(--display); text-transform: uppercase; }
+.pause-links small { margin-top: 3px; font-size: 9px; letter-spacing: .5px; }
+.controls.desktop-only { grid-template-columns: 1fr 1fr; column-gap: 22px; margin: 16px 0 10px; }
+.controls.desktop-only > div { justify-content: flex-start; padding: 6px 0; }
+.controls.desktop-only > div:nth-last-child(2) { border-bottom: 0; }
+.controls.desktop-only kbd { flex: 0 0 62px; min-width: 62px; }
+.pad-note { margin: 0 0 14px !important; color: #64695c; font: 10px/1.5 var(--mono) !important; }
+.pause-actions button[aria-pressed="true"] { background: #d9cfb5; }
+
+/* Logbook page: lap table, the twelve finds, and what they unlock. */
+.logbook-card { width: 600px; }
+.logbook-card > .primary { margin: 6px 0 4px; }
+.logbook-heading { display: flex; align-items: center; gap: 8px; margin: 22px 0 0; padding-bottom: 7px; border-bottom: 2px solid var(--ink); font: 700 23px/1 var(--display); text-transform: uppercase; }
+.logbook-heading .ui-icon { width: 20px; height: 20px; color: var(--rust); }
+.logbook-heading small { margin-left: auto; font-size: 9px; letter-spacing: .6px; }
+.lap-table { width: 100%; border-collapse: collapse; }
+.lap-table th, .lap-table td { padding: 9px 8px 9px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.lap-table th { width: 38%; font: 700 20px/1.05 var(--display); text-transform: uppercase; }
+.lap-table td b { font: 500 15px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.lap-table small { margin-top: 3px; font-size: 8px; letter-spacing: .5px; }
+.lap-table .unowned th, .lap-table .unowned td { color: #8a8a78; }
+.lap-table .blank { color: #8a8a78; font: 10px/1.6 var(--mono); }
+.medal { display: inline-block; margin-left: 7px; padding: 2px 5px; border: 2px solid currentColor; font: 700 13px/1 var(--display); letter-spacing: .5px; text-transform: uppercase; transform: rotate(-3deg); vertical-align: 2px; }
+.medal.gold { color: #a87a14; }
+.medal.silver { color: #6f7b82; }
+.medal.bronze { color: #99592f; }
+.find-list, .unlock-list { margin: 0; padding: 0; list-style: none; }
+.find-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; }
+.find-list li { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--line); color: #77776a; }
+.find-list li > div { flex: 1; min-width: 0; }
+.find-list b { display: block; font: 700 17px/1.05 var(--display); text-transform: uppercase; }
+.find-list small { margin-top: 2px; font-size: 9px; line-height: 1.35; }
+.find-list li.found { color: var(--ink); }
+.find-list li.found .ui-icon { width: 16px; height: 16px; color: var(--green); }
+.find-number { flex: 0 0 22px; color: #8b6e59; font: 500 10px/1 var(--mono); }
+.unlock-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 14px; }
+.unlock-list li { padding: 7px 8px; border: 1px dashed #6d6b5b99; color: #77776a; }
+.unlock-list li.found { border: 1px solid var(--green); color: var(--green); background: #345d430f; }
+.unlock-list b { display: block; font: 700 16px/1.05 var(--display); text-transform: uppercase; }
+.unlock-list small { margin-top: 3px; font-size: 8px; letter-spacing: .5px; color: inherit; }
+
+/* Build sheet slot 04: earned finishes and stripes. */
+.finish-options, .stripe-options { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.finish-options button, .stripe-options button { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 92px; padding: 7px 9px; color: var(--ink); background: var(--paper-light); border: 1px solid #aaa58d; text-align: left; }
+.stripe-options button { flex-direction: row; align-items: center; gap: 7px; min-width: 0; }
+.finish-options b, .stripe-options b { font: 700 17px/1 var(--display); text-transform: uppercase; }
+.finish-options small, .stripe-options small { font-size: 8px; letter-spacing: .4px; }
+.finish-options button.active, .stripe-options button.active { outline: 2px solid var(--rust); outline-offset: 1px; }
+.finish-options button:disabled, .stripe-options button:disabled { color: #7c7d6d; background: #d7ceba55; border-style: dashed; }
+.stripe-chip { flex: 0 0 22px; width: 22px; height: 16px; border: 1px solid #1e2a2955; background: linear-gradient(90deg, transparent 0 5px, var(--swatch) 5px 9px, transparent 9px 13px, var(--swatch) 13px 17px, transparent 17px), #57605a; }
+.stripe-chip.plain { background: #57605a; }
+
+@media (max-height: 740px) and (min-width: 801px) {
+  #banner { top: 74px; }
+  .pause-card { padding: 22px 28px; }
+  .pause-card::before { margin: -22px auto 16px; }
+  .pause-card h2 { font-size: 34px; margin: 7px 0 8px; }
+  .pause-card > p { margin-bottom: 10px; }
+  .pause-card > .primary { margin-top: 10px; }
+  .document-top { margin-bottom: 12px; padding-bottom: 9px; }
+}
+@media (max-width: 800px) {
+  .yard-mark > .yard-clock { padding: 5px 7px; font-size: 9px; }
+  #minimap { left: 18px; bottom: 30px; width: 118px; height: 118px; }
+  body:not([data-input="touch"]) #minimap:not([hidden]) ~ #route { bottom: 160px; }
+  #recover { bottom: 202px; }
+  .rev-bar { height: 6px; margin-top: 5px; }
+  .gear { min-width: 19px; height: 22px; font-size: 17px; }
+  .route-timer { font-size: 14px; }
+  #banner { top: 70px; }
+  .banner-card b { font-size: 23px; }
+  .pause-card { width: 500px; }
+  .controls.desktop-only { column-gap: 14px; margin: 12px 0 8px; }
+  .controls.desktop-only > div { padding: 5px 0; gap: 9px; }
+  .controls.desktop-only kbd { flex-basis: 54px; min-width: 54px; }
+  .pause-links button { padding: 7px 9px; }
+  .pause-links span { font-size: 17px; }
+  .logbook-heading { font-size: 20px; margin-top: 16px; }
+  .lap-table th { font-size: 17px; }
+  .find-list { column-gap: 14px; }
+  .unlock-list { grid-template-columns: 1fr 1fr; }
+  #photo-bar { bottom: 14px; padding: 8px 10px; gap: 6px; }
+}
+@media (max-width: 560px) {
+  .controls.desktop-only, .find-list { grid-template-columns: 1fr; }
+  .pause-links { grid-template-columns: 1fr; }
+  .lap-table th { width: 34%; }
+  .photo-title { flex-basis: 100%; justify-content: center; margin: 0; }
+}
+
+/* --- Review fixes: scroll edges fade instead of slicing a line, small print is larger, and short windows fit the pause sheet whole. --- */
+.garage-panel > .build-scroll { padding-top: 10px; padding-bottom: 24px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 26px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 12px, #000 calc(100% - 26px), transparent 100%); }
+.garage-panel > .build-scroll > .build-slot:first-child { border-top: 0; padding-top: 4px; }
+/* A soft edge rides the bottom of a pause sheet that has more below; at the end it rests on blank paper. */
+.pause-card::after { content: ''; position: sticky; bottom: 0; display: block; height: 26px; margin-top: -6px; background: linear-gradient(to bottom, #ede4ce00, var(--paper) 88%); pointer-events: none; }
+#panel:not(.garage-panel)::after { content: ''; position: sticky; bottom: 0; display: block; height: 26px; margin-top: -6px; background: linear-gradient(to bottom, #ede4ce00, var(--paper) 88%); pointer-events: none; }
+.logbook-card { width: 780px; }
+.logbook-columns { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr); gap: 0 30px; }
+.logbook-columns .logbook-heading { margin-top: 18px; }
+.logbook-columns .find-list { grid-template-columns: 1fr; }
+.logbook-columns .find-list li { padding: 4px 0; }
+.logbook-columns .unlock-list { grid-template-columns: 1fr 1fr; }
+.job-steps li { font-size: 9px; }
+.instrument-bottom { font-size: 8px; }
+.lap-table small, .unlock-list small, .finish-options small, .stripe-options small { font-size: 9px; }
+.photo-help { font-size: 9px; }
+@media (max-width: 860px) {
+  .logbook-card { width: 500px; }
+  .logbook-columns { grid-template-columns: 1fr; }
+}
+@media (max-height: 660px) and (min-width: 700px) {
+  /* An 800 by 600 window shows the whole pause sheet without scrolling. */
+  .pause-card { padding: 15px 24px 10px; }
+  .pause-card::before { margin: -15px auto 9px; }
+  .pause-card::after { height: 12px; margin-top: -4px; }
+  .pause-card .document-top { margin-bottom: 7px; padding-bottom: 6px; }
+  .pause-card h2 { font-size: 27px; margin: 3px 0 5px; }
+  .pause-card > p, .pad-note { display: none; }
+  .pause-card > .primary { margin-top: 5px; min-height: 38px; padding: 8px 14px; font-size: 18px; }
+  .pause-links { margin-top: 6px; gap: 6px; }
+  .pause-links button { padding: 5px 9px; }
+  .pause-links .ui-icon { width: 20px; height: 20px; }
+  .controls.desktop-only { margin: 8px 0 7px; }
+  .controls.desktop-only > div { padding: 3px 0; }
+  .controls.desktop-only kbd { padding: 3px 6px; }
+  .pause-actions { margin-bottom: 7px; gap: 5px; }
+  .pause-actions button { padding: 6px 8px; }
+  .reset-card > p { display: block; }
+  .logbook-columns .logbook-heading { margin-top: 10px; }
+}
+
+/* --- Second review: sheets settle on a row, not through one; the fade is longer. --- */
+.garage-panel > .build-scroll { scroll-snap-type: y proximity; scroll-padding-top: 12px; padding-bottom: 40px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); }
+.build-scroll > .build-slot, .build-scroll .inventory > button { scroll-snap-align: start; }

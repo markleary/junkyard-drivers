@@ -57,7 +57,7 @@ function makePalette(condition: PartCondition) {
     steel: new THREE.MeshStandardMaterial({ color: used ? '#77766d' : '#aab1b1', metalness: .86, roughness: used ? .57 : .26 }),
     dark: new THREE.MeshStandardMaterial({ color: used ? '#393932' : '#303738', metalness: .58, roughness: .64, map }),
     iron: new THREE.MeshStandardMaterial({ color: used ? '#79513a' : '#716b5a', metalness: .48, roughness: .83, map }),
-    rubber: new THREE.MeshStandardMaterial({ color: used ? '#292b27' : '#171d1e', roughness: .91 }),
+    rubber: new THREE.MeshStandardMaterial({ color: used ? '#3a3c38' : '#22282a', roughness: .91 }),
     sidewall: new THREE.MeshStandardMaterial({ color: used ? '#343730' : '#252b2c', roughness: .82 }),
     enamel: new THREE.MeshStandardMaterial({ color: used ? '#53716d' : '#43616a', metalness: .42, roughness: used ? .68 : .3, map: used ? map : null }),
     accent: new THREE.MeshStandardMaterial({ color: used ? '#8f5943' : '#a8412c', metalness: .32, roughness: used ? .7 : .36 }),

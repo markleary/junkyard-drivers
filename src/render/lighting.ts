@@ -1,136 +1,235 @@
 import * as THREE from 'three';
-import { Sky } from 'three/addons/objects/Sky.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
+import { CopyShader } from 'three/addons/shaders/CopyShader.js';
+import { createAtmosphere } from './atmosphere';
+import { FrameBudget, initialTier, isSoftwareRenderer, nextLowerTier, qualitySettings, type QualityChoice, type QualityTier } from './quality';
 
-/** Outdoor light, reflections and restrained contact shading, independent of game state. */
-export function createLighting(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera) {
+export interface LightingOptions {
+  touch: boolean;
+  quality: QualityChoice;
+  hour: number;
+}
+
+/** A named colour treatment applied after tone mapping. Photo mode swaps these. */
+export interface Grade { saturation: number; contrast: number; vignette: number; warmth: number; fade: number }
+export const GRADES = {
+  natural: { saturation: 1.1, contrast: 1.0, vignette: .2, warmth: .16, fade: 0 },
+  postcard: { saturation: 1.3, contrast: 1.12, vignette: .34, warmth: .7, fade: .02 },
+  faded: { saturation: .72, contrast: .94, vignette: .42, warmth: .9, fade: .09 },
+  mono: { saturation: 0, contrast: 1.2, vignette: .46, warmth: 0, fade: .03 },
+} satisfies Record<string, Grade>;
+export type GradeName = keyof typeof GRADES;
+
+const finalVertex = /* glsl */`
+precision highp float;
+attribute vec3 position;
+attribute vec2 uv;
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4( position.xy, 0.0, 1.0 );
+}`;
+
+const finalFragment = /* glsl */`
+precision highp float;
+uniform sampler2D tColor;
+// x: saturation, y: contrast, z: vignette, w: seconds
+uniform vec4 uGrade;
+// x: warmth, y: fade, z: shadow lift
+uniform vec3 uTone;
+varying vec2 vUv;
+#include <tonemapping_pars_fragment>
+#include <colorspace_pars_fragment>
+
+float grain( vec2 p ) {
+  return fract( sin( dot( p, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+}
+
+void main() {
+  vec3 color = texture2D( tColor, vUv ).rgb;
+  color = ACESFilmicToneMapping( color );
+  color = sRGBTransferOETF( vec4( color, 1.0 ) ).rgb;
+  // Grading happens on display values, where contrast and saturation behave as the eye expects.
+  float luma = dot( color, vec3( 0.2126, 0.7152, 0.0722 ) );
+  color = mix( vec3( luma ), color, uGrade.x );
+  color = ( color - 0.5 ) * uGrade.y + 0.5;
+  // The darkest tones are raised a little, so tires and engines in shade keep their shape instead of closing up to black.
+  color += uTone.z * ( 1.0 - smoothstep( 0.0, 0.32, luma ) );
+  // Cool shadows against warm highlights, the late-afternoon palette of the yard.
+  color += uTone.x * ( vec3( -0.012, 0.0, 0.018 ) * ( 1.0 - luma ) + vec3( 0.016, 0.006, -0.012 ) * luma );
+  color = mix( color, vec3( 0.78, 0.74, 0.66 ), uTone.y );
+  vec2 centred = vUv - 0.5;
+  color *= 1.0 - uGrade.z * smoothstep( 0.32, 0.92, length( centred ) * 1.25 );
+  // One 8-bit step of noise hides banding in the smooth sky gradient.
+  color += ( grain( gl_FragCoord.xy + fract( uGrade.w ) * 91.0 ) - 0.5 ) / 255.0 * 1.6;
+  gl_FragColor = vec4( clamp( color, 0.0, 1.0 ), 1.0 );
+}`;
+
+/** Sky, sun and shadows plus the screen passes, independent of game state. */
+export function createLighting(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, options: LightingOptions) {
   const gl = renderer.getContext();
   const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
   const rendererName = debugInfo ? String(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)) : '';
-  const softwareRenderer = /SwiftShader|llvmpipe|softpipe|Software Rasterizer/i.test(rendererName);
-  if (softwareRenderer) {
-    renderer.setPixelRatio(Math.min(renderer.getPixelRatio(), .6));
-    renderer.setSize(innerWidth, innerHeight);
-  }
+  const software = isSoftwareRenderer(rendererName);
+  let choice: QualityChoice = options.quality;
+  let touch = options.touch;
+  let tier: QualityTier = initialTier(choice, software, touch);
+  let quality = qualitySettings(tier);
+  let width = 1, height = 1;
+
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
-  renderer.shadowMap.enabled = !softwareRenderer;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.info.autoReset = false;
 
-  const sunDirection = new THREE.Vector3(-.78, .43, .46).normalize();
-  const sky = new Sky();
-  sky.scale.setScalar(5000);
-  sky.material.uniforms.turbidity.value = 2.8;
-  sky.material.uniforms.rayleigh.value = 1.5;
-  sky.material.uniforms.mieCoefficient.value = .004;
-  sky.material.uniforms.mieDirectionalG.value = .8;
-  sky.material.uniforms.sunPosition.value.copy(sunDirection);
-  scene.add(sky);
-  scene.background = new THREE.Color('#b8c6cd');
-  scene.fog = new THREE.Fog('#c1cbc7', 200, 600);
+  const atmosphere = createAtmosphere(renderer, scene, quality, options.hour);
+  const budget = new FrameBudget();
 
-  // The same sky lights the paint and glass. An earth hemisphere grounds the
-  // reflections without a remote HDRI or the old indoor studio light boxes.
-  const environmentScene = new THREE.Scene();
-  const environmentSky = sky.clone();
-  environmentScene.add(environmentSky);
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(2000, 48), new THREE.MeshBasicMaterial({ color: '#655e4f' }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -2;
-  environmentScene.add(ground);
-  // Broad shapes along the reflected horizon give curved body panels readable
-  // highlights, as a nearby workshop and tree line would, without a remote HDRI.
-  const reflectionGeometry = new THREE.BoxGeometry(1, 1, 1);
-  const reflectionMaterials = [0x586052, 0x7e7c6b, 0x464e43].map(color => new THREE.MeshBasicMaterial({ color }));
-  for (let i = 0; i < 18; i++) {
-    const angle = i / 18 * Math.PI * 2, distance = 90 + i % 3 * 12;
-    const silhouette = new THREE.Mesh(reflectionGeometry, reflectionMaterials[i % 3]);
-    const height = 8 + i % 4 * 4;
-    silhouette.position.set(Math.cos(angle) * distance, height / 2 - 2, Math.sin(angle) * distance);
-    silhouette.scale.set(i % 3 ? 15 : 24, height, 12); silhouette.rotation.y = -angle;
-    environmentScene.add(silhouette);
-  }
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(environmentScene, .025, .1, 6000);
-  scene.environment = environment.texture;
-  scene.environmentIntensity = .68;
-  ground.geometry.dispose(); ground.material.dispose(); pmrem.dispose();
-  reflectionGeometry.dispose(); reflectionMaterials.forEach(material => material.dispose());
+  const finalMaterial = new THREE.RawShaderMaterial({
+    vertexShader: finalVertex, fragmentShader: finalFragment, depthTest: false, depthWrite: false,
+    uniforms: {
+      tColor: { value: null as THREE.Texture | null }, toneMappingExposure: { value: 1 },
+      uGrade: { value: new THREE.Vector4(1, 1, 0, 0) }, uTone: { value: new THREE.Vector3(0, 0, 0) },
+    },
+  });
+  const finalQuad = new FullScreenQuad(finalMaterial);
+  const copyMaterial = new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.clone(CopyShader.uniforms), vertexShader: CopyShader.vertexShader, fragmentShader: CopyShader.fragmentShader,
+    depthTest: false, depthWrite: false, blending: THREE.NoBlending,
+  });
+  const copyQuad = new FullScreenQuad(copyMaterial);
 
-  const skyFill = new THREE.HemisphereLight('#c1d8e7', '#756049', .78);
-  scene.add(skyFill);
-  const sun = new THREE.DirectionalLight('#ffe1b9', 3.2);
-  sun.castShadow = !softwareRenderer;
-  const shadowSize = Math.min(softwareRenderer ? 512 : 4096, renderer.capabilities.maxTextureSize);
-  sun.shadow.mapSize.set(shadowSize, shadowSize);
-  Object.assign(sun.shadow.camera, { left: -68, right: 68, top: 68, bottom: -68, near: 1, far: 320 });
-  sun.shadow.normalBias = .035;
-  sun.shadow.bias = -.00018;
-  sun.shadow.camera.updateProjectionMatrix();
-  scene.add(sun, sun.target);
-
-  // Software WebGL keeps the same materials and light, but skips costly screen
-  // passes so movement and fixed-step physics remain responsive in that mode.
-  let composer: EffectComposer | undefined;
+  let sceneTarget: THREE.WebGLRenderTarget | undefined;
+  let compositeTarget: THREE.WebGLRenderTarget | undefined;
   let ao: GTAOPass | undefined;
-  if (!softwareRenderer) {
-    const target = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: Math.min(4, renderer.capabilities.maxSamples) });
-    composer = new EffectComposer(renderer, target);
-    composer.addPass(new RenderPass(scene, camera));
-    ao = new GTAOPass(scene, camera);
-    ao.blendIntensity = .68;
-    ao.normalMaterial.side = THREE.DoubleSide;
-    ao.updateGtaoMaterial({ radius: .85, thickness: 1.1, distanceExponent: 1.5, distanceFallOff: .9, scale: .9, samples: 12 });
-    ao.updatePdMaterial({ radius: 5, samples: 12, rings: 2, lumaPhi: 8, depthPhi: 2, normalPhi: 3 });
-    composer.addPass(ao);
-    // GTAO's normal override cannot sample cutout alpha. Exclude leaf sprays and
-    // ground decals from that pass so their rectangles never create dark halos.
-    // Their ordinary color and shadow passes still retain the actual cutouts.
-    const renderAO = ao.render.bind(ao);
-    let excluded: THREE.Object3D[] | undefined;
-    ao.render = (...args) => {
-      if (!excluded) {
-        excluded = [];
-        scene.traverse(object => { if (object.userData.excludeFromAO) excluded!.push(object); });
-      }
-      const visible = excluded.filter(object => object.visible);
-      visible.forEach(object => { object.visible = false; });
-      try { renderAO(...args); } finally { visible.forEach(object => { object.visible = true; }); }
-    };
-    composer.addPass(new OutputPass());
+  let bloom: UnrealBloomPass | undefined;
+  let grade: Grade = GRADES.natural;
+  let seconds = 0;
+
+  function releaseTargets() {
+    sceneTarget?.depthTexture?.dispose();
+    sceneTarget?.dispose(); sceneTarget = undefined;
+    compositeTarget?.dispose(); compositeTarget = undefined;
+    ao?.dispose(); ao = undefined;
+    bloom?.dispose(); bloom = undefined;
   }
 
-  function resize(width: number, height: number) {
-    composer?.setPixelRatio(renderer.getPixelRatio());
-    composer?.setSize(width, height);
-    // Contact shading can use a smaller buffer while the color image stays sharp.
+  function buildTargets() {
+    releaseTargets();
+    if (!quality.postprocessing) return;
     const ratio = renderer.getPixelRatio();
-    ao?.setSize(Math.ceil(width * ratio * .75), Math.ceil(height * ratio * .75));
+    const w = Math.max(2, Math.round(width * ratio)), h = Math.max(2, Math.round(height * ratio));
+    // The depth texture lets ambient occlusion reuse this pass instead of drawing the scene again.
+    const depth = new THREE.DepthTexture(w, h);
+    sceneTarget = new THREE.WebGLRenderTarget(w, h, {
+      type: THREE.HalfFloatType, depthTexture: depth, samples: Math.min(quality.samples, renderer.capabilities.maxSamples),
+    });
+    if (quality.ambientOcclusion || quality.bloom) compositeTarget = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType, depthBuffer: false });
+    if (quality.ambientOcclusion) {
+      ao = new GTAOPass(scene, camera, w, h);
+      // Normals are rebuilt from depth, so cut-out foliage needs no special handling.
+      ao.setGBuffer(depth, undefined);
+      ao.blendIntensity = .74;
+      ao.updateGtaoMaterial({ radius: .9, thickness: 1.1, distanceExponent: 1.4, distanceFallOff: .9, scale: 1, samples: 12 });
+      ao.updatePdMaterial({ radius: 5, samples: 12, rings: 2, lumaPhi: 8, depthPhi: 2, normalPhi: 3 });
+      ao.setSize(Math.ceil(w * .75), Math.ceil(h * .75));
+    }
+    if (quality.bloom) {
+      // Only values well above white bloom: the sun, lamps, headlights and glints.
+      bloom = new UnrealBloomPass(new THREE.Vector2(w, h), .3, .6, 1.12);
+    }
   }
+
+  function applyQuality(next: QualityTier) {
+    tier = next;
+    quality = qualitySettings(tier);
+    atmosphere.configure(quality);
+    budget.reset();
+    resize(width, height);
+  }
+
+  function resize(nextWidth: number, nextHeight: number) {
+    width = Math.max(1, nextWidth); height = Math.max(1, nextHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, quality.pixelRatio));
+    renderer.setSize(width, height);
+    buildTargets();
+  }
+
+  const focus = new THREE.Vector3(), forward = new THREE.Vector3();
+  function placeShadow() {
+    // Bias the shadow volume ahead of the view, then snap to whole texels so
+    // shadow edges do not shimmer as the player moves.
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    if (forward.lengthSq() > 1e-6) forward.normalize();
+    const texel = quality.shadowRange * 2 / atmosphere.sun.shadow.mapSize.x;
+    const reach = quality.shadowRange * .42;
+    focus.set(
+      Math.round((camera.position.x + forward.x * reach) / texel) * texel, 0,
+      Math.round((camera.position.z + forward.z * reach) / texel) * texel,
+    );
+    atmosphere.sun.target.position.copy(focus);
+    atmosphere.sun.position.copy(focus).addScaledVector(atmosphere.keyDirection, 170);
+  }
+
   resize(innerWidth, innerHeight);
-  const focus = new THREE.Vector3();
+
   return {
-    quality: softwareRenderer ? 'compatible' : 'detailed',
-    render(dt: number) {
-      // Quantizing shadow movement prevents sub-texel shimmer as the player walks.
-      const texel = 136 / shadowSize;
-      focus.set(Math.round(camera.position.x / texel) * texel, 0, Math.round(camera.position.z / texel) * texel);
-      sun.target.position.copy(focus);
-      sun.position.copy(focus).addScaledVector(sunDirection, 160);
+    atmosphere,
+    get quality() { return tier; },
+    get settings() { return quality; },
+    get choice() { return choice; },
+    get software() { return software; },
+    /** Player preference. Software WebGL always stays in the compatible tier. */
+    setQuality(next: QualityChoice, isTouch = touch) {
+      choice = next; touch = isTouch;
+      const wanted = initialTier(choice, software, touch);
+      if (wanted !== tier) applyQuality(wanted);
+    },
+    setGrade(name: GradeName) { grade = GRADES[name]; },
+    render(dt: number, measure = true) {
+      seconds += dt;
+      if (measure && choice === 'auto' && budget.sample(dt)) {
+        const lower = nextLowerTier(tier);
+        if (lower) applyQuality(lower);
+      }
+      atmosphere.update(dt, camera);
+      placeShadow();
       renderer.info.reset();
-      if (composer) composer.render(dt);
-      else renderer.render(scene, camera);
+      if (!sceneTarget) {
+        renderer.setRenderTarget(null);
+        renderer.render(scene, camera);
+        return;
+      }
+      renderer.setRenderTarget(sceneTarget);
+      renderer.render(scene, camera);
+      let source = sceneTarget;
+      if (compositeTarget) {
+        if (ao) ao.render(renderer, compositeTarget, sceneTarget, dt, false);
+        else {
+          copyMaterial.uniforms.tDiffuse.value = sceneTarget.texture;
+          renderer.setRenderTarget(compositeTarget);
+          copyQuad.render(renderer);
+        }
+        bloom?.render(renderer, compositeTarget, compositeTarget, dt, false);
+        source = compositeTarget;
+      }
+      const uniforms = finalMaterial.uniforms;
+      uniforms.tColor.value = source.texture;
+      uniforms.toneMappingExposure.value = renderer.toneMappingExposure;
+      uniforms.uGrade.value.set(grade.saturation, grade.contrast, grade.vignette, seconds);
+      uniforms.uTone.value.set(grade.warmth, grade.fade, .012 + .02 * atmosphere.sample.daylight);
+      renderer.setRenderTarget(null);
+      finalQuad.render(renderer);
     },
     resize,
     dispose() {
-      composer?.passes.forEach(pass => pass.dispose());
-      composer?.dispose(); environment.dispose();
-      sky.geometry.dispose(); sky.material.dispose();
-      sun.shadow.dispose();
+      releaseTargets();
+      atmosphere.dispose();
+      finalMaterial.dispose(); finalQuad.dispose();
+      copyMaterial.dispose(); copyQuad.dispose();
     },
   };
 }
+export type Lighting = ReturnType<typeof createLighting>;

@@ -23,4 +23,9 @@ export const touchMarkup = `<div id="touch-controls" role="group" aria-label="To
     <button id="touch-throttle" type="button" aria-label="Accelerate" aria-pressed="false"><span class="pedal-ribs" aria-hidden="true"></span><b>ACCELERATE</b><small>HOLD</small></button>
   </div>
   <button id="touch-handbrake" class="touch-drive-help" type="button" aria-label="Handbrake" aria-pressed="false"><span class="handbrake-symbol" aria-hidden="true">P</span><b>HANDBRAKE</b><small>HOLD</small></button>
+  <div class="touch-switches touch-drive-help" role="group" aria-label="Car switches">
+    <button id="touch-camera" type="button" aria-label="Change camera">${icon('camera')}<small>VIEW</small></button>
+    <button id="touch-lights" type="button" aria-label="Headlamps">${icon('lamp')}<small>LAMPS</small></button>
+    <button id="touch-horn" type="button" aria-label="Horn">${icon('horn')}<small>HORN</small></button>
+  </div>
 </div>`;
