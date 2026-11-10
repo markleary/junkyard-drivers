@@ -35,14 +35,16 @@ export function buildYard(ctx: SceneContext, plants: Vegetation, marks: GroundMa
       const width = length / panels + .06, height = 2.1 + rng() * .22, lean = (rng() - .5) * .03;
       // Every so often a sheet has been replaced with a rustier one.
       const tint = rng() > .84 ? C.rust : sheetTints[Math.floor(rng() * sheetTints.length)];
-      b.box(corrugated, x, height / 2 + .04, z, horizontal ? width : .05, height, horizontal ? .05 : width, { color: tint, shade: .74, roll: horizontal ? 0 : lean, pitch: horizontal ? lean : 0 });
+      // Alternate sheets sit in front of their neighbours, as lapped sheets do. In one plane the laps would shimmer.
+      const lap = i % 2 ? .006 : -.006;
+      b.box(corrugated, horizontal ? x : x + lap, height / 2 + .04, horizontal ? z + lap : z, horizontal ? width : .05, height, horizontal ? .05 : width, { color: tint, shade: .74, roll: horizontal ? 0 : lean, pitch: horizontal ? lean : 0 });
     }
     for (let d = 0; d <= length + .01; d += 4.1) {
       const x = ax + (bx - ax) * Math.min(1, d / length), z = az + (bz - az) * Math.min(1, d / length);
       b.box(flat.metal, x, 1.25, z, .11, 2.5, .11, { color: C.steelDark });
     }
-    b.box(flat.metal, (ax + bx) / 2, 2.02, (az + bz) / 2 + (horizontal ? -.06 : 0), horizontal ? length : .06, .07, horizontal ? .06 : length, { color: C.steelDark });
-    b.box(flat.metal, (ax + bx) / 2, .5, (az + bz) / 2 + (horizontal ? -.06 : 0), horizontal ? length : .06, .07, horizontal ? .06 : length, { color: C.steelDark });
+    b.box(flat.metal, (ax + bx) / 2, 2.02, (az + bz) / 2 + (horizontal ? -.06 : 0), horizontal ? length : .08, .07, horizontal ? .06 : length, { color: C.steelDark });
+    b.box(flat.metal, (ax + bx) / 2, .5, (az + bz) / 2 + (horizontal ? -.06 : 0), horizontal ? length : .08, .07, horizontal ? .06 : length, { color: C.steelDark });
   }
   fence(YARD_BOUNDS.minX, YARD_BOUNDS.minZ, YARD_BOUNDS.maxX, YARD_BOUNDS.minZ);
   fence(YARD_BOUNDS.minX, YARD_BOUNDS.minZ, YARD_BOUNDS.minX, YARD_BOUNDS.maxZ);
@@ -57,7 +59,7 @@ export function buildYard(ctx: SceneContext, plants: Vegetation, marks: GroundMa
     b.box(lights.lamp, x, 5.08, 30.5, .3, .1, .3, { color: C.sodium, cast: false });
     ctx.lamps.push({ x, y: 5, z: 31.2, color: C.sodium, reach: 16 });
   }
-  for (const y of [5.6, 4.35]) b.box(flat.satin, -20, y, 30, 14.3, .14, .2, { color: 0x4a5753 });
+  for (const y of [5.6, 4.35]) b.box(flat.satin, -20, y, 30, 14.28, .14, .2, { color: 0x4a5753 });
   for (let i = 0; i < 14; i++) {
     const x = -26.5 + i, lean = i % 2 ? 1 : -1;
     b.beam(flat.satin, new THREE.Vector3(x - .5 * lean, 4.4, 30), new THREE.Vector3(x + .5 * lean, 5.56, 30), .03, { color: 0x4a5753, segments: 4 });
@@ -91,7 +93,8 @@ export function buildYard(ctx: SceneContext, plants: Vegetation, marks: GroundMa
     frame.box(corrugated, -1.17, 1.05, 0, .06, 1.9, 4.4, { color: 0x8d948f, shade: .8 });
     for (const y of [.2, 1, 1.8]) {
       frame.box(wood, .1, y, 0, 2.7, .08, 4.6, { color: C.woodPale });
-      frame.box(flat.metal, 1.36, y - .01, 0, .06, .1, 4.6, { color: C.oxide });
+      // The painted lip stands a few millimetres above the board.
+      frame.box(flat.metal, 1.36, y - .006, 0, .06, .1, 4.58, { color: C.oxide });
     }
     // A sloped tin roof keeps the weather off the stock.
     frame.box(corrugated, -.14, 2.64, 0, 2.76, .05, 5, { color: 0x8a6a52, roll: -.09 });
@@ -182,12 +185,12 @@ export function buildYard(ctx: SceneContext, plants: Vegetation, marks: GroundMa
     crane.solid(dx, 1.4, dz, .5, 2.8, .5);
   }
   for (const dz of [-2.2, 2.2]) {
-    crane.box(flat.metal, 0, CRANE.height, dz, CRANE.span + .6, .5, .34, { color: C.yellow });
+    crane.box(flat.metal, 0, CRANE.height, dz, CRANE.span + .6, .5, .36, { color: C.yellow });
     for (let i = 0; i < 6; i++) crane.beam(flat.metal, [-6.5 + i * 2.17, CRANE.height - .2, dz], [-6.5 + (i + 1) * 2.17, CRANE.height - 1.3, dz], .05, { color: C.yellow, segments: 4 });
     crane.box(flat.metal, 0, CRANE.height - 1.3, dz, CRANE.span, .12, .12, { color: C.yellow });
   }
   for (const dx of [-6.5, 6.5]) {
-    crane.box(flat.metal, dx, CRANE.height, 0, .34, .4, 4.6, { color: C.yellow });
+    crane.box(flat.metal, dx, CRANE.height, 0, .36, .4, 4.6, { color: C.yellow });
     crane.beam(flat.metal, [dx, 3.2, -2.2], [dx, CRANE.height - .4, 2.2], .05, { color: C.steelDark, segments: 4 });
     crane.beam(flat.metal, [dx, 3.2, 2.2], [dx, CRANE.height - .4, -2.2], .05, { color: C.steelDark, segments: 4 });
   }

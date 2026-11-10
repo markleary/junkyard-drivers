@@ -75,8 +75,9 @@ export function buildGarage(ctx: SceneContext, marks: GroundMarks) {
   for (const x of [-27.6, -12.4]) b.box(plaster, x, 2.6, -6.22, 2.7, 5.1, .04, { color: 0xddd4bd, cast: false });
 
   // Roller door: rolled up into its drum, guides either side, hazard paint on the sill.
-  b.cylinder(flat.metal, -20, 4.58, -6.42, .3, 12.3, { roll: Math.PI / 2, color: 0x7d8683, segments: 12 });
-  b.box(siding, -20, 4.2, -6.36, 12.3, .5, .05, { color: 0x9aa09a });
+  // The drum and the valance stop just inside the door guides.
+  b.cylinder(flat.metal, -20, 4.58, -6.42, .3, 12.28, { roll: Math.PI / 2, color: 0x7d8683, segments: 12 });
+  b.box(siding, -20, 4.2, -6.36, 12.26, .5, .05, { color: 0x9aa09a });
   for (const x of [-26.1, -13.9]) b.box(flat.metal, x, 2.3, -6.3, .1, 4.5, .12, { color: 0x4a5250 });
   for (let i = 0; i < 16; i++) b.box(flat.marking, -25.6 + i * .75, .066, -6, .38, .004, .34, { color: i % 2 ? C.yellow : C.black, yaw: .5, cast: false });
   // Drain grate and expansion joints stay paint-thin, so the floor is level to walk and drive on.
@@ -108,7 +109,7 @@ export function buildGarage(ctx: SceneContext, marks: GroundMarks) {
   bench.solid(0, .55, 0, 1.6, 1.1, 4);
   for (const dz of [-1.9, 0, 1.9]) for (const dx of [-.7, .7]) bench.box(flat.metal, dx, .52, dz, .08, 1.04, .08, { color: C.steelDark });
   bench.box(flat.metal, 0, .22, 0, 1.5, .05, 3.9, { color: 0x4a5250 });
-  bench.box(metal, -.02, .62, 0, 1.44, .5, 3.84, { color: 0x4c5f58, shade: .8 });
+  bench.box(metal, -.01, .62, 0, 1.42, .5, 3.84, { color: 0x4c5f58, shade: .8 });
   for (let i = 0; i < 4; i++) { bench.box(flat.metal, .71, .62, -1.44 + i * .96, .02, .34, .86, { color: 0x56695f }); bench.box(flat.chrome, .73, .7, -1.44 + i * .96, .02, .03, .4, { color: 0xc8cdc9 }); }
   bench.box(wood, 0, 1.14, 0, 1.85, .16, 4.1, { color: 0x8f6c42 });
   bench.box(wood, -1.44, 2.3, 0, .06, 1.8, 4, { color: 0xa78a5e });

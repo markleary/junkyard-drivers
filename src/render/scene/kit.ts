@@ -350,7 +350,8 @@ export function mailbox(ctx: SceneContext, x: number, z: number, yaw: number) {
   const p = new Part(ctx.b, x, 0, z, yaw);
   for (const dx of [-.18, .18]) for (const dz of [-.16, .16]) p.box(flat.satin, dx, .12, dz, .05, .24, .05, { color: 0x1d3f66 });
   p.box(flat.satin, 0, .68, 0, .5, .9, .46, { color: 0x24528a, shade: .8 });
-  p.cyl(flat.satin, 0, 1.13, 0, .23, .5, { roll: Math.PI / 2, color: 0x24528a, segments: 10 });
+  // The rounded top stops just inside the sides of the box.
+  p.cyl(flat.satin, 0, 1.13, 0, .23, .49, { roll: Math.PI / 2, color: 0x24528a, segments: 10 });
   p.box(flat.satin, 0, .92, -.235, .34, .1, .01, { color: C.white });
 }
 

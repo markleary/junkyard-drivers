@@ -99,8 +99,10 @@ export function buildTown(ctx: SceneContext, plants: Vegetation, marks: GroundMa
 
     // Corner quoins and a string course at each floor line.
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) p.box(kind === 'siding' ? flat.satin : plaster, sx * (w / 2 - .12), h / 2, sz * (d / 2 + .05), .34, h, .16, { color: trim });
-    for (let floor = 1; floor < floors; floor++) for (const sz of [-1, 1]) p.box(flat.satin, 0, floor * 3 + .4, sz * (d / 2 + .06), w, .14, .14, { color: trim });
-    p.box(flat.satin, 0, h - .14, d / 2 + .1, w + .1, .28, .22, { color: trim });
+    // Each band stands a centimetre proud of the quoins it crosses. The cornice starts at the wall face and stops
+    // just short of the wall top, so no two of their faces share a plane.
+    for (let floor = 1; floor < floors; floor++) for (const sz of [-1, 1]) p.box(flat.satin, 0, floor * 3 + .4, sz * (d / 2 + .065), w, .14, .15, { color: trim });
+    p.box(flat.satin, 0, h - .145, d / 2 + .11, w + .12, .28, .22, { color: trim });
 
     // Windows. A stable pattern decides which rooms have their lamps on after dark.
     const pane = (dx: number, y: number, dz: number, pw: number, ph: number, along: 'x' | 'z', seed: number, alwaysLit = false) => {
@@ -146,7 +148,8 @@ export function buildTown(ctx: SceneContext, plants: Vegetation, marks: GroundMa
     if (shop) {
       // Shop front: bulkhead, display glazing, a recessed door and a striped awning.
       const awning = AWNINGS[index % AWNINGS.length], doorAt = (index % 3 - 1) * Math.min(2, w * .14);
-      p.box(kind === 'brick' ? plaster : brick, 0, .5, fz + .06, w - .8, .7, .14, { color: kind === 'brick' ? 0x3c4448 : 0x7b4636 });
+      // The bulkhead sits a centimetre behind the window and door frames that cross it.
+      p.box(kind === 'brick' ? plaster : brick, 0, .5, fz + .055, w - .8, .7, .13, { color: kind === 'brick' ? 0x3c4448 : 0x7b4636 });
       const bays: [number, number][] = [];
       const left = -w / 2 + .7, right = w / 2 - .7;
       if (doorAt - .85 - left > 1.6) bays.push([left, doorAt - .85]);
@@ -238,8 +241,9 @@ export function buildTown(ctx: SceneContext, plants: Vegetation, marks: GroundMa
     }
     // Back of the building: a service door, a meter box and the bins.
     p.box(flat.satin, w * .2, 1.4, -fz - .07, 1.1, 2.4, .1, { color: 0x3c4448 });
-    p.box(flat.metal, -w * .3, 1.5, -fz - .1, .5, .7, .16, { color: 0x858c88 });
-    p.cyl(flat.metal, -w * .3, .8, -fz - .08, .03, 1.1, { color: 0x858c88, segments: 5 });
+    // The meter box hangs below the sills, clear of the back windows.
+    p.box(flat.metal, -w * .3, .68, -fz - .1, .5, .44, .16, { color: 0x858c88 });
+    p.cyl(flat.metal, -w * .3, .23, -fz - .08, .03, .46, { color: 0x858c88, segments: 5 });
     // Rough grass against the plinth softens the meeting of wall and ground.
     if (ctx.quality.density > .2) for (let i = 0; i < 10; i++) {
       const edge = i % 3, [gx, gz] = edge === 0 ? p.at(-w / 2 - .6, (rng() - .5) * d) : edge === 1 ? p.at(w / 2 + .6, (rng() - .5) * d) : p.at((rng() - .5) * w, -fz - .6);
@@ -340,8 +344,9 @@ function fuelStation(ctx: SceneContext, lot: Lot, marks: GroundMarks) {
   kiosk.box(flat.satin, 0, 3.5, 0, 9.6, .3, 5.6, { color: C.oxide });
   kiosk.box(flat.satin, 0, .5, 2.54, 9, 1, .08, { color: C.oxide });
   kiosk.box(windowGlass, -2.2, 1.9, 2.55, 3.6, 1.7, .06, { color: 0xffe6b8, cast: false, shade: .4 });
-  kiosk.box(windowGlass, 2.6, 1.6, 2.55, 1, 2.2, .06, { color: 0xffe6b8, cast: false, shade: .4 });
-  kiosk.box(flat.satin, 2.6, 1.6, 2.53, 1.2, 2.5, .06, { color: 0x2c3a40 });
+  // The door and its frame stand proud of the painted skirt they interrupt.
+  kiosk.box(windowGlass, 2.6, 1.6, 2.585, 1, 2.2, .06, { color: 0xffe6b8, cast: false, shade: .4 });
+  kiosk.box(flat.satin, 2.6, 1.6, 2.56, 1.2, 2.5, .06, { color: 0x2c3a40 });
   const [kx, kz] = kiosk.at(0, 2.6);
   sign(ctx, 'WILLOW FUEL', kx, 2.95, kz, 6, .6, { bg: '#7c4432', yaw, bare: true });
   const [unitX, unitZ] = kiosk.at(-2.5, -.5);
@@ -388,7 +393,7 @@ function fuelStation(ctx: SceneContext, lot: Lot, marks: GroundMarks) {
   sign(ctx, 'FUEL', qx, 5.6, qz, 2.6, 1.1, { style: 'neon', glow: C.neonAmber, yaw: yaw + Math.PI, bare: true });
   pylon.box(flat.satin, 0, 5.6, 0, 2.8, 1.3, .36, { color: 0x1c2224 });
   sign(ctx, 'REG 1.19', px, 4.3, pz, 2.2, .7, { bg: '#1c2224', color: '#e3b449', yaw, bare: true });
-  pylon.box(flat.satin, 0, 4.3, 0, 2.4, .9, .3, { color: 0x1c2224 });
+  pylon.box(flat.satin, 0, 4.3, 0, 2.4, .9, .32, { color: 0x1c2224 });
   // A customer at the pump and the station's own pickup.
   const [customerX, customerZ] = canopy.at(-5.1, .3);
   placeCar(b, 'sedan', customerX, .06, customerZ, { tint: STREET_TINTS[6], yaw: yaw + Math.PI / 2, collide: true });

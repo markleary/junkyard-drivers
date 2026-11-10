@@ -1,0 +1,145 @@
+{
+  "base": "http://127.0.0.1:5173/",
+  "seed": 642019,
+  "nudgeMetres": 0.006,
+  "threshold": 28,
+  "views": [
+    {
+      "name": "store-path",
+      "position": [
+        15.5,
+        1.7,
+        33.2
+      ],
+      "target": [
+        -2,
+        0.3,
+        33.2
+      ],
+      "flippedShare": 0.03856,
+      "solidBlocks": 169
+    },
+    {
+      "name": "store-path-from-above",
+      "position": [
+        6,
+        3.4,
+        37.5
+      ],
+      "target": [
+        5.5,
+        0,
+        33.2
+      ],
+      "flippedShare": 0.15019,
+      "solidBlocks": 741
+    },
+    {
+      "name": "store-canopy",
+      "position": [
+        12,
+        1.7,
+        30.5
+      ],
+      "target": [
+        12,
+        3.5,
+        26.2
+      ],
+      "flippedShare": 0.00807,
+      "solidBlocks": 0
+    },
+    {
+      "name": "gate-junction",
+      "position": [
+        -20,
+        1.7,
+        35
+      ],
+      "target": [
+        -20,
+        0,
+        46
+      ],
+      "flippedShare": 0.00303,
+      "solidBlocks": 0
+    },
+    {
+      "name": "pavement-corner",
+      "position": [
+        140.5,
+        1.7,
+        139.5
+      ],
+      "target": [
+        136.7,
+        0.16,
+        143.2
+      ],
+      "flippedShare": 0.00849,
+      "solidBlocks": 4
+    },
+    {
+      "name": "crossing",
+      "position": [
+        127.5,
+        1.7,
+        45.2
+      ],
+      "target": [
+        136,
+        0,
+        44
+      ],
+      "flippedShare": 0.00502,
+      "solidBlocks": 3
+    },
+    {
+      "name": "shop-door",
+      "position": [
+        107.2,
+        1.5,
+        161
+      ],
+      "target": [
+        108.2,
+        0.8,
+        163.85
+      ],
+      "flippedShare": 0.00777,
+      "solidBlocks": 2
+    },
+    {
+      "name": "yard-fence",
+      "position": [
+        -23.2,
+        1.6,
+        -49.5
+      ],
+      "target": [
+        -23.2,
+        1.2,
+        -53
+      ],
+      "flippedShare": 0.04851,
+      "solidBlocks": 119
+    },
+    {
+      "name": "town-street",
+      "position": [
+        60,
+        1.7,
+        46.5
+      ],
+      "target": [
+        100,
+        0.5,
+        44
+      ],
+      "flippedShare": 0.00689,
+      "solidBlocks": 20
+    }
+  ],
+  "errors": [],
+  "note": "Measured on the build before the fix (merge commit 2903341) with the first version of this script, which had no still-camera baseline."
+}

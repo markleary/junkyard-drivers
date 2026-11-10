@@ -22,7 +22,12 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
 
   // Slabs: shop floor, forecourt and the path from the yard gate.
   b.box(concrete, store.x, .02, store.z, store.w, .08, store.d, { color: 0xa9a59a, collide: true, cast: false });
-  b.box(surface('asphalt'), store.x, .02, 29, 26, .08, 10, { color: 0x505254, collide: true, cast: false });
+  // The forecourt is drawn in two pieces around the path, which crosses its street edge at the same height: drawn
+  // whole, the two slabs would share a plane there and shimmer. One collider still covers the whole forecourt.
+  const forecourt = surface('asphalt');
+  b.box(forecourt, store.x, .02, 28.15, 26, .08, 8.3, { color: 0x505254, cast: false });
+  b.box(forecourt, 18.5, .02, 33.15, 13, .08, 1.7, { color: 0x505254, cast: false });
+  b.solidBox(store.x, .02, 29, 26, .08, 10);
   b.box(concrete, -3, .02, 34, 30, .08, 3.4, { color: 0xb1ada1, collide: true, cast: false });
   b.box(surface('tile', 'overlay'), store.x, .064, store.z, store.w - .5, .004, store.d - .5, { color: 0xd9d2bf, cast: false });
   // A pavement strip under the canopy, flush so the door has no step.
@@ -42,20 +47,23 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
     for (const dx of [-4.45, -1.5, 1.5, 4.45]) b.box(flat.metal, x + dx, 2.24, 24, .09, 2.2, .14, { color: 0x2c3a40 });
     b.box(flat.metal, x, 3.3, 24, 9, .1, .14, { color: 0x2c3a40 });
   }
-  b.box(plaster, store.x, 4.03, 24, 22, 1.14, .3, { color: blue, collide: true });
+  // A hair taller than the side walls it crosses, so their tops are not in one plane. The collider is the original.
+  b.box(plaster, store.x, 4.031, 24, 22, 1.142, .3, { color: blue });
+  b.solidBox(store.x, 4.03, 24, 22, 1.14, .3);
   b.solidBox(store.x, 4.73, 14, 22.7, .26, 20.7);
   b.box(metal, store.x, 4.76, 14, 22.9, .2, 20.9, { color: 0x6f7773 });
   b.box(flat.matte, store.x, 4.56, 14, 21.6, .06, 19.6, { color: 0xe9e4d4, cast: false });
   for (const x of [9.8, 14.2]) b.box(flat.metal, x, 1.75, 24, .12, 3.5, .4, { color: 0x2c3a40, collide: true });
   // Door header and the mat inside.
-  b.box(flat.metal, store.x, 3.4, 24, 4.4, .2, .3, { color: 0x2c3a40 });
+  b.box(flat.metal, store.x, 3.4, 24, 4.4, .2, .32, { color: 0x2c3a40 });
   b.box(flat.rubber, store.x, .07, 23.3, 2.6, .012, 1.2, { color: 0x2a2f30, cast: false });
 
   // Canopy with a painted fascia and the shop name lit from within after dark.
   b.box(metal, store.x, 3.48, 25.05, 22.6, .18, 2.3, { color: blue });
-  b.box(flat.satin, store.x, 4.03, 26.14, 22.6, 1.1, .12, { color: blue });
-  b.box(flat.satin, store.x, 3.44, 26.16, 22.7, .1, .14, { color: C.yellow });
-  b.box(flat.satin, store.x, 4.62, 26.16, 22.7, .08, .14, { color: C.yellow });
+  // The fascia stands a centimetre proud of the canopy edge, and the lower trim hangs just below its underside.
+  b.box(flat.satin, store.x, 4.03, 26.15, 22.62, 1.1, .12, { color: blue });
+  b.box(flat.satin, store.x, 3.435, 26.17, 22.7, .1, .14, { color: C.yellow });
+  b.box(flat.satin, store.x, 4.62, 26.17, 22.7, .08, .14, { color: C.yellow });
   for (const x of [1.4, 22.6]) b.box(flat.metal, x, 1.74, 26.05, .14, 3.48, .14, { color: 0x2c3a40, collide: true });
   sign(ctx, 'HOLLOWAY AUTO PARTS', store.x, 4.05, 26.24, 18.5, .98, { bg: '#24566a', sub: 'NEW ENGINES · WHEELS · PAINT', bare: true });
   sign(ctx, 'OPEN', 15.2, 2.5, 24.1, 1.5, .62, { style: 'neon', glow: C.neonRed, bare: true });
@@ -84,7 +92,7 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
     b.solidBox(x, 1.3, z, 2.1, 2.6, 4);
     const side = x < 12 ? 1 : -1;
     b.box(metal, x - side * 1.02, 1.3, z, .06, 2.6, 4, { color: 0x56605c });
-    for (const dx of [-1.02, 1.02]) for (const dz of [-1.95, 1.95]) b.box(flat.metal, x + dx, 1.3, z + dz, .07, 2.6, .07, { color: 0x2c3a40 });
+    for (const dx of [-1.02, 1.02]) for (const dz of [-1.95, 1.95]) b.box(flat.metal, x + dx, 1.31, z + dz, .07, 2.62, .07, { color: 0x2c3a40 });
     for (const y of [.3, 1.05, 1.8, 2.5]) {
       b.box(metal, x, y, z, 2.25, .06, 4.2, { color: 0x9aa09a });
       b.box(flat.satin, x + side * 1.13, y - .02, z, .02, .09, 4.2, { color: C.yellow });

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { WorldBuilder } from './builder';
+import type { Audit } from './coplanar';
 import { ensureLightTextures, updateGlows } from './materials';
 import { configureSurfaces, prepareSurfaces } from './surfaces';
 import { createVegetation } from './vegetation';
@@ -29,7 +30,8 @@ export interface WorldView {
   update(dt: number, seconds: number, night: number, focus: THREE.Vector3): void;
 }
 
-export function createWorld(scene: THREE.Scene, world: RAPIER.World, layout: TownLayout, quality: QualitySettings): WorldView {
+/** `audit` collects every flat face placed, for the coplanar-overlap check in the tests; the game passes none. */
+export function createWorld(scene: THREE.Scene, world: RAPIER.World, layout: TownLayout, quality: QualitySettings, audit?: Audit): WorldView {
   const started = performance.now();
   const root = new THREE.Group();
   root.name = 'Town, scrapyard and workshop';
@@ -37,7 +39,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World, layout: Tow
   configureSurfaces({ detailMaps: quality.tier !== 'compatible' });
   prepareSurfaces();
   ensureLightTextures();
-  const builder = new WorldBuilder(root, world);
+  const builder = new WorldBuilder(root, world, 44, audit);
   const rng = randomFromSeed(layout.seed ^ 0x8549);
   const ctx: SceneContext = { b: builder, root, rng, layout, quality, interactables: [], lamps: [], animated: [] };
   const plants = createVegetation(builder, randomFromSeed(layout.seed ^ 0x2f71));

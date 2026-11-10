@@ -1,0 +1,162 @@
+{
+  "base": "http://127.0.0.1:5173/",
+  "seed": 642019,
+  "nudgeMetres": 0.006,
+  "threshold": 28,
+  "views": [
+    {
+      "name": "store-path",
+      "position": [
+        15.5,
+        1.7,
+        33.2
+      ],
+      "target": [
+        -2,
+        0.3,
+        33.2
+      ],
+      "stillShare": 0.0026,
+      "stillBlocks": 3,
+      "flippedShare": 0.00506,
+      "solidBlocks": 2
+    },
+    {
+      "name": "store-path-from-above",
+      "position": [
+        6,
+        3.4,
+        37.5
+      ],
+      "target": [
+        5.5,
+        0,
+        33.2
+      ],
+      "stillShare": 0.00002,
+      "stillBlocks": 0,
+      "flippedShare": 0.00255,
+      "solidBlocks": 0
+    },
+    {
+      "name": "store-canopy",
+      "position": [
+        12,
+        1.7,
+        30.5
+      ],
+      "target": [
+        12,
+        3.5,
+        26.2
+      ],
+      "stillShare": 0,
+      "stillBlocks": 0,
+      "flippedShare": 0.00479,
+      "solidBlocks": 0
+    },
+    {
+      "name": "gate-junction",
+      "position": [
+        -20,
+        1.7,
+        35
+      ],
+      "target": [
+        -20,
+        0,
+        46
+      ],
+      "stillShare": 0.00145,
+      "stillBlocks": 0,
+      "flippedShare": 0.00325,
+      "solidBlocks": 0
+    },
+    {
+      "name": "pavement-corner",
+      "position": [
+        140.5,
+        1.7,
+        139.5
+      ],
+      "target": [
+        136.7,
+        0.16,
+        143.2
+      ],
+      "stillShare": 0.0035,
+      "stillBlocks": 5,
+      "flippedShare": 0.00839,
+      "solidBlocks": 5
+    },
+    {
+      "name": "crossing",
+      "position": [
+        127.5,
+        1.7,
+        45.2
+      ],
+      "target": [
+        136,
+        0,
+        44
+      ],
+      "stillShare": 0.00135,
+      "stillBlocks": 0,
+      "flippedShare": 0.00305,
+      "solidBlocks": 0
+    },
+    {
+      "name": "shop-door",
+      "position": [
+        107.2,
+        1.5,
+        161
+      ],
+      "target": [
+        108.2,
+        0.8,
+        163.85
+      ],
+      "stillShare": 0.00072,
+      "stillBlocks": 1,
+      "flippedShare": 0.00412,
+      "solidBlocks": 0
+    },
+    {
+      "name": "yard-fence",
+      "position": [
+        -23.2,
+        1.6,
+        -49.5
+      ],
+      "target": [
+        -23.2,
+        1.2,
+        -53
+      ],
+      "stillShare": 0.03795,
+      "stillBlocks": 76,
+      "flippedShare": 0.04623,
+      "solidBlocks": 101
+    },
+    {
+      "name": "town-street",
+      "position": [
+        60,
+        1.7,
+        46.5
+      ],
+      "target": [
+        100,
+        0.5,
+        44
+      ],
+      "stillShare": 0.00075,
+      "stillBlocks": 0,
+      "flippedShare": 0.00186,
+      "solidBlocks": 0
+    }
+  ],
+  "errors": []
+}
