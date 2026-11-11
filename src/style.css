@@ -29,6 +29,8 @@ button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 button:disabled { cursor: default; }
 button[hidden], [hidden] { display: none !important; }
 #world { display: block; width: 100vw; height: 100vh; }
+/* Looking by dragging (mouse capture refused, or photo mode) hides the cursor while the button is held. */
+body[data-drag-look], body[data-drag-look] * { cursor: none !important; }
 #crosshair, #objective, #hint, #speed, #route { pointer-events: none; }
 svg { display: block; }
 .ui-icon { width: 22px; height: 22px; flex: 0 0 auto; }
