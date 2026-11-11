@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. A WebGL 2-capable browser and WebAssembly support are required. Use a keyboard and mouse on desktop, or the on-screen controls on a touch device. Click **Enter the yard** to begin. Desktop play captures the mouse; if capture is unavailable, hold the left mouse button to look. Touch play never requests mouse capture.
+Open the local URL printed by Vite. A WebGL 2-capable browser and WebAssembly support are required. Use a keyboard and mouse on desktop, or the on-screen controls on a touch device. Click **Enter the yard** to begin. Desktop play captures the mouse, which hides the cursor while you look around. If the browser refuses capture (for example when the click that resumes play is also the one that focuses the window), the next click on the scene asks again; until then, hold the left mouse button to look, and the cursor hides while it is held. Touch play never requests mouse capture.
 
 No API key, account, backend, or `.env` file is needed to run or build the game. `.env` and `.env.*` are ignored by Git. Never commit credentials or put secrets in `VITE_*` variables, which are public build configuration.
 

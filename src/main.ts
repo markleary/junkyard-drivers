@@ -116,8 +116,13 @@ function announce(options: BannerOptions, sound?: 'medal' | 'find' | 'unlock' | 
   if (sound) audio.play(sound);
 }
 function clearInputs() {
-  keys.clear(); dragging = false; lookBack = false; touch.reset();
+  keys.clear(); setDragging(false); lookBack = false; touch.reset();
   if (hornHeld) { hornHeld = false; audio.horn(false); }
+}
+// Looking by dragging turns the camera without capturing the mouse, so the cursor hides until the button comes up.
+function setDragging(on: boolean) {
+  dragging = on;
+  document.body.toggleAttribute('data-drag-look', on && (!!photo || (dragMode && !paused && !touchEnabled && mode === 'foot')));
 }
 function syncUiScreen() {
   document.body.dataset.screen = photo ? 'photo' : panelKind !== 'none' ? panelKind : !started ? 'intro' : paused ? 'pause' : mode;
@@ -212,21 +217,28 @@ function pause() {
   if (vehicle) flushDriving();
   renderOverlay(menu, pauseMarkup(pauseOptions()), '[data-action="resume"]');
 }
-async function resume() {
+function resume() {
   started = true; paused = false;
   menu.hidden = true; panel.hidden = true; panelKind = 'none';
   clearInputs(); syncUiScreen();
   canvas.focus({ preventScroll: true });
   audio.start();
   if (touchEnabled) { dragMode = true; return; }
-  try {
-    await canvas.requestPointerLock();
-    if (paused || touchEnabled) { document.exitPointerLock?.(); return; }
-    dragMode = false;
-  } catch {
-    dragMode = true;
-    if (!paused) notify('Mouse capture unavailable. Hold the left mouse button to look. WASD to move.');
-  }
+  dragMode = false;
+  captureMouse();
+}
+// Desktop play captures the mouse, which hides the cursor and keeps it still while looking.
+// The pointerlockchange listener handles a granted capture.
+function captureMouse() {
+  // Some engines return nothing here and report a refusal only as a pointerlockerror event.
+  try { Promise.resolve(canvas.requestPointerLock()).catch(lookByDragging); } catch { lookByDragging(); }
+}
+// Capture can be refused, for example when the click that resumed play also focused the window, or just
+// after Escape. Until a press on the scene captures the mouse, holding the left button looks around.
+function lookByDragging() {
+  if (paused || touchEnabled || dragMode) return;
+  dragMode = true;
+  notify('Mouse capture unavailable. Click to try again, or hold the left mouse button to look.');
 }
 function openPanel(kind: typeof panelKind) {
   paused = true; clearInputs(); panelKind = kind;
@@ -910,8 +922,12 @@ document.addEventListener('mousemove', e => {
     pitch = Math.max(-1.2, Math.min(1.2, pitch - e.movementY * .0024));
   }
 });
-canvas.addEventListener('mousedown', () => { dragging = true; });
-window.addEventListener('mouseup', () => dragging = false);
+canvas.addEventListener('mousedown', () => {
+  setDragging(true);
+  // After a refused capture, a press on the scene asks again; the press is the user gesture it needs.
+  if (dragMode && !paused && !touchEnabled) captureMouse();
+});
+window.addEventListener('mouseup', () => setDragging(false));
 canvas.addEventListener('wheel', e => {
   if (!photo) return;
   e.preventDefault();
@@ -934,7 +950,14 @@ canvas.addEventListener('pointermove', e => {
   previous.x = e.clientX; previous.y = e.clientY;
 });
 for (const type of ['pointerup', 'pointercancel']) window.addEventListener(type, e => photoTouches.delete((e as PointerEvent).pointerId));
-document.addEventListener('pointerlockchange', () => { clearInputs(); if (!document.pointerLockElement && !paused && !dragMode && !touchEnabled) pause(); });
+document.addEventListener('pointerlockchange', () => {
+  clearInputs();
+  if (document.pointerLockElement === canvas) {
+    // A capture that lands after the game paused (or switched to touch controls) is let go at once.
+    if (paused || touchEnabled) document.exitPointerLock?.(); else dragMode = false;
+  } else if (!paused && !dragMode && !touchEnabled) pause();
+});
+document.addEventListener('pointerlockerror', lookByDragging);
 window.addEventListener('blur', () => { clearInputs(); if (started && !paused) pause(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && started) pause(); });
 window.addEventListener('resize', () => { clearInputs(); resizeGraphics(); });
