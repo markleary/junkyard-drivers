@@ -3,7 +3,7 @@
  * saturator, fixed exhaust resonances and a lowpass that opens with rpm and throttle.
  * One long-lived graph per running engine; every frame only moves parameters.
  */
-import type { EngineFamily, EngineProfile } from './types';
+import type { EngineFamily, EngineProfile, ExhaustNote } from './types';
 import {
   Drift,
   Glide,
@@ -246,8 +246,42 @@ const MAX_POWER = 440;
 /** How far the start-up flare lifts the revs above idle, as a share of the rev range. */
 const FLARE_RPM = 0.26;
 
-function specFor(family: EngineFamily): FamilySpec {
-  return Object.hasOwn(FAMILIES, family) ? FAMILIES[family] : FAMILIES.i4;
+/**
+ * What a modified exhaust does to a family's voicing: more drive into the saturator, a lower floor and a higher
+ * ceiling, more level, a harder bark when the throttle opens, and pops on the overrun. Straight-through pipes
+ * take every one of those further than a sport system does.
+ */
+const EXHAUSTS: Record<'sport' | 'race', { drive: number; open: number; level: number; bark: number; crackle: number; boom: number }> = {
+  sport: { drive: 1.25, open: 1.18, level: 1.14, bark: 0.3, crackle: 2.5, boom: 1.5 },
+  race: { drive: 1.5, open: 1.35, level: 1.3, bark: 0.6, crackle: 5, boom: 2.5 },
+};
+const tunedSpecs = new Map<string, FamilySpec>();
+
+function specFor(family: EngineFamily, exhaust: ExhaustNote = 'stock'): FamilySpec {
+  const base = Object.hasOwn(FAMILIES, family) ? FAMILIES[family] : FAMILIES.i4;
+  if (exhaust !== 'sport' && exhaust !== 'race') return base;
+  const key = family + ':' + exhaust;
+  let spec = tunedSpecs.get(key);
+  if (!spec) {
+    const tune = EXHAUSTS[exhaust];
+    const louder = (gains: Gains): Gains => [gains[0] * tune.level, gains[1] * tune.level, gains[2] * tune.level];
+    spec = {
+      ...base,
+      bias: Math.min(0.5, base.bias + 0.08),
+      floor: base.floor * 0.9,
+      drive: { idle: base.drive.idle * tune.drive, rpm: base.drive.rpm * tune.drive, load: base.drive.load * tune.drive },
+      // The lowest resonance is the boom of the pipe itself.
+      formants: base.formants.map((formant, index) => (index === 0 ? { ...formant, gain: formant.gain + tune.boom } : formant)),
+      cutoff: { ...base.cutoff, idle: base.cutoff.idle * tune.open, rpm: base.cutoff.rpm * tune.open, max: Math.min(6000, base.cutoff.max * tune.open) },
+      ceiling: Math.min(6500, base.ceiling * tune.open),
+      breath: { ...base.breath, grit: base.breath.grit * 1.4, gritLoad: base.breath.gritLoad * 1.3, rasp: base.breath.rasp * 1.5 },
+      loudness: { coast: louder(base.loudness.coast), pull: louder(base.loudness.pull) },
+      bark: base.bark + tune.bark,
+      crackle: Math.max(base.crackle, tune.crackle),
+    };
+    tunedSpecs.set(key, spec);
+  }
+  return spec;
 }
 
 /** Firing frequency in Hz for a normalized rpm (0 idle .. 1 redline). */
@@ -302,7 +336,7 @@ export class EngineVoice {
     flare: boolean,
   ) {
     this.profile = profile;
-    this.spec = specFor(profile.family);
+    this.spec = specFor(profile.family, profile.exhaust);
     this.fullness = clamp01((finite(profile.power, MIN_POWER) - MIN_POWER) / (MAX_POWER - MIN_POWER));
     const spec = this.spec;
     const patch = new Patch(ctx, noiseBuffer);

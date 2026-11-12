@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { clearGlass, flat, lights } from '../materials';
 import { surface } from '../surfaces';
-import { createEngineModel, createPaintCan, createWheelModel } from '../parts';
+import { createEngineModel, createExhaustModel, createNitroModel, createPaintCan, createTurboModel, createWheelModel } from '../parts';
 import { STREET_TINTS, placeCar } from '../wrecks';
 import type { Vegetation } from '../vegetation';
 import { getPartsForSale } from '../../game/catalog';
@@ -65,7 +65,7 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
   b.box(flat.satin, store.x, 3.435, 26.17, 22.7, .1, .14, { color: C.yellow });
   b.box(flat.satin, store.x, 4.62, 26.17, 22.7, .08, .14, { color: C.yellow });
   for (const x of [1.4, 22.6]) b.box(flat.metal, x, 1.74, 26.05, .14, 3.48, .14, { color: 0x2c3a40, collide: true });
-  sign(ctx, 'HOLLOWAY AUTO PARTS', store.x, 4.05, 26.24, 18.5, .98, { bg: '#24566a', sub: 'NEW ENGINES · WHEELS · PAINT', bare: true });
+  sign(ctx, 'HOLLOWAY AUTO PARTS', store.x, 4.05, 26.24, 18.5, .98, { bg: '#24566a', sub: 'NEW ENGINES · WHEELS · PAINT · TUNING', bare: true });
   sign(ctx, 'OPEN', 15.2, 2.5, 24.1, 1.5, .62, { style: 'neon', glow: C.neonRed, bare: true });
   for (const x of [4, 8, 16, 20]) {
     b.box(lights.interior, x, 3.37, 25.1, 1.2, .03, .2, { color: 0xfff1d6, cast: false });
@@ -147,6 +147,23 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
     lightPool(ctx, x, 6.1, 2.4, C.lampCool, .5, .07);
   }
   b.model(createEngineModel('v8', { condition: 'new' }), 3.2, 1.84, 11.5, Math.PI / 2, .7);
+  // Tuning table, clear of the centre aisle: a turbocharger, two nitrous bottles and a sport exhaust under their own lamp.
+  const tuning = new Part(b, 16.7, 0, 14.6);
+  tuning.solid(0, .41, 0, 2.5, .82, 1.15);
+  tuning.box(wood, 0, .41, 0, 2.5, .82, 1.15, { color: 0x3a6276, shade: .8 });
+  tuning.box(wood, 0, .85, 0, 2.62, .06, 1.27, { color: 0x9a7a52 });
+  tuning.box(flat.metal, 0, .822, .64, 2.62, .03, .03, { color: C.yellow });
+  b.model(createTurboModel({ condition: 'new' }), 15.95, .88, 14.5, .5, 1.15);
+  b.model(createNitroModel(), 16.75, .88, 14.42, .3, .9);
+  b.model(createNitroModel(), 17.08, .88, 14.62, -.5, .9);
+  b.model(createExhaustModel({ condition: 'new', style: 'system' }), 16.9, .88, 15, Math.PI / 2 + .04, .92);
+  tuning.box(flat.matte, -.95, .884, .34, .3, .008, .2, { color: C.paper, yaw: .2 });
+  sign(ctx, 'TUNING', 16.7, 2.72, 14.6, 2, .5, { yaw: Math.PI, bg: '#24566a', sub: 'TURBO · EXHAUST · NITROUS', bare: true });
+  sign(ctx, 'TUNING', 16.7, 2.72, 14.62, 2, .5, { bg: '#24566a', sub: 'TURBO · EXHAUST · NITROUS', bare: true });
+  for (const dx of [-.9, .9]) b.box(flat.metal, 16.7 + dx, 3.75, 14.61, .015, 1.6, .015, { color: C.steelDark, cast: false });
+  b.cylinder(flat.satin, 16.7, 4.2, 14.2, .22, .3, { taper: .4, color: 0x2c3a40, segments: 10 });
+  b.cylinder(lights.interior, 16.7, 4.06, 14.2, .13, .03, { color: 0xfff1d6, segments: 10, cast: false });
+  lightPool(ctx, 16.7, 14.6, 2.2, C.lampCool, .5, .07);
   // Window displays make the shop recognisable from the street.
   for (const x of [5.7, 18.3]) {
     b.box(wood, x, .14, 21.8, 3.2, .28, 1.55, { color: blue, collide: true });

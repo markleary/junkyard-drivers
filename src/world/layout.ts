@@ -12,6 +12,20 @@ export const YARD_BOUNDS = { minX: -86, maxX: -5, minZ: -53, maxZ: 30 };
 export const AUTO_PARTS_STORE = { x: 12, z: 14, w: 22, d: 20, counter: { x: 12, z: 8 } };
 export const STORE_LOT = { x: 12, z: 18, w: 28, d: 38 };
 
+/**
+ * A point in a lot's own frame: `across` runs along its frontage and `toward` runs out to its street. The same
+ * frame the scenery is built in, so game rules and props agree about where things stand.
+ */
+export function lotPoint(lot: Lot, across: number, toward: number): Point {
+  return { x: lot.x + lot.face.z * across + lot.face.x * toward, z: lot.z - lot.face.x * across + lot.face.z * toward };
+}
+
+/** The inverse: where a world point lies in the lot's frame. */
+export function lotLocal(lot: Lot, x: number, z: number): { across: number; toward: number } {
+  const dx = x - lot.x, dz = z - lot.z;
+  return { across: dx * lot.face.z - dz * lot.face.x, toward: dx * lot.face.x + dz * lot.face.z };
+}
+
 export function overlapsBox(a: { x: number; z: number; w: number; d: number }, b: { x: number; z: number; w: number; d: number }, margin = 0): boolean {
   return Math.abs(a.x - b.x) < (a.w + b.w) / 2 + margin && Math.abs(a.z - b.z) < (a.d + b.d) / 2 + margin;
 }

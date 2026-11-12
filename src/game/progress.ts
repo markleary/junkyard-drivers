@@ -1,4 +1,4 @@
-import type { ShellId } from './catalog';
+import { UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
 
 /**
  * Everything a player earns by driving and exploring. Kept under its own
@@ -15,6 +15,10 @@ export type QualityPreference = 'auto' | 'high' | 'medium' | 'low';
 export type TimePreference = 'auto' | 'morning' | 'midday' | 'golden' | 'dusk' | 'night';
 
 export interface CarStyle { finish: FinishId; stripe: StripeId }
+/** The inventory instance in each tuning slot of one car. */
+export type UpgradeFit = Partial<Record<UpgradeKind, string>>;
+/** What the used-car dealer has paid out so far, in dollars. */
+export interface Sales { count: number; takings: number; profit: number; best: number }
 export interface Settings {
   quality: QualityPreference;
   time: TimePreference;
@@ -38,9 +42,18 @@ export interface Progress {
   settings: Settings;
   /** Time of day, carried between sessions when the cycle is running. */
   hour: number;
+  /** Turbocharger, exhaust and nitrous fitted to each car, keyed by car id. The parts themselves are ordinary inventory. */
+  fitted: Record<string, UpgradeFit>;
+  /** Best lap by the car of each kind owned now: what the dealer accepts as proof of its speed. Cleared when that car is sold. */
+  proof: Partial<Record<ShellId, number>>;
+  sales: Sales;
+  /** Decides where the rare salvage is hidden. Zero until the first visit rolls it. */
+  stash: number;
+  /** How many times each rare listing has come back after being sold with a car. Each return moves it. */
+  restock: Record<string, number>;
 }
 
-export const SHELL_IDS: ShellId[] = ['hachiro', 'bison', 'veloce'];
+export const SHELL_IDS: ShellId[] = ['hachiro', 'bison', 'veloce', 'wren', 'packhorse'];
 export const FINISHES: { id: FinishId; name: string; finds: number; note: string }[] = [
   { id: 'gloss', name: 'Gloss', finds: 0, note: 'Workshop standard' },
   { id: 'metallic', name: 'Metallic', finds: 3, note: 'Fine flake under clear coat' },
@@ -63,6 +76,8 @@ export const MEDAL_TIMES: Record<ShellId, Record<Medal, number>> = {
   hachiro: { bronze: 72, silver: 58, gold: 52 },
   bison: { bronze: 71, silver: 57, gold: 52 },
   veloce: { bronze: 69, silver: 55, gold: 50 },
+  wren: { bronze: 71, silver: 57, gold: 51 },
+  packhorse: { bronze: 72, silver: 58, gold: 52 },
 };
 const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
 export const DEFAULT_SETTINGS: Settings = { quality: 'auto', time: 'auto', camera: 'chase', lights: 'auto', motion: true, map: true };
@@ -71,7 +86,10 @@ const START_HOUR = 16.6;
 export type ProgressStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function newProgress(): Progress {
-  return { version: 1, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR };
+  return {
+    version: 1, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
+    fitted: {}, proof: {}, sales: { count: 0, takings: 0, profit: 0, best: 0 }, stash: 0, restock: {},
+  };
 }
 
 export function medalFor(shell: ShellId, seconds: number): Medal | null {
@@ -126,7 +144,13 @@ export function recordLap(progress: Progress, shell: ShellId, seconds: number): 
   const improved = previous === undefined || seconds < previous;
   const medal = medalFor(shell, seconds);
   const before = previous === undefined ? null : medalFor(shell, previous);
-  const next: Progress = { ...progress, laps: progress.laps + 1, bestLap: improved ? { ...progress.bestLap, [shell]: Math.round(seconds * 100) / 100 } : progress.bestLap };
+  const lap = Math.round(seconds * 100) / 100, proven = progress.proof[shell];
+  const next: Progress = {
+    ...progress, laps: progress.laps + 1,
+    bestLap: improved ? { ...progress.bestLap, [shell]: lap } : progress.bestLap,
+    // The record stands for good; the proof belongs to the car in the bay and goes when it is sold.
+    proof: proven === undefined || seconds < proven ? { ...progress.proof, [shell]: lap } : progress.proof,
+  };
   return { progress: next, improved, medal, previous, newMedal: !!medal && (!before || MEDAL_RANK[medal] > MEDAL_RANK[before]) };
 }
 
@@ -144,6 +168,7 @@ export function recordDriving(progress: Progress, shell: ShellId, metres: number
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const oneOf = <T extends string>(value: unknown, options: readonly T[], fallback: T): T => options.includes(value as T) ? value as T : fallback;
 const positive = (value: unknown, limit: number) => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= limit;
+const CAR_ID = /^car-[a-z]+$/, INSTANCE_ID = /^instance-part-[a-z0-9-]+$/, LISTING_ID = /^(shell|part)-[a-z0-9-]+$/;
 
 /** Unknown or damaged fields fall back to defaults one at a time, so a bad setting never costs a medal. */
 export function parseProgress(raw: string, knownFinds?: readonly string[]): Progress {
@@ -159,7 +184,7 @@ export function parseProgress(raw: string, knownFinds?: readonly string[]): Prog
   };
   const styles: Record<string, CarStyle> = {};
   if (isRecord(data.styles)) for (const [carId, style] of Object.entries(data.styles)) {
-    if (!isRecord(style) || !/^car-[a-z]+$/.test(carId)) continue;
+    if (!isRecord(style) || !CAR_ID.test(carId)) continue;
     styles[carId] = { finish: oneOf(style.finish, FINISHES.map(item => item.id), 'gloss'), stripe: oneOf(style.stripe, STRIPES.map(item => item.id), 'none') };
   }
   const saved = isRecord(data.settings) ? data.settings : {};
@@ -171,10 +196,30 @@ export function parseProgress(raw: string, knownFinds?: readonly string[]): Prog
     motion: typeof saved.motion === 'boolean' ? saved.motion : true,
     map: typeof saved.map === 'boolean' ? saved.map : true,
   };
+  const fitted: Record<string, UpgradeFit> = {};
+  if (isRecord(data.fitted)) for (const [carId, slots] of Object.entries(data.fitted)) {
+    if (!isRecord(slots) || !CAR_ID.test(carId)) continue;
+    const fit: UpgradeFit = {};
+    for (const kind of UPGRADE_KINDS) { const id = slots[kind]; if (typeof id === 'string' && INSTANCE_ID.test(id)) fit[kind] = id; }
+    if (Object.keys(fit).length) fitted[carId] = fit;
+  }
+  const sold = isRecord(data.sales) ? data.sales : {};
+  const dollars = (value: unknown) => positive(value, 1e12) ? Math.round(value as number) : 0;
+  // Neither the profit nor the best single sale can exceed everything the dealer has paid.
+  const takings = dollars(sold.takings);
+  const sales: Sales = { count: positive(sold.count, 1e7) ? Math.floor(sold.count as number) : 0, takings, profit: Math.min(dollars(sold.profit), takings), best: Math.min(dollars(sold.best), takings) };
+  const restock: Record<string, number> = {};
+  if (isRecord(data.restock)) for (const [listing, times] of Object.entries(data.restock)) {
+    if (LISTING_ID.test(listing) && positive(times, 1e6) && Math.floor(times as number) > 0) restock[listing] = Math.floor(times as number);
+  }
   return {
     version: 1, finds, bestLap: perShell(data.bestLap, 36000), odometer: perShell(data.odometer, 1e9), topSpeed: perShell(data.topSpeed, 200),
     laps: positive(data.laps, 1e7) ? Math.floor(data.laps as number) : 0, styles, settings,
     hour: positive(data.hour, 24) ? data.hour as number : START_HOUR,
+    // A record written before the dealer existed has no proof at all. Nothing could be sold then, so every car
+    // that set a lap in it is still in the collection and that lap is its proof.
+    fitted, proof: perShell(data.proof === undefined ? data.bestLap : data.proof, 36000), sales, restock,
+    stash: positive(data.stash, 0xffffffff) && Number.isInteger(data.stash) ? data.stash as number : 0,
   };
 }
 

@@ -66,6 +66,8 @@ export function install(state: GameState, carId: string, instanceId: string): Ga
   if (!car) throw new Error('Choose a car in the Garage first.');
   const part = getPart(state, instanceId);
   if (!part || part.kind === 'paint') throw new Error('That part is not in your inventory.');
+  // Turbochargers, exhausts and nitrous have their own slots, recorded with the car's other extras (game/upgrades.ts).
+  if (part.kind !== 'engine' && part.kind !== 'wheels') throw new Error('That is a tuning part. Fit it in the tuning slot of the build sheet.');
   if (part.kind === 'engine' && part.mount !== getShell(car.shellId).mount) {
     throw new Error(`Incompatible engine: this car needs a ${getShell(car.shellId).mount} mount.`);
   }
@@ -81,6 +83,29 @@ export function paintCar(state: GameState, carId: string, paintId: string): Game
   const paint = PARTS.find((part) => part.id === paintId && part.kind === 'paint');
   if (!paint?.color || !state.paints.includes(paintId)) throw new Error('Purchase this paint at the parts rack first.');
   return { ...state, cars: state.cars.map((car) => car.id === carId ? { ...car, paint: paint.color! } : car) };
+}
+
+/**
+ * The car leaves the collection with its engine, its wheels and any tuning parts named in `fitted`. Their
+ * receipts go too, so the save reads exactly as if they had never been bought: the same shell and parts can be
+ * found and bought again. Paint is a colour the workshop keeps, not a part, and stays.
+ */
+export function sellCar(state: GameState, carId: string, fitted: readonly string[] = []): GameState {
+  const car = state.cars.find((item) => item.id === carId);
+  if (!car) throw new Error('That car is not in your collection.');
+  const leaving = new Set([car.engineId, car.wheelsId, ...fitted].filter((id): id is string => typeof id === 'string'));
+  for (const id of leaving) {
+    if (!state.inventory.some((item) => item.id === id)) throw new Error('A part on that car is not in your inventory.');
+    if (state.cars.some((other) => other.id !== carId && (other.engineId === id || other.wheelsId === id))) throw new Error('A part on that car is installed in another car.');
+  }
+  // An instance is named for the listing that created it.
+  const receipts = new Set([`shell-${car.shellId}`, ...[...leaving].map((id) => id.slice('instance-'.length))]);
+  return {
+    ...state,
+    purchasedListings: state.purchasedListings.filter((id) => !receipts.has(id)),
+    cars: state.cars.filter((item) => item.id !== carId),
+    inventory: state.inventory.filter((item) => !leaving.has(item.id)),
+  };
 }
 
 export function buildIssues(state: GameState, car: OwnedCar): string[] {

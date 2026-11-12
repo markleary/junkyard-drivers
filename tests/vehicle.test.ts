@@ -1,7 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-compat';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { PARTS, SHELLS } from '../src/game/catalog';
-import { FIXED_DT, Vehicle } from '../src/physics/vehicle';
+import { FIXED_DT, NITRO_REARM, NITRO_REFILL, Vehicle } from '../src/physics/vehicle';
 import type { DriveInput, VehicleTuning } from '../src/physics/vehicle';
 
 beforeAll(async () => { await RAPIER.init(); });
@@ -106,6 +106,130 @@ describe('actual Rapier raycast vehicle dynamics', () => {
     expect(test.vehicle.body.linvel()).toMatchObject({ x: 0, y: 0, z: 0 });
     expect(test.vehicle.body.rotation().z).toBe(0);
     expect(test.vehicle.speed).toBe(0);
+    test.free();
+  });
+});
+
+describe('turbocharger, nitrous and what they do to the same car', () => {
+  const part = (id: string) => PARTS.find(item => item.id === id)!;
+  const turbo = (id: string): Partial<VehicleTuning> => ({ boost: part(id).boost, lag: part(id).lag });
+  const kit = (id: string): Partial<VehicleTuning> => ({ shot: part(id).shot, burn: part(id).burn });
+  const boosted: DriveInput = { ...throttle, nitro: true };
+
+  it('builds boost over the turbine’s lag and lets go when the throttle shuts', () => {
+    const test = rig({ ...tuning(), ...turbo('turbo-race') });
+    expect(test.vehicle.spool).toBe(0);
+    test.step(throttle, Math.round(part('turbo-race').lag! / FIXED_DT));
+    // One time constant in: about two thirds of the way there.
+    expect(test.vehicle.spool).toBeGreaterThan(.55);
+    expect(test.vehicle.spool).toBeLessThan(.72);
+    test.step(throttle, 240);
+    expect(test.vehicle.spool).toBeGreaterThan(.98);
+    test.step(idle, 30);
+    expect(test.vehicle.spool).toBeLessThan(.15);
+    // Reversing and braking make no boost.
+    test.step({ ...idle, throttle: -.55 }, 120);
+    expect(test.vehicle.spool).toBeLessThan(.01);
+    test.step({ ...throttle, brake: true }, 60);
+    expect(test.vehicle.spool).toBeLessThan(.01);
+    test.free();
+  });
+
+  it('wakes a small turbine sooner than a big one, and the big one pulls harder once it is awake', () => {
+    const small = rig({ ...tuning(), ...turbo('turbo-street') }), big = rig({ ...tuning(), ...turbo('turbo-race') }), plain = rig();
+    for (const test of [small, big, plain]) test.step(throttle, 20);
+    expect(small.vehicle.spool).toBeGreaterThan(big.vehicle.spool * 1.4);
+    for (const test of [small, big, plain]) test.step(throttle, 340);
+    console.log('six-second speeds m/s', { plain: plain.speed(), small: small.speed(), big: big.speed() });
+    expect(small.speed()).toBeGreaterThan(plain.speed() * 1.08);
+    expect(big.speed()).toBeGreaterThan(small.speed() * 1.04);
+    expect(plain.vehicle.spool).toBe(0);
+    for (const test of [small, big, plain]) test.free();
+  });
+
+  it('adds nitrous only while the button is held with the throttle down, and empties the bottle in its rated time', () => {
+    const test = rig({ ...tuning(), ...kit('nitro-75') }), plain = rig({ ...tuning(), ...kit('nitro-75') });
+    expect(test.vehicle.charge).toBe(1);
+    // The button alone, with no throttle, does nothing and costs nothing.
+    test.step({ ...idle, nitro: true }, 60);
+    expect(test.vehicle.nitro).toBe(false);
+    expect(test.vehicle.charge).toBe(1);
+    test.step(boosted, 120); plain.step(throttle, 120);
+    expect(test.vehicle.nitro).toBe(true);
+    expect(plain.vehicle.nitro).toBe(false);
+    expect(test.vehicle.charge).toBeCloseTo(1 - 2 / part('nitro-75').burn!, 2);
+    console.log('two-second speeds m/s', { plain: plain.speed(), nitrous: test.speed() });
+    expect(test.speed()).toBeGreaterThan(plain.speed() * 1.25);
+    // Held to the end: it runs dry after the rated four seconds and stops pushing.
+    test.step(boosted, Math.round(2.1 / FIXED_DT));
+    expect(test.vehicle.charge).toBe(0);
+    expect(test.vehicle.nitro).toBe(false);
+    test.free(); plain.free();
+  });
+
+  it('refills with the button up, and will not fire again until the bottle has pressure', () => {
+    const test = rig({ ...tuning(), ...kit('nitro-150') });
+    test.step(boosted, Math.round(part('nitro-150').burn! / FIXED_DT) + 5);
+    expect(test.vehicle.charge).toBe(0);
+    // Holding the button on an empty bottle neither fires nor refills.
+    test.step(boosted, 120);
+    expect(test.vehicle.charge).toBe(0);
+    expect(test.vehicle.nitro).toBe(false);
+    // A few seconds off the button: some gas back, but not enough to fire.
+    test.step(throttle, Math.round(NITRO_REFILL * (NITRO_REARM - .05) / FIXED_DT));
+    expect(test.vehicle.charge).toBeGreaterThan(.1);
+    test.step(boosted, 1);
+    expect(test.vehicle.nitro).toBe(false);
+    test.step(idle, Math.round(NITRO_REFILL * .12 / FIXED_DT));
+    test.step(boosted, 2);
+    expect(test.vehicle.nitro).toBe(true);
+    // Left alone for the whole refill time it is full again, and never more than full.
+    test.step(idle, Math.round(NITRO_REFILL / FIXED_DT) + 60);
+    expect(test.vehicle.charge).toBe(1);
+    test.free();
+  });
+
+  it('leaves a car without the parts exactly as it was', () => {
+    const before = rig(), after = rig({ ...tuning(), boost: 0, shot: 0 });
+    before.step(throttle, 240); after.step(boosted, 240);
+    expect(after.speed()).toBeCloseTo(before.speed(), 6);
+    expect(after.vehicle.nitro).toBe(false);
+    expect(after.vehicle.spool).toBe(0);
+    before.free(); after.free();
+  });
+
+  it('keeps the most powerful build possible on its wheels and under control', () => {
+    // The rarest V12 with the biggest turbo, open pipes, the big nitrous kit and racing slicks, in the lightest shell that takes a V12.
+    const engine = part('rare-v12').power! * (1 + part('exhaust-race').flow!);
+    const config: VehicleTuning = { mass: SHELLS.find(shell => shell.mount === 'V12')!.mass, power: engine, grip: part('rare-wheels').grip!, ...turbo('turbo-race'), ...kit('nitro-150') };
+    const test = rig(config);
+    let fastest = 0, lowest = 1;
+    for (let frame = 0; frame < 900; frame++) {
+      test.step({ ...boosted, steer: frame > 500 && frame < 620 ? .5 : 0, nitro: frame % 420 < 300 }, 1);
+      const q = test.vehicle.body.rotation(), p = test.vehicle.body.translation();
+      for (const value of [p.x, p.y, p.z, q.x, q.y, q.z, q.w, test.vehicle.speed]) expect(Number.isFinite(value)).toBe(true);
+      lowest = Math.min(lowest, 1 - 2 * (q.x * q.x + q.z * q.z));
+      fastest = Math.max(fastest, test.speed());
+      expect(p.y).toBeGreaterThan(.2);
+      expect(p.y).toBeLessThan(1.6);
+    }
+    console.log('strongest build', { fastestKmh: Math.round(fastest * 3.6), upright: lowest });
+    expect(lowest).toBeGreaterThan(.85);
+    // Quick, but still inside what the speedometer and the streets were built for.
+    expect(fastest).toBeGreaterThan(30);
+    expect(fastest).toBeLessThan(60);
+    test.free();
+  });
+
+  it('forgets its boost when the car is recovered, and keeps what is left in the bottle', () => {
+    const test = rig({ ...tuning(), ...turbo('turbo-street'), ...kit('nitro-75') });
+    test.step(boosted, 90);
+    const left = test.vehicle.charge;
+    expect(test.vehicle.spool).toBeGreaterThan(.8);
+    test.vehicle.recover();
+    expect(test.vehicle.spool).toBe(0);
+    expect(test.vehicle.nitro).toBe(false);
+    expect(test.vehicle.charge).toBe(left);
     test.free();
   });
 });

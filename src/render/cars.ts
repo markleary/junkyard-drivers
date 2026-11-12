@@ -1,11 +1,56 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { createEngineModel, type EngineFamily } from './parts';
+import { createEngineModel, createNitroModel, createTurboModel, type EngineFamily } from './parts';
 
-type ShellId = 'hachiro' | 'bison' | 'veloce';
+type ShellId = 'hachiro' | 'bison' | 'veloce' | 'wren' | 'packhorse';
+type BodyStyle = 'notchback' | 'muscle' | 'wedge' | 'hatch' | 'pickup';
 export type PaintFinish = 'gloss' | 'metallic' | 'matte' | 'pearl';
 export interface FittedEngine { family: EngineFamily; salvage: boolean; performance: boolean }
+/** Tuning parts that show on the car: larger tailpipes, and a turbocharger and nitrous bottle under the bonnet. */
+export interface FittedTuning { exhaust: boolean; turbo: boolean; nitro: boolean }
+
+/**
+ * The measurements that make each shell its own shape. Every car shares one wheelbase and track (the physics model
+ * has a single chassis), so proportions come from the overhangs, the beltline, and where the glass starts and stops.
+ */
+interface BodySpec {
+  style: BodyStyle;
+  badge: string;
+  /** Showroom colour used when no paint has been chosen. */
+  paint: string;
+  halfWidth: number; front: number; rear: number; shoulder: number; roof: number;
+  windscreenBottomZ: number; windscreenTopZ: number; rearTopZ: number; rearBottomZ: number; roofWidth: number;
+  /** Height of the bonnet's leading edge. */
+  nose: number;
+  /** Rear edge of the door, where the seat back stands, and the pillar behind the door (null for a cab without one). */
+  doorRear: number; seatZ: number; pillarZ: number | null;
+  markerZ: number;
+  /** Fuel filler: along the body and up from the sill. */
+  filler: [number, number];
+  /** Oxidised paint the shell is found in. */
+  patina: [number, number, number];
+  tire: string; spokes: number; spokeWidth: number;
+}
+const BODIES: Record<ShellId, BodySpec> = {
+  hachiro: { style: 'notchback', badge: 'HACHI', paint: '#e8d9b0', halfWidth: .91, front: -2.12, rear: 2.09, shoulder: .27, roof: .72,
+    windscreenBottomZ: -.66, windscreenTopZ: -.06, rearTopZ: .76, rearBottomZ: 1.43, roofWidth: .73, nose: .16,
+    doorRear: .72, seatZ: .54, pillarZ: .38, markerZ: -1.85, filler: [1.77, .09], patina: [102, 119, 116], tire: '205 / 55 R15', spokes: 8, spokeWidth: .021 },
+  bison: { style: 'muscle', badge: 'BISON', paint: '#d28037', halfWidth: .98, front: -2.3, rear: 2.28, shoulder: .29, roof: .76,
+    windscreenBottomZ: -.45, windscreenTopZ: .12, rearTopZ: .76, rearBottomZ: 1.3, roofWidth: .76, nose: .16,
+    doorRear: .72, seatZ: .54, pillarZ: .38, markerZ: -1.85, filler: [1.77, .09], patina: [116, 91, 75], tire: '225 / 60 R15', spokes: 5, spokeWidth: .041 },
+  veloce: { style: 'wedge', badge: 'VELOCE', paint: '#b83d30', halfWidth: .99, front: -2.2, rear: 2.12, shoulder: .2, roof: .5,
+    windscreenBottomZ: -.82, windscreenTopZ: -.1, rearTopZ: .5, rearBottomZ: 1.18, roofWidth: .7, nose: .03,
+    doorRear: .72, seatZ: .54, pillarZ: .38, markerZ: -1.85, filler: [1.77, .09], patina: [124, 111, 94], tire: '245 / 45 ZR16', spokes: 5, spokeWidth: .036 },
+  // Short overhangs, a tall glasshouse and a steep tailgate: a hot hatch.
+  wren: { style: 'hatch', badge: 'WREN', paint: '#d9d4c2', halfWidth: .88, front: -1.98, rear: 1.9, shoulder: .3, roof: .79,
+    windscreenBottomZ: -.74, windscreenTopZ: -.2, rearTopZ: 1.3, rearBottomZ: 1.62, roofWidth: .74, nose: .19,
+    doorRear: .58, seatZ: .44, pillarZ: .5, markerZ: -1.72, filler: [1.5, .2], patina: [132, 126, 104], tire: '185 / 60 R14', spokes: 8, spokeWidth: .026 },
+  // A blunt bonnet, an upright cab set well forward, and a long deck behind it: a pickup under a tonneau.
+  packhorse: { style: 'pickup', badge: 'DUNMORE', paint: '#5f8f86', halfWidth: .97, front: -2.22, rear: 2.4, shoulder: .37, roof: .93,
+    windscreenBottomZ: -.58, windscreenTopZ: -.26, rearTopZ: .44, rearBottomZ: .5, roofWidth: .8, nose: .3,
+    doorRear: .4, seatZ: .22, pillarZ: null, markerZ: -2, filler: [.95, .2], patina: [104, 122, 113], tire: '235 / 75 R15', spokes: 5, spokeWidth: .046 },
+};
 export interface CarAppearance {
   paint?: string;
   /** Fresh paint rather than the oxidised skin the shell was found in. */
@@ -16,6 +61,7 @@ export interface CarAppearance {
   stripe?: string | null;
   /** Shown in the bay when the bonnet is raised. */
   engine?: FittedEngine | null;
+  tuning?: FittedTuning | null;
 }
 export interface CarLamps { head: number; brake: number; reverse: number }
 export interface CarVisual {
@@ -26,6 +72,8 @@ export interface CarVisual {
   headlamps: THREE.Vector3[];
   /** Local positions of the tailpipes, for exhaust haze. */
   exhausts: THREE.Vector3[];
+  /** Height of the roof above the body's origin: the bonnet camera rides just over it. */
+  roofHeight: number;
   setAppearance(options: CarAppearance): void;
   animateWheels(steering: number, rotation: number, suspension?: number[]): void;
   /** 0 shut, 1 fully raised. Front bonnet, or the engine cover on the mid-engined car. */
@@ -47,9 +95,14 @@ const amber = new THREE.MeshStandardMaterial({ color: '#e79028', emissive: '#a85
 const black = new THREE.MeshStandardMaterial({ color: '#101818', roughness: 0.7 });
 const brake = new THREE.MeshStandardMaterial({ color: '#a24429', metalness: 0.55, roughness: 0.35 });
 const supportConcrete = new THREE.MeshStandardMaterial({ color: '#858071', roughness: 0.98 });
+/** Waxed canvas over a pickup bed. */
+const tonneau = new THREE.MeshStandardMaterial({ color: '#2c312d', roughness: 0.95 });
+/** Polished pipe for a performance exhaust, and the blued tip it ends in. */
+const pipeChrome = new THREE.MeshStandardMaterial({ color: '#d5d8d4', metalness: 1, roughness: 0.12 });
+const pipeBlued = new THREE.MeshStandardMaterial({ color: '#6a5a8a', metalness: 0.9, roughness: 0.3 });
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 const lugGeometry = new THREE.CylinderGeometry(.012, .012, .018, 6);
-const sharedMaterials = new Set<THREE.Material>([metal, darkMetal, rubber, glass, interior, lamp, tailLamp, amber, black, brake, supportConcrete]);
+const sharedMaterials = new Set<THREE.Material>([metal, darkMetal, rubber, glass, interior, lamp, tailLamp, amber, black, brake, supportConcrete, tonneau, pipeChrome, pipeBlued]);
 const surfaceTextures = new Map<string, THREE.CanvasTexture>();
 
 /** Details are baked together within each rigid assembly, never across wheel pivots. */
@@ -302,7 +355,7 @@ function weathering(shellId: ShellId) {
   if (rustTextures.has(shellId)) return rustTextures.get(shellId)!;
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const context = canvas.getContext('2d')!;
-  const base = { hachiro: [102, 119, 116], bison: [116, 91, 75], veloce: [124, 111, 94] }[shellId];
+  const base = BODIES[shellId].patina;
   let seed = shellId.length * 7193;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   // Fine oxidized paint grain remains dominant. Rust gathers in irregular chips,
@@ -358,8 +411,8 @@ function tireLettering(style: ShellId) {
       context.save(); context.translate(Math.sin(angle) * radius, -Math.cos(angle) * radius); context.rotate(angle); context.fillText(letter, 0, 0); context.restore();
     });
   };
-  words(style === 'veloce' ? 'HOLLOWAY  SPORT' : 'HOLLOWAY  RADIAL', 207, -.57, 1.14);
-  words(style === 'bison' ? '225 / 60 R15' : style === 'veloce' ? '245 / 45 ZR16' : '205 / 55 R15', 207, 2.68, .92);
+  words(style === 'veloce' ? 'HOLLOWAY  SPORT' : style === 'wren' ? 'HOLLOWAY  RALLY' : 'HOLLOWAY  RADIAL', 207, -.57, 1.14);
+  words(BODIES[style].tire, 207, 2.68, .92);
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
   const material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, alphaTest: .15, roughness: .96, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
   sharedMaterials.add(material); sidewallMaterials.set(style, material); surfaceTextures.set(`sidewall-${style}`, texture);
@@ -397,11 +450,11 @@ function createWheel(style: ShellId, side: number) {
   }
   // The caliper follows the steering knuckle but does not spin with the rim.
   roundedBox(pivot, brake, [side * .09, .025, .15], [.055, .15, .065], .012);
-  const spokes = style === 'hachiro' ? 8 : 5;
+  const spokes = BODIES[style].spokes;
   for (let i = 0; i < spokes; i++) {
     const angle = i / spokes * Math.PI * 2;
     const shape = new THREE.Shape();
-    const width = style === 'veloce' ? .036 : style === 'bison' ? .041 : .021;
+    const width = BODIES[style].spokeWidth;
     shape.moveTo(-width * .65, .047); shape.lineTo(-width, .19); shape.lineTo(-width * .65, .225);
     shape.lineTo(width * .65, .225); shape.lineTo(width, .19); shape.lineTo(width * .65, .047); shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: .025, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: .004, bevelThickness: .004, curveSegments: 1 });
@@ -468,10 +521,10 @@ const FINISHES: Record<PaintFinish, { metalness: number; roughness: number; clea
 
 export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVisual {
   const group = new THREE.Group(); group.name = `car-${shellId}`;
-  const initialPaint = { hachiro: '#e8d9b0', bison: '#d28037', veloce: '#b83d30' }[shellId];
-  const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe'>> & { engine: FittedEngine | null; stripe: string | null } = {
-    paint: options.paint ?? initialPaint, restored: options.restored ?? false, wheels: options.wheels ?? false,
-    finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null,
+  const spec = BODIES[shellId];
+  const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe' | 'tuning'>> & { engine: FittedEngine | null; stripe: string | null; tuning: FittedTuning | null } = {
+    paint: options.paint ?? spec.paint, restored: options.restored ?? false, wheels: options.wheels ?? false,
+    finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null, tuning: options.tuning ?? null,
   };
   const paint = new THREE.MeshPhysicalMaterial({ color: appearance.paint, metalness: .19, roughness: .28, clearcoat: .88, clearcoatRoughness: .1, bumpMap: fineFinish(), bumpScale: .0007, side: THREE.DoubleSide, envMapIntensity: 1.25 });
   const stripePaint = new THREE.MeshPhysicalMaterial({ color: '#f1ece0', metalness: .1, roughness: .3, clearcoat: .9, clearcoatRoughness: .1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -483,20 +536,14 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   // Each car owns its lamp materials so one can brake or switch on its lights without lighting the others.
   const headMaterial = lamp.clone(), tailMaterial = tailLamp.clone();
   const reverseMaterial = new THREE.MeshStandardMaterial({ color: '#e9eae4', emissive: '#f4f6ff', emissiveIntensity: 0, roughness: .2, map: lamp.map });
-  const isMuscle = shellId === 'bison', isSuper = shellId === 'veloce';
-  const halfWidth = isMuscle ? 0.98 : isSuper ? 0.99 : 0.91;
-  const front = isMuscle ? -2.3 : isSuper ? -2.2 : -2.12;
-  const rear = isMuscle ? 2.28 : isSuper ? 2.12 : 2.09;
-  const shoulder = isMuscle ? 0.29 : isSuper ? 0.2 : 0.27;
-  const roof = isMuscle ? 0.76 : isSuper ? 0.50 : 0.72;
-  const windscreenBottomZ = isMuscle ? -0.45 : isSuper ? -0.82 : -0.66;
-  const windscreenTopZ = isMuscle ? 0.12 : isSuper ? -0.10 : -0.06;
-  const rearTopZ = isSuper ? 0.50 : 0.76;
-  const rearBottomZ = isMuscle ? 1.3 : isSuper ? 1.18 : 1.43;
-  const roofWidth = isSuper ? 0.70 : isMuscle ? 0.76 : 0.73;
+  const isMuscle = spec.style === 'muscle', isSuper = spec.style === 'wedge', isHatch = spec.style === 'hatch', isPickup = spec.style === 'pickup';
+  const { halfWidth, front, rear, shoulder, roof, windscreenBottomZ, windscreenTopZ, rearTopZ, rearBottomZ, roofWidth } = spec;
+  // A pickup's deck is canvas stretched over the bed, not a painted panel.
+  const deck = isPickup ? tonneau : paint;
 
-  box(group, darkMetal, [0, -0.23, 0], [1.30, 0.13, 3.87]);
-  const hoodSections = [{z:front,y:isSuper ? 0.03 : 0.16,width:halfWidth * 0.88},
+  // The floor pan stops short of both bumpers, whatever the overhangs.
+  box(group, darkMetal, [0, -0.23, isHatch || isPickup ? (front + rear) / 2 : 0], [1.30, 0.13, isHatch || isPickup ? rear - front - .34 : 3.87]);
+  const hoodSections = [{z:front,y:spec.nose,width:halfWidth * 0.88},
     {z:front + 0.25,y:isSuper ? 0.10 : shoulder,width:halfWidth},
     {z:(front + windscreenBottomZ) * .5,y:isSuper ? .145 : shoulder + .025,width:halfWidth * .99},
     {z:windscreenBottomZ,y:shoulder + 0.03,width:halfWidth * 0.96}];
@@ -519,7 +566,7 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   } else {
     loft(group, paint, hoodSections, 0, 2); loft(group, paint, hoodSections, 6, 8);
     loft(group, paint, hoodSections.slice(0, 2), 2, 6);
-    loft(group, paint, bootSections);
+    loft(group, deck, bootSections);
   }
   loft(bonnet, paint, liftSections, 2, 6, hinge);
   endBand(group, paint, hoodSections[0], -.12, -1);
@@ -530,16 +577,17 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     box(group, paint, [side * halfWidth * 0.94, -0.235, 0], [0.08, 0.10, 1.45]);
     // Shut lines sit on the curved skin, with a small recessed handle pocket.
     const skin = (y: number, z: number) => new THREE.Vector3(bodyWidth(side * halfWidth, z, y, front, rear, shoulder) + side * .003, y, z);
-    const doorLine = [skin(shoulder - .005, windscreenBottomZ + .08), skin(-.13, windscreenBottomZ + .12), skin(-.185, windscreenBottomZ + .22), skin(-.185,.59), skin(-.1,.72), skin(shoulder - .005,.72)];
+    const doorRear = spec.doorRear;
+    const doorLine = [skin(shoulder - .005, windscreenBottomZ + .08), skin(-.13, windscreenBottomZ + .12), skin(-.185, windscreenBottomZ + .22), skin(-.185,doorRear - .13), skin(-.1,doorRear), skin(shoulder - .005,doorRear)];
     for (let i = 0; i < doorLine.length - 1; i++) for (let step = 0; step < 8; step++) {
       const a = doorLine[i].clone().lerp(doorLine[i + 1], step / 8), b = doorLine[i].clone().lerp(doorLine[i + 1], (step + 1) / 8);
       strip(group, black, skin(a.y,a.z), skin(b.y,b.z), .004);
     }
-    const handleX = bodyWidth(side * halfWidth, .53, shoulder - .045, front, rear, shoulder);
-    roundedBox(group, darkMetal, [handleX + side * .005, shoulder - .045, .53], [.012,.042,.17], .008);
-    roundedBox(group, metal, [handleX + side * .016, shoulder - .038, .53], [.021,.019,.13], .006);
-    box(group, darkMetal, [side * (halfWidth + 0.01), shoulder - 0.15, -1.85], [0.018, 0.04, 0.10]);
-    box(group, amber, [side * (halfWidth + 0.012), shoulder - 0.15, -1.85], [0.02, 0.028, 0.065]);
+    const handleZ = doorRear - .19, handleX = bodyWidth(side * halfWidth, handleZ, shoulder - .045, front, rear, shoulder);
+    roundedBox(group, darkMetal, [handleX + side * .005, shoulder - .045, handleZ], [.012,.042,.17], .008);
+    roundedBox(group, metal, [handleX + side * .016, shoulder - .038, handleZ], [.021,.019,.13], .006);
+    box(group, darkMetal, [side * (halfWidth + 0.01), shoulder - 0.15, spec.markerZ], [0.018, 0.04, 0.10]);
+    box(group, amber, [side * (halfWidth + 0.012), shoulder - 0.15, spec.markerZ], [0.02, 0.028, 0.065]);
     for (const center of [-1.25,1.25]) {
       const strut = new THREE.Mesh(new THREE.CylinderGeometry(.026,.034,.4,10), darkMetal);
       strut.position.set(side * .69,-.15,center); group.add(strut);
@@ -567,7 +615,7 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     strip(group,darkMetal,new THREE.Vector3(a,panelHeight(fixedSections,a,crossZ) + .002,crossZ),new THREE.Vector3(b,panelHeight(fixedSections,b,crossZ) + .002,crossZ),.004);
   }
   const filler = new THREE.Mesh(new THREE.TorusGeometry(.071,.003,4,24), darkMetal);
-  filler.rotation.y = Math.PI / 2; filler.position.set(bodyWidth(halfWidth,1.77,.09,front,rear,shoulder) + .003,.09,1.77); group.add(filler);
+  filler.rotation.y = Math.PI / 2; filler.position.set(bodyWidth(halfWidth,spec.filler[0],spec.filler[1],front,rear,shoulder) + .003,spec.filler[1],spec.filler[0]); group.add(filler);
 
   // Engine bay: a dark tub that is only ever seen with the panel raised.
   const bayFront = isSuper ? rearBottomZ + .04 : front + .32, bayBack = isSuper ? rear - .2 : windscreenBottomZ - .04;
@@ -596,24 +644,26 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
       [topX,roof - 0.035,windscreenTopZ + 0.045], [topX,roof - 0.055,rearTopZ - 0.045],
       [bottomX,shoulder + 0.035,rearBottomZ - 0.08]]);
     strip(group, paint, new THREE.Vector3(bottomX,shoulder,windscreenBottomZ), new THREE.Vector3(topX,roof,windscreenTopZ), 0.065);
-    strip(group, paint, new THREE.Vector3(topX,roof - 0.02,rearTopZ), new THREE.Vector3(bottomX,shoulder,rearBottomZ), isSuper ? 0.13 : 0.09);
+    strip(group, paint, new THREE.Vector3(topX,roof - 0.02,rearTopZ), new THREE.Vector3(bottomX,shoulder,rearBottomZ), isSuper ? 0.13 : isHatch ? 0.11 : 0.09);
     strip(group, paint, new THREE.Vector3(topX,roof - 0.02,windscreenTopZ),new THREE.Vector3(topX,roof - 0.02,rearTopZ),0.05);
-    strip(group, darkMetal, new THREE.Vector3(bottomX,shoulder + 0.035,0.38),new THREE.Vector3(topX,roof - 0.035,0.38),0.035);
+    if (spec.pillarZ !== null) strip(group, darkMetal, new THREE.Vector3(bottomX,shoulder + 0.035,spec.pillarZ),new THREE.Vector3(topX,roof - 0.035,spec.pillarZ),0.035);
     strip(group, darkMetal, new THREE.Vector3(bottomX,shoulder + 0.025,windscreenBottomZ),new THREE.Vector3(bottomX,shoulder + 0.025,rearBottomZ),0.035);
     // Bright trim along the gutter and waist, as on any car of the period.
     strip(group, metal, new THREE.Vector3(bottomX + side * .012,shoulder + 0.012,windscreenBottomZ + .02),new THREE.Vector3(bottomX + side * .012,shoulder + 0.012,rearBottomZ - .04),0.014);
     roundedBox(group, paint, [side * (halfWidth + 0.075), shoulder + 0.11, windscreenBottomZ + 0.16], [0.18, 0.085, 0.20], .03);
     box(group, glass, [side * (halfWidth + 0.075), shoulder + 0.11, windscreenBottomZ + 0.266], [0.13, 0.055, 0.008]);
   }
-  box(group, interior, [0, 0.19, 0.15], [1.36, 0.07, 1.52]);
+  // The cab floor and tunnel sit under the seats, wherever the cab is.
+  const seatZ = spec.seatZ, cabZ = seatZ - .39;
+  box(group, interior, [0, 0.19, cabZ], [1.36, 0.07, isPickup ? 1.1 : 1.52]);
   const seatHeight = roof - .31;
   for (const side of [-1, 1]) {
-    roundedBox(group, interior, [side * .36, .16 + seatHeight / 2, .54], [.40, seatHeight, .18], .04, [-.11, 0, 0]);
-    roundedBox(group, interior, [side * .36, .22, .26], [.40, .12, .48], .04);
-    roundedBox(group, interior, [side * .36, roof - .13, .56], [.22, .11, .13], .025);
+    roundedBox(group, interior, [side * .36, .16 + seatHeight / 2, seatZ], [.40, seatHeight, .18], .04, [-.11, 0, 0]);
+    roundedBox(group, interior, [side * .36, .22, seatZ - .28], [.40, .12, .48], .04);
+    roundedBox(group, interior, [side * .36, roof - .13, seatZ + .02], [.22, .11, .13], .025);
   }
   roundedBox(group, interior, [0, shoulder + .01, windscreenBottomZ + .15], [1.38, .11, .30], .025);
-  box(group, darkMetal, [0, .25, .15], [.16, .10, .80]);
+  box(group, darkMetal, [0, .25, cabZ], [.16, .10, isPickup ? .6 : .80]);
   const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(.11, .015, 8, 20), interior);
   steeringWheel.position.set(-.34, shoulder + .13, windscreenBottomZ + .36); steeringWheel.rotation.x = -.55; group.add(steeringWheel);
   box(group, darkMetal, [-.34, shoulder + .13, windscreenBottomZ + .36], [.17,.025,.025],[-.55,0,0]);
@@ -665,6 +715,61 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     box(group,paint,[0,0.46,1.92],[1.83,0.055,0.23]);
     for (const side of [-1,1]) box(group,darkMetal,[side * 0.58,0.34,1.93],[0.045,0.22,0.10]);
     box(group,black,[0,-0.23,rear + 0.03],[1.72,0.13,0.10]);
+  } else if (isHatch) {
+    // Works hot hatch: square lamps, a pair of rally spots, a deep air dam, mud flaps and a roof spoiler.
+    box(group,darkMetal,[0,-0.02,front - 0.025],[1.64,0.2,0.07]);
+    for (const side of [-1,1]) {
+      box(group,headMaterial,[side * 0.6,0.05,front - 0.07],[0.36,0.15,0.025]);
+      box(group,black,[side * 0.6,0.05,front - 0.062],[0.4,0.19,0.02]);
+      headlamps.push(new THREE.Vector3(side * .6, .05, front - .1));
+      box(group,amber,[side * 0.82,0.05,front - 0.065],[0.06,0.15,0.027]);
+      // Spot lamps on the bumper, each on its own bracket with a chrome rim.
+      const spot = new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.075,0.07,20), headMaterial);
+      spot.rotation.x = Math.PI / 2; spot.position.set(side * 0.27,-0.08,front - 0.15); group.add(spot);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.086,0.011,6,20), metal);
+      rim.position.set(side * 0.27,-0.08,front - 0.186); group.add(rim);
+      box(group,darkMetal,[side * 0.27,-0.16,front - 0.13],[0.03,0.09,0.05]);
+      box(group,tailMaterial,[side * 0.69,0.1,rear + 0.025],[0.24,0.2,0.035]);
+      box(group,amber,[side * 0.69,0.225,rear + 0.026],[0.24,0.045,0.033]);
+      box(group,reverseMaterial,[side * 0.69,-0.02,rear + 0.026],[0.24,0.045,0.033]);
+      for (const axle of [-1.25,1.25]) box(group,brake,[side * 0.86,-0.47,axle + 0.5],[0.26,0.2,0.016],[0.14,0,0]);
+    }
+    for (let i = 0; i < 3; i++) box(group,black,[0,-0.03 + i * 0.045,front - 0.067],[0.72,0.018,0.02]);
+    box(group,black,[0,-0.19,front - 0.08],[1.74,0.09,0.12]);
+    box(group,black,[0,-0.275,front - 0.02],[1.62,0.07,0.16]);
+    box(group,black,[0,-0.18,rear + 0.05],[1.76,0.085,0.09]);
+    // A lip spoiler over the tailgate, close to the roof on two short legs.
+    box(group,paint,[0,roof + 0.036,rearTopZ + 0.13],[roofWidth * 1.9,0.024,0.26],[-0.14,0,0]);
+    for (const side of [-1,1]) box(group,darkMetal,[side * roofWidth * 0.72,roof + 0.012,rearTopZ + 0.07],[0.03,0.03,0.12]);
+    strip(group,black,new THREE.Vector3(0.3,shoulder + 0.09,rearBottomZ - 0.02),new THREE.Vector3(-0.12,shoulder + 0.2,rearBottomZ - 0.12),0.012);
+  } else if (isPickup) {
+    // Sixties farm truck: a full-width chrome grille, single round lamps, plain chrome bumpers and a lettered tailgate.
+    box(group, darkMetal, [0, 0.07, front - 0.031], [1.78, 0.34, 0.045]);
+    for (let i = 0; i < 5; i++) box(group, metal, [0, -0.05 + i * 0.062, front - 0.058], [1.2, 0.02, 0.016]);
+    for (let i = 0; i < 9; i++) box(group, metal, [(i - 4) * 0.14, 0.07, front - 0.052], [0.014, 0.27, 0.012]);
+    for (const side of [-1, 1]) {
+      const light = new THREE.Mesh(new THREE.CylinderGeometry(0.115,0.115,0.04,24), headMaterial);
+      light.rotation.x = Math.PI / 2; light.position.set(side * 0.72,0.1,front - 0.05); group.add(light);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.12,0.016,6,24), metal);
+      ring.position.copy(light.position); ring.position.z -= 0.026; group.add(ring);
+      headlamps.push(new THREE.Vector3(side * .72, .1, front - .09));
+      box(group, amber, [side * 0.72, -0.07, front - 0.06], [0.15, 0.05, 0.025]);
+      box(group, tailMaterial, [side * 0.86, 0.12, rear + 0.03], [0.1, 0.26, 0.035]);
+      box(group, reverseMaterial, [side * 0.86, -0.04, rear + 0.031], [0.1, 0.05, 0.033]);
+      // Bed rails with a row of tonneau snaps.
+      box(group, metal, [side * halfWidth * 0.93, shoulder + 0.068, (rearBottomZ + rear) / 2], [0.03, 0.02, rear - rearBottomZ - 0.2]);
+      // A step into the cab.
+      box(group, darkMetal, [side * (halfWidth + 0.05), -0.25, (windscreenBottomZ + rearBottomZ) / 2], [0.16, 0.03, rearBottomZ - windscreenBottomZ - 0.1]);
+    }
+    box(group, metal, [0, -0.19, front - 0.09], [1.96, 0.11, 0.1]);
+    box(group, metal, [0, -0.2, rear + 0.07], [1.96, 0.1, 0.13]);
+    box(group, darkMetal, [0, -0.2, rear + 0.11], [0.6, 0.05, 0.08]);
+    // Straps across the canvas, and the seam where the tailgate drops.
+    for (let i = 0; i < 4; i++) {
+      const z = rearBottomZ + 0.32 + i * 0.44;
+      box(group, darkMetal, [0, panelHeight(bootSections, 0, z) + 0.006, z], [halfWidth * 1.78, 0.008, 0.035]);
+    }
+    box(group, black, [0, 0.154, rear + 0.006], [1.6, 0.008, 0.02]);
   } else {
     // Eighties notchback: broad rectangular lights, slim black bumpers, tidy lip spoiler.
     box(group,darkMetal,[0,-0.04,front - 0.025],[1.70,0.20,0.07]);
@@ -682,21 +787,32 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     for (const side of [-1,1]) box(group,darkMetal,[side * 0.53,shoulder + 0.045,rear - 0.20],[0.04,0.07,0.06]);
   }
 
-  const badgeName = { hachiro:'HACHI', bison:'BISON', veloce:'VELOCE' }[shellId];
-  const badgeMaterial = label(badgeName);
-  const badge = new THREE.Mesh(new THREE.PlaneGeometry(isSuper ? 0.24 : 0.29,0.065),badgeMaterial);
-  badge.rotation.y = Math.PI; badge.position.set(0, isMuscle ? 0.10 : isSuper ? 0.065 : 0.19,front - 0.083);group.add(badge);
-  const rearBadge = new THREE.Mesh(new THREE.PlaneGeometry(0.30,0.065),badgeMaterial);
-  rearBadge.position.set(0,0.16,rear + 0.045);group.add(rearBadge);
+  const badgeMaterial = label(spec.badge);
+  const badge = new THREE.Mesh(new THREE.PlaneGeometry(isSuper ? 0.24 : isPickup ? 0.4 : 0.29,isPickup ? 0.08 : 0.065),badgeMaterial);
+  badge.rotation.y = Math.PI; badge.position.set(0, isMuscle ? 0.10 : isSuper ? 0.065 : isHatch ? 0.015 : isPickup ? 0.2 : 0.19,front - (isPickup ? 0.072 : 0.083));group.add(badge);
+  // The pickup's name is pressed across the tailgate, above the bumper valance.
+  const rearBadge = new THREE.Mesh(new THREE.PlaneGeometry(isPickup ? 0.62 : 0.30,isPickup ? 0.1 : 0.065),badgeMaterial);
+  rearBadge.position.set(0,isPickup ? 0.225 : 0.16,rear + (isPickup ? 0.014 : 0.045));group.add(rearBadge);
   const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.36,0.10),label('JNK-YRD','#ddd5b9','#36403a'));
   plate.position.set(0,-0.065,rear + 0.062);group.add(plate);
   const exhausts: THREE.Vector3[] = [];
+  // Standard tailpipes, and the fatter polished pair a performance system ends in. Only one set shows at a time.
+  const stockPipes = new THREE.Group(), sportPipes = new THREE.Group();
+  stockPipes.name = 'Tailpipes'; sportPipes.name = 'Performance tailpipes';
   for (const side of isMuscle || isSuper ? [-1,1] : [1]) {
     const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(.047,.043,.21,20,1,true),metal);
-    exhaust.rotation.x = Math.PI / 2;exhaust.position.set(side * .59,-.28,rear);group.add(exhaust);
+    exhaust.rotation.x = Math.PI / 2;exhaust.position.set(side * .59,-.28,rear);stockPipes.add(exhaust);
     const bore = new THREE.Mesh(new THREE.CircleGeometry(.041,20),black);
-    bore.position.set(side * .59,-.28,rear + .065);group.add(bore);
+    bore.position.set(side * .59,-.28,rear + .065);stockPipes.add(bore);
     exhausts.push(new THREE.Vector3(side * .59, -.28, rear + .14));
+    for (const offset of [-.062, .062]) {
+      const tip = new THREE.Mesh(new THREE.CylinderGeometry(.058,.05,.26,22,1,true),pipeChrome);
+      tip.rotation.x = Math.PI / 2;tip.position.set(side * .59 + offset,-.28,rear + .02);sportPipes.add(tip);
+      const lip = new THREE.Mesh(new THREE.TorusGeometry(.058,.008,6,22),pipeBlued);
+      lip.position.set(side * .59 + offset,-.28,rear + .15);sportPipes.add(lip);
+      const throat = new THREE.Mesh(new THREE.CircleGeometry(.05,20),black);
+      throat.position.set(side * .59 + offset,-.28,rear + .1);sportPipes.add(throat);
+    }
   }
 
   const wheelMeshes: THREE.Group[] = [], spins: THREE.Group[] = [];
@@ -736,16 +852,21 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   } else {
     stripes(stripeGroup, stripePaint, hoodSections.slice(0, 2), halfWidth, front + .03, front + .25);
     stripes(bonnetStripes, stripePaint, liftSections, halfWidth, front + .26, windscreenBottomZ - .02, hinge);
-    stripes(stripeGroup, stripePaint, bootSections, halfWidth, rearBottomZ + .02, rear - .01);
+    // Paint does not carry across canvas: a pickup's stripes stop at the cab.
+    if (!isPickup) stripes(stripeGroup, stripePaint, bootSections, halfWidth, rearBottomZ + .02, rear - .01);
   }
   stripes(stripeGroup, stripePaint, roofSections, roofWidth, windscreenTopZ - .01, rearTopZ + .01);
   group.add(stripeGroup); bonnet.add(bonnetStripes);
   batchAssembly(hubs); batchAssembly(supports); batchAssembly(bonnet); batchAssembly(stripeGroup); batchAssembly(bonnetStripes); batchAssembly(group);
+  // Added after the body is baked, so the two sets of pipes stay separate and can be swapped.
+  batchAssembly(stockPipes); batchAssembly(sportPipes);
+  group.add(stockPipes, sportPipes);
   // A prop rod holds the panel while it is up. Added after baking, so it stays a separate, movable piece.
   const prop = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, 1, 6), metal);
   prop.visible = false; prop.castShadow = true; group.add(prop);
 
   let engineModel: THREE.Group | undefined, engineKey = '';
+  let turboModel: THREE.Group | undefined, bottleModel: THREE.Group | undefined;
   const setAppearance = (next: CarAppearance) => {
     Object.assign(appearance,next);
     const finish = FINISHES[appearance.finish];
@@ -782,6 +903,31 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
         engineSlot.add(engineModel);
       }
     }
+    // Tuning parts: the pipes show at once; the turbocharger and the bottle only with the panel up.
+    const tuning = appearance.engine ? appearance.tuning : null;
+    stockPipes.visible = !tuning?.exhaust;
+    sportPipes.visible = !!tuning?.exhaust;
+    if (!!tuning?.turbo !== !!turboModel) {
+      if (turboModel) { engineSlot.remove(turboModel); turboModel = undefined; }
+      else {
+        turboModel = createTurboModel({ condition: 'new' });
+        turboModel.scale.setScalar(isSuper ? .5 : .58);
+        turboModel.position.set(halfWidth * .4, .02, isSuper ? -.12 : .2);
+        turboModel.rotation.y = Math.PI / 2;
+        turboModel.traverse(object => { object.userData.sharedPart = true; });
+        engineSlot.add(turboModel);
+      }
+    }
+    if (!!tuning?.nitro !== !!bottleModel) {
+      if (bottleModel) { engineSlot.remove(bottleModel); bottleModel = undefined; }
+      else {
+        bottleModel = createNitroModel();
+        bottleModel.scale.setScalar(.52);
+        bottleModel.position.set(-halfWidth * .43, .0, isSuper ? .14 : -.24);
+        bottleModel.traverse(object => { object.userData.sharedPart = true; });
+        engineSlot.add(bottleModel);
+      }
+    }
     engineSlot.visible = bonnetOpen > .02;
   };
   let bonnetOpen = 0;
@@ -813,7 +959,7 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   return {
     group,
     wheels:wheelMeshes,
-    headlamps, exhausts,
+    headlamps, exhausts, roofHeight: roof,
     setAppearance, setBonnet, setLamps,
     animateWheels(steering,rotation,suspension) {
       wheelMeshes.forEach((wheel,index) => {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { GameAudio, firingFrequency } from '../src/audio/audio';
-import { findSteps, findSustain } from '../src/audio/sampled';
-import type { EngineFamily, SfxName, SurfaceKind } from '../src/audio/audio';
+import { SampledBoost, SampledEngine, findSteps, findSustain, type SampleBank } from '../src/audio/sampled';
+import type { DriveAudioState, EngineFamily, EngineProfile, SfxName, SurfaceKind } from '../src/audio/audio';
 
 const FAMILIES: EngineFamily[] = ['i4', 'v8', 'v12'];
 const SURFACES: SurfaceKind[] = ['asphalt', 'gravel', 'concrete', 'grass'];
@@ -10,6 +10,7 @@ const SOUNDS: SfxName[] = [
   'enterCar', 'exitCar', 'ignition', 'shutdown', 'recover',
   'checkpoint', 'lapComplete', 'medal', 'find', 'unlock',
   'handbrake', 'thud', 'scrape', 'lightSwitch', 'shutter', 'gearShift',
+  'blowoff', 'nitroStart', 'backfire', 'sold',
 ];
 const FRAME = 1 / 60;
 
@@ -17,15 +18,16 @@ const FRAME = 1 / 60;
 function exercise(audio: GameAudio, tick: () => void = () => undefined): void {
   audio.setVolumes({ master: 0.8, sfx: 0.7 });
   audio.setVolumes({ ambience: Number.NaN, master: 7 });
-  for (const family of FAMILIES) {
-    audio.setEngine({ family, power: family === 'v12' ? 440 : 110 });
+  for (const [index, family] of FAMILIES.entries()) {
+    // One engine on its factory exhaust, one on a sport system, one on straight-through pipes.
+    audio.setEngine({ family, power: family === 'v12' ? 440 : 110, exhaust: (['stock', 'sport', 'race'] as const)[index] });
     audio.play('ignition');
     for (let frame = 0; frame < 90; frame++) {
       const rpm = frame / 89;
       const surface = SURFACES[frame % SURFACES.length];
       const throttle = frame % 30 < 20 ? 1 : 0;
       const grounded = frame % 17 !== 0;
-      audio.updateDrive({ rpm, throttle, speed: rpm * 50 - 5, slip: rpm, surface, grounded }, FRAME);
+      audio.updateDrive({ rpm, throttle, speed: rpm * 50 - 5, slip: rpm, surface, grounded, boost: rpm * throttle, nitro: frame > 40 && frame < 70 ? 1 : 0 }, FRAME);
       audio.updateAmbience({ night: rpm, indoors: 1 - rpm, wind: rpm }, FRAME);
       if (frame % 20 === 0) audio.footstep(surface, frame % 40 === 0);
       if (frame === 30) audio.horn(true);
@@ -34,6 +36,8 @@ function exercise(audio: GameAudio, tick: () => void = () => undefined): void {
     }
     const wild = { rpm: Number.NaN, throttle: Infinity, speed: -Infinity, slip: -3, grounded: true };
     audio.updateDrive({ ...wild, surface: 'lava' as SurfaceKind }, Number.NaN);
+    audio.updateDrive({ ...wild, surface: 'asphalt', boost: Number.NaN, nitro: -Infinity }, FRAME);
+    audio.updateDrive({ ...wild, surface: 'asphalt', boost: 40, nitro: 9 }, FRAME);
     audio.updateAmbience({ night: Number.NaN, indoors: 9, wind: -1 }, -1);
   }
   for (const name of SOUNDS) {
@@ -47,6 +51,7 @@ function exercise(audio: GameAudio, tick: () => void = () => undefined): void {
   audio.footstep('lava' as SurfaceKind, true);
   audio.click();
   audio.setEngine({ family: 'rotary' as EngineFamily, power: Number.NaN });
+  audio.setEngine({ family: 'v8', power: 9000, exhaust: 'whistle' as 'race' });
   audio.setPaused(true);
   audio.horn(true);
   audio.updateDrive({ rpm: 0.5, throttle: 1, speed: 10, slip: 0, surface: 'asphalt', grounded: true }, FRAME);
@@ -308,6 +313,123 @@ describe('GameAudio on a fake AudioContext', () => {
       exercise(audio);
     }).not.toThrow();
     expect(audio.ready).toBe(false);
+  });
+});
+
+describe('recorded engine and boost voices', () => {
+  afterEach(() => {
+    FakeContext.made.length = 0;
+    problems.length = 0;
+  });
+
+  /** A bank holding only the named clips: enough for the voices that play them. */
+  const bankOf = (names: string[]) => {
+    const buffers = new Map(names.map(name => [name, { name, duration: 4.8 }]));
+    return { has: (...wanted: string[]) => wanted.every(name => buffers.has(name)), get: (name: string) => buffers.get(name), loopBounds: () => [0.03, 0] } as unknown as SampleBank;
+  };
+  const STANDARD = FAMILIES.flatMap(family => [`engine-${family}-idle`, `engine-${family}-rev`]);
+  const MODIFIED = FAMILIES.flatMap(family => [`engine-${family}-sport-idle`, `engine-${family}-sport-rev`]);
+  /** What a looping recording was last told: which clip it is, how loud, and how fast it plays. */
+  const loop = (gain: FakeNode) => {
+    const source = gain.inputs[0];
+    return { clip: (source.buffer as { name: string }).name, level: (gain.gain as FakeParam).target, rate: (source.playbackRate as FakeParam).target };
+  };
+  const engineOn = (ctx: FakeContext, bank: SampleBank, profile: EngineProfile) => {
+    const out = ctx.node(), engine = new SampledEngine(ctx as unknown as BaseAudioContext, bank, out as unknown as AudioNode, profile, 0);
+    // Output gain, then the tone filter the two loops play through.
+    const tone = out.inputs[0].inputs[0];
+    return { engine, tone, loops: () => tone.inputs.map(loop) };
+  };
+  const decibels = (ratio: number) => 20 * Math.log10(ratio);
+
+  it('plays the modified recordings for a changed exhaust, and the standard pair when one of them is missing', () => {
+    const ctx = new FakeContext(), full = bankOf([...STANDARD, ...MODIFIED]);
+    for (const family of FAMILIES) {
+      expect(SampledEngine.available(full, family)).toBe(true);
+      expect(SampledEngine.modified(full, family)).toBe(true);
+      const standard = engineOn(ctx, full, { family, power: 200 });
+      expect(standard.engine.source).toBe(`engine-${family}`);
+      expect(standard.loops().map(item => item.clip)).toEqual([`engine-${family}-idle`, `engine-${family}-rev`]);
+      for (const exhaust of ['sport', 'race'] as const) {
+        const changed = engineOn(ctx, full, { family, power: 200, exhaust });
+        expect(changed.engine.source).toBe(`engine-${family}-sport`);
+        expect(changed.loops().map(item => item.clip)).toEqual([`engine-${family}-sport-idle`, `engine-${family}-sport-rev`]);
+      }
+      // Half a pair is no pair: the car keeps its standard recordings rather than mixing the two.
+      const partial = bankOf([...STANDARD, `engine-${family}-sport-idle`]);
+      expect(SampledEngine.modified(partial, family)).toBe(false);
+      const fallback = engineOn(ctx, partial, { family, power: 200, exhaust: 'race' });
+      expect(fallback.engine.source).toBe(`engine-${family}`);
+      expect(fallback.loops().map(item => item.clip)).toEqual([`engine-${family}-idle`, `engine-${family}-rev`]);
+    }
+    expect(SampledEngine.modified(bankOf(STANDARD), 'v8')).toBe(false);
+    expect(problems).toEqual([]);
+  });
+
+  it('plays a changed exhaust louder and more open at the same revs, without changing the engine speed', () => {
+    const ctx = new FakeContext();
+    // With the modified recordings, and without them: the part changes the sound either way.
+    for (const bank of [bankOf([...STANDARD, ...MODIFIED]), bankOf(STANDARD)]) for (const family of FAMILIES) {
+      const heard = (exhaust: EngineProfile['exhaust'], rpm: number, throttle: number) => {
+        const { engine, tone, loops } = engineOn(ctx, bank, { family, power: 260, exhaust });
+        engine.update(rpm, throttle, FRAME);
+        const [idle, rev] = loops();
+        return { idle, rev, open: (tone.frequency as FakeParam).target };
+      };
+      for (const [rpm, throttle] of [[0.8, 1], [0.35, 0.4], [0, 0]]) {
+        const stock = heard('stock', rpm, throttle), sport = heard('sport', rpm, throttle), race = heard('race', rpm, throttle);
+        // A sport system is a couple of decibels up, straight-through pipes about four, on both recordings.
+        for (const part of ['idle', 'rev'] as const) {
+          if (stock[part].level === 0) { expect(race[part].level).toBe(0); continue; }
+          expect(decibels(sport[part].level / stock[part].level)).toBeGreaterThan(1.5);
+          expect(decibels(sport[part].level / stock[part].level)).toBeLessThan(3.5);
+          expect(decibels(race[part].level / sport[part].level)).toBeGreaterThan(1);
+          expect(decibels(race[part].level / stock[part].level)).toBeLessThan(5.5);
+          expect(sport[part].rate).toBe(stock[part].rate);
+          expect(race[part].rate).toBe(stock[part].rate);
+        }
+        expect(sport.open).toBeGreaterThan(stock.open);
+        expect(race.open).toBeGreaterThan(sport.open);
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('raises the turbine whistle with boost and opens the jet only while nitrous flows', () => {
+    const ctx = new FakeContext(), out = ctx.node();
+    expect(SampledBoost.available(bankOf(['turbo-spool']))).toBe(false);
+    const bank = bankOf(['turbo-spool', 'nitro-loop']);
+    expect(SampledBoost.available(bank)).toBe(true);
+    const voice = new SampledBoost(ctx as unknown as BaseAudioContext, bank, out as unknown as AudioNode);
+    const state = (boost: number, nitro: number, rpm = 0.6): DriveAudioState => ({ rpm, throttle: 1, speed: 20, slip: 0, surface: 'asphalt', grounded: true, boost, nitro });
+    const at = (boost: number, nitro: number, rpm?: number) => { voice.update(state(boost, nitro, rpm), FRAME); return out.inputs.map(loop); };
+    let [spool, jet] = at(0, 0);
+    expect([spool.clip, jet.clip]).toEqual(['turbo-spool', 'nitro-loop']);
+    expect([spool.level, jet.level]).toEqual([0, 0]);
+    for (const boost of [0.25, 0.5, 0.75, 1]) {
+      const [next] = at(boost, 0);
+      expect(next.level).toBeGreaterThan(spool.level);
+      expect(next.rate).toBeGreaterThan(spool.rate);
+      spool = next;
+    }
+    // On full boost the turbine still follows the engine up the rev range.
+    expect(at(1, 0, 1)[0].rate).toBeGreaterThan(at(1, 0, 0.2)[0].rate);
+    [spool, jet] = at(0.4, 1);
+    expect(jet.level).toBeGreaterThan(0);
+    expect(at(0.4, 0)[1].level).toBe(0);
+    // A car with neither part reports nothing at all, and a buggy caller cannot push the levels anywhere odd.
+    voice.update({ rpm: 0.5, throttle: 1, speed: 20, slip: 0, surface: 'asphalt', grounded: true }, FRAME);
+    expect(out.inputs.map(loop).map(item => item.level)).toEqual([0, 0]);
+    for (const [boost, nitro] of [[Number.NaN, Infinity], [-3, -1], [40, 9]]) for (const item of at(boost, nitro, Number.NaN)) {
+      expect(item.level).toBeGreaterThanOrEqual(0);
+      expect(item.level).toBeLessThanOrEqual(1);
+      expect(item.rate).toBeGreaterThan(0.3);
+      expect(item.rate).toBeLessThan(3);
+    }
+    voice.silence();
+    expect(out.inputs.map(loop).map(item => item.level)).toEqual([0, 0]);
+    voice.dispose();
+    expect(problems).toEqual([]);
   });
 });
 

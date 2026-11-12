@@ -20,14 +20,16 @@ describe('auto parts store inventory', () => {
     }
   });
 
-  it('has independent new engines and wheel sets to complete all three cars', () => {
+  it('has independent new engines and wheel sets to complete every car', () => {
     let state = newGame();
+    const wheels = getPartsForSale('store', 'wheels');
     for (const [index, shell] of SHELLS.entries()) {
       const engines = getPartsForSale('store', 'engine').filter(part => part.mount === shell.mount);
       expect(engines).toHaveLength(2);
       expect(engines[1].power).toBeGreaterThan(engines[0].power!);
-      const engine = engines[0];
-      const wheelId = `new-touring-${index + 1}`;
+      // Two cars share each of the smaller mounts, so the second takes the other crate engine.
+      const engine = engines.find(part => !state.purchasedListings.includes(`part-${part.id}`))!;
+      const wheelId = wheels[index].id;
       state = buy(state, `shell-${shell.id}`, `part-${engine.id}`, `part-${wheelId}`);
       state = install(state, `car-${shell.id}`, `instance-part-${engine.id}`);
       state = install(state, `car-${shell.id}`, `instance-part-${wheelId}`);

@@ -286,3 +286,153 @@ export function createPaintCan(color: string, name = 'Workshop finish', options:
     return a.build(`${name} paint tin`);
   });
 }
+
+const extras = new Map<string, THREE.MeshStandardMaterial>();
+/** One-off finishes for the tuning parts: anodised bottle blue, racing magnesium, polished pipe. */
+function extra(name: string, make: () => THREE.MeshStandardMaterial) {
+  let material = extras.get(name);
+  if (!material) { material = make(); extras.set(name, material); }
+  return material;
+}
+
+/** A turbocharger on its mounting flange: alloy compressor one side, cast iron turbine the other. About 0.5 m across. */
+export function createTurboModel(options: PartOptions = {}): THREE.Group {
+  const condition = options.condition ?? 'new';
+  return cached(`turbo-${condition}`, () => {
+    const p = palette(condition), a = new Assembly(), along = [0, 0, Math.PI / 2], facing = [0, Math.PI / 2, 0];
+    // The shaft runs along X: cold side at -x, hot side at +x.
+    a.add(new THREE.TorusGeometry(.118, .062, 10, 26), p.cast, [-.13, .22, 0], facing);
+    a.cylinder(p.cast, [-.13, .22, 0], .118, .1, along, 22);
+    a.cylinder(p.cast, [-.215, .22, 0], .082, .09, along, 20);
+    a.cylinder(p.dark, [-.262, .22, 0], .068, .008, along, 20);
+    a.cylinder(p.steel, [-.262, .22, 0], .022, .03, along, 6);
+    for (let blade = 0; blade < 9; blade++) {
+      const angle = blade / 9 * Math.PI * 2;
+      a.box(p.steel, [-.264, .22 + Math.cos(angle) * .038, Math.sin(angle) * .038], [.006, .05, .012], 0, [angle + .5, 0, 0]);
+    }
+    a.cylinder(p.steel, [0, .22, 0], .058, .17, along, 16);
+    a.box(p.steel, [0, .15, 0], [.09, .03, .11], .006);
+    a.add(new THREE.TorusGeometry(.106, .058, 10, 26), p.iron, [.13, .22, 0], facing);
+    a.cylinder(p.iron, [.13, .22, 0], .1, .1, along, 22);
+    a.cylinder(p.iron, [.2, .22, 0], .07, .06, along, 18);
+    a.cylinder(p.dark, [.232, .22, 0], .058, .008, along, 18);
+    // Compressor outlet sweeps up and back toward the intake.
+    a.tube(p.cast, [[-.13, .34, -.04], [-.13, .42, .02], [-.13, .45, .13], [-.13, .44, .22]], .046, 10);
+    a.cylinder(p.steel, [-.13, .44, .225], .054, .014, [Math.PI / 2, 0, 0], 16);
+    // Turbine inlet and its bolted flange.
+    a.cylinder(p.iron, [.13, .1, 0], .056, .1, [0, 0, 0], 14);
+    a.box(p.iron, [.13, .035, 0], [.19, .03, .17], .008);
+    for (const dx of [-.07, .07]) for (const dz of [-.06, .06]) a.cylinder(p.steel, [.13 + dx, .056, dz], .012, .02, [0, 0, 0], 6);
+    a.box(p.dark, [.13, .012, 0], [.25, .024, .22], .006);
+    // Wastegate can and its rod across to the hot side.
+    a.cylinder(p.accent, [-.02, .39, -.14], .052, .07, [Math.PI / 2, 0, 0], 16);
+    a.cylinder(p.steel, [-.02, .39, -.185], .03, .02, [Math.PI / 2, 0, 0], 12);
+    a.tube(p.steel, [[-.02, .39, -.1], [.07, .33, -.07], [.15, .3, -.06]], .008, 8);
+    a.tube(p.rubber, [[0, .28, .02], [.0, .36, .07], [.04, .43, .16]], .011, 8);
+    return a.build(`${condition} turbocharger`);
+  });
+}
+
+/** A performance exhaust laid out on the ground: either a silencer with twin tips, or a pair of chromed side pipes. About 1.5 m long. */
+export function createExhaustModel(options: PartOptions & { style?: 'system' | 'sidepipes' } = {}): THREE.Group {
+  const condition = options.condition ?? 'new', style = options.style ?? 'system';
+  return cached(`exhaust-${style}-${condition}`, () => {
+    const p = palette(condition), a = new Assembly();
+    const chrome = extra(`pipe-${condition}`, () => new THREE.MeshStandardMaterial({ color: condition === 'new' ? '#d3d7d3' : '#a9a79a', metalness: 1, roughness: condition === 'new' ? .14 : .34 }));
+    if (style === 'sidepipes') {
+      for (const x of [-.11, .11]) {
+        a.cylinder(chrome, [x, .07, 0], .058, 1.42, [Math.PI / 2, 0, 0], 20);
+        a.cylinder(chrome, [x, .07, .76], .07, .12, [Math.PI / 2, 0, 0], 20);
+        a.cylinder(p.dark, [x, .07, .823], .056, .006, [Math.PI / 2, 0, 0], 18);
+        a.tube(chrome, [[x, .07, -.71], [x * 1.3, .1, -.83], [x * 2.4, .17, -.92]], .05, 8);
+        // Slotted heat shield along the outer face.
+        a.box(p.steel, [x + Math.sign(x) * .052, .09, .05], [.014, .09, .96], .004);
+        for (let slot = 0; slot < 9; slot++) a.box(p.dark, [x + Math.sign(x) * .06, .09, -.36 + slot * .1], [.004, .05, .055], 0);
+      }
+      for (const z of [-.45, .45]) a.box(p.dark, [0, .03, z], [.34, .03, .05], .006);
+    } else {
+      a.tube(chrome, [[-.02, .08, -.78], [-.02, .08, -.5], [.03, .09, -.34], [.06, .1, -.2]], .034, 12);
+      // Straight-through silencer: an oval can with a rolled seam at each end.
+      a.cylinder(chrome, [.06, .1, .08], .1, .56, [Math.PI / 2, 0, 0], 22);
+      for (const z of [-.2, .36]) a.add(new THREE.TorusGeometry(.1, .012, 6, 22), p.steel, [.06, .1, z]);
+      a.box(p.accent, [.06, .204, .08], [.1, .006, .16], .002);
+      for (const x of [.005, .115]) {
+        a.cylinder(chrome, [x, .1, .52], .048, .34, [Math.PI / 2, 0, 0], 18);
+        a.add(new THREE.TorusGeometry(.049, .008, 6, 18), p.steel, [x, .1, .69]);
+        a.cylinder(p.dark, [x, .1, .687], .041, .004, [Math.PI / 2, 0, 0], 16);
+      }
+      for (const z of [-.6, -.1, .3]) { a.box(p.dark, [.03, .19, z], [.05, .02, .03], .004); a.tube(p.rubber, [[.03, .2, z], [.03, .24, z + .02], [.05, .27, z]], .012, 6); }
+    }
+    return a.build(`${condition} ${style === 'sidepipes' ? 'side pipes' : 'sport exhaust'}`);
+  });
+}
+
+/** A nitrous bottle standing in its bracket, with the valve, gauge and braided feed line. About 0.62 m tall. */
+export function createNitroModel(): THREE.Group {
+  return cached('nitro-bottle', () => {
+    const p = palette('new'), a = new Assembly();
+    const blue = extra('bottle', () => new THREE.MeshStandardMaterial({ color: '#1f5db0', metalness: .5, roughness: .28 }));
+    const label = extra('bottle-label', () => new THREE.MeshStandardMaterial({ color: '#ece6d2', roughness: .7 }));
+    const brass = extra('brass', () => new THREE.MeshStandardMaterial({ color: '#c9a24a', metalness: .9, roughness: .3 }));
+    a.cylinder(blue, [0, .25, 0], .088, .42, [0, 0, 0], 26);
+    a.add(new THREE.SphereGeometry(.088, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), blue, [0, .46, 0]);
+    a.cylinder(blue, [0, .03, 0], .08, .04, [0, 0, 0], 24);
+    a.add(new THREE.CylinderGeometry(.0895, .0895, .13, 26, 1, true), label, [0, .29, 0]);
+    a.add(new THREE.CylinderGeometry(.0897, .0897, .02, 26, 1, true), p.accent, [0, .345, 0]);
+    // Valve, hand wheel and pressure gauge.
+    a.cylinder(brass, [0, .565, 0], .024, .06, [0, 0, 0], 12);
+    a.box(brass, [0, .6, 0], [.05, .04, .05], .006);
+    a.cylinder(p.accent, [0, .632, 0], .042, .012, [0, 0, 0], 8);
+    a.cylinder(p.steel, [-.045, .6, 0], .026, .016, [0, 0, Math.PI / 2], 16);
+    a.cylinder(label, [-.054, .6, 0], .021, .002, [0, 0, Math.PI / 2], 16);
+    a.tube(p.steel, [[.025, .6, 0], [.09, .6, .01], [.13, .5, .03], [.14, .3, .05], [.16, .06, .1]], .011, 14);
+    // Two steel straps hold it to a bracket.
+    for (const y of [.14, .4]) a.add(new THREE.TorusGeometry(.092, .009, 5, 24), p.steel, [0, y, 0], [Math.PI / 2, 0, 0]);
+    a.box(p.dark, [0, .27, -.1], [.12, .44, .016], .004);
+    a.box(p.dark, [0, .012, -.02], [.24, .024, .24], .006);
+    return a.build('nitrous bottle');
+  });
+}
+
+/**
+ * Four magnesium racing wheels on slicks: three stacked flat the way a pit crew leaves them, the fourth leaning
+ * against the pile with its spokes showing. About 0.8 m tall and 1.1 m across.
+ */
+export function createRacingWheelStack(options: PartOptions = {}): THREE.Group {
+  const condition = options.condition ?? 'salvage';
+  return cached('racing-wheels-' + condition, () => {
+    const p = palette(condition), a = new Assembly();
+    const magnesium = extra('magnesium-' + condition, () => new THREE.MeshStandardMaterial({ color: condition === 'new' ? '#a08a52' : '#93804c', metalness: .72, roughness: condition === 'new' ? .38 : .52 }));
+    const chalk = extra('chalk', () => new THREE.MeshStandardMaterial({ color: '#d9c25a', roughness: .9 }));
+    const profile = [[.232, -.126], [.29, -.132], [.34, -.122], [.36, -.092], [.364, -.06], [.364, .06], [.36, .092], [.34, .122], [.29, .132], [.232, .126]].map(([r, y]) => new THREE.Vector2(r, y));
+    // One wheel, built lying flat around the origin with its face up, then turned and moved into place as a whole.
+    const wheel = (matrix: THREE.Matrix4, turn: number) => {
+      const place = (geometry: THREE.BufferGeometry, material: THREE.Material, position: number[] = [0, 0, 0], rotation: number[] = [0, 0, 0]) => {
+        geometry.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(...position), new THREE.Quaternion().setFromEuler(new THREE.Euler(rotation[0], rotation[1], rotation[2])), new THREE.Vector3(1, 1, 1)));
+        geometry.applyMatrix4(matrix);
+        a.add(geometry, material);
+      };
+      place(new THREE.LatheGeometry(profile, 40), p.rubber);
+      place(new THREE.CylinderGeometry(.236, .236, .21, 30, 1, true), magnesium);
+      place(new THREE.CylinderGeometry(.228, .228, .012, 28), p.dark, [0, .05, 0]);
+      place(new THREE.TorusGeometry(.24, .013, 6, 36), magnesium, [0, .106, 0], [Math.PI / 2, 0, 0]);
+      // Eight short spokes around a deep hub, with a single centre nut.
+      for (let spoke = 0; spoke < 8; spoke++) {
+        const angle = turn + spoke / 8 * Math.PI * 2;
+        place(new THREE.BoxGeometry(.058, .03, .2), magnesium, [Math.sin(angle) * .128, .075, Math.cos(angle) * .128], [0, angle, 0]);
+      }
+      place(new THREE.CylinderGeometry(.072, .072, .05, 18), magnesium, [0, .085, 0]);
+      place(new THREE.CylinderGeometry(.03, .03, .02, 6), p.steel, [0, .118, 0]);
+      // A yellow chalk stripe across the sidewall, as scrutineers leave.
+      place(new THREE.BoxGeometry(.03, .004, .09), chalk, [Math.sin(turn + .4) * .3, .1275, Math.cos(turn + .4) * .3], [0, turn + .4, 0]);
+    };
+    const flat = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
+    wheel(flat(-.16, .134, 0), 0);
+    wheel(flat(-.13, .396, -.02), .7);
+    wheel(flat(-.17, .658, .025), 1.4);
+    // The fourth stands on its tread and leans back against the pile, face outward.
+    const leaning = new THREE.Matrix4().compose(new THREE.Vector3(.36, .37, .02), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -Math.PI / 2 + .2)), new THREE.Vector3(1, 1, 1));
+    wheel(leaning, .3);
+    return a.build('magnesium racing wheel set');
+  });
+}

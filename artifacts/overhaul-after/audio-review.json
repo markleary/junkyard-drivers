@@ -1,6 +1,6 @@
 {
   "baseURL": "http://127.0.0.1:5173/",
-  "clips": 47,
+  "clips": 59,
   "loops": [
     {
       "name": "amb-day",
@@ -99,6 +99,30 @@
       "seamClick": 0.48
     },
     {
+      "name": "turbo-spool",
+      "seconds": 2.63,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -22.5,
+      "seamStepDb": 0.2,
+      "usualStepDb": 2.9,
+      "seamClick": 0.9
+    },
+    {
+      "name": "nitro-loop",
+      "seconds": 4.5,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -21.4,
+      "seamStepDb": 0.3,
+      "usualStepDb": 0.6,
+      "seamClick": 0.92
+    },
+    {
       "name": "engine-i4-idle",
       "seconds": 4.79,
       "paddingMs": [
@@ -121,6 +145,30 @@
       "seamStepDb": 0.1,
       "usualStepDb": 1.5,
       "seamClick": 0.61
+    },
+    {
+      "name": "engine-i4-sport-idle",
+      "seconds": 4.78,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 3.4,
+      "usualStepDb": 5.3,
+      "seamClick": 0.51
+    },
+    {
+      "name": "engine-i4-sport-rev",
+      "seconds": 4.78,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.5,
+      "seamStepDb": 0.1,
+      "usualStepDb": 0.6,
+      "seamClick": 1
     },
     {
       "name": "engine-v8-idle",
@@ -147,6 +195,30 @@
       "seamClick": 0.46
     },
     {
+      "name": "engine-v8-sport-idle",
+      "seconds": 4.78,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.5,
+      "seamStepDb": 2,
+      "usualStepDb": 3.8,
+      "seamClick": 0.34
+    },
+    {
+      "name": "engine-v8-sport-rev",
+      "seconds": 4.78,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.5,
+      "seamStepDb": 0.3,
+      "usualStepDb": 1.1,
+      "seamClick": 0.79
+    },
+    {
       "name": "engine-v12-idle",
       "seconds": 4.79,
       "paddingMs": [
@@ -169,121 +241,496 @@
       "seamStepDb": 1,
       "usualStepDb": 0.6,
       "seamClick": 0.62
+    },
+    {
+      "name": "engine-v12-sport-idle",
+      "seconds": 4.77,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 0.4,
+      "usualStepDb": 3.1,
+      "seamClick": 0.78
+    },
+    {
+      "name": "engine-v12-sport-rev",
+      "seconds": 4.77,
+      "paddingMs": [
+        30,
+        0
+      ],
+      "levelDb": -20.4,
+      "seamStepDb": 0.3,
+      "usualStepDb": 0.7,
+      "seamClick": 0.88
     }
   ],
   "engines": [
     {
       "family": "i4",
       "power": 110,
+      "exhaust": "stock",
+      "source": "engine-i4",
       "sweep": [
         {
           "revs": 0.15,
           "levelDb": -26.2,
-          "crossingsHz": 210
+          "crossingsHz": 214
         },
         {
           "revs": 0.3,
-          "levelDb": -26.9,
-          "crossingsHz": 1132
+          "levelDb": -26.5,
+          "crossingsHz": 994
         },
         {
           "revs": 0.5,
+          "levelDb": -24,
+          "crossingsHz": 1640
+        },
+        {
+          "revs": 0.7,
           "levelDb": -23.7,
-          "crossingsHz": 1482
-        },
-        {
-          "revs": 0.7,
-          "levelDb": -25.5,
-          "crossingsHz": 1916
+          "crossingsHz": 1898
         },
         {
           "revs": 0.9,
-          "levelDb": -24.1,
-          "crossingsHz": 2146
+          "levelDb": -24.4,
+          "crossingsHz": 2144
         }
       ],
-      "peak": 0.33,
+      "peak": 0.38,
+      "pullLevelDb": -24.6,
+      "pullHeardDb": -25.8,
+      "idleHeardDb": -45.2,
       "pitchRises": true,
-      "levelRangeDb": 4.8,
-      "largestStepDb": 1.5,
-      "liftOffDropDb": 9.7,
-      "idleAfterDb": -29
+      "levelRangeDb": 3.5,
+      "largestStepDb": 1.3,
+      "liftOffDropDb": 9.3,
+      "idleAfterDb": -28.4
     },
     {
-      "family": "v8",
-      "power": 290,
-      "sweep": [
-        {
-          "revs": 0.15,
-          "levelDb": -26.2,
-          "crossingsHz": 112
-        },
-        {
-          "revs": 0.3,
-          "levelDb": -25.2,
-          "crossingsHz": 158
-        },
-        {
-          "revs": 0.5,
-          "levelDb": -21.8,
-          "crossingsHz": 146
-        },
-        {
-          "revs": 0.7,
-          "levelDb": -21.4,
-          "crossingsHz": 154
-        },
-        {
-          "revs": 0.9,
-          "levelDb": -22.2,
-          "crossingsHz": 230
-        }
-      ],
-      "peak": 0.23,
-      "pitchRises": false,
-      "levelRangeDb": 4.8,
-      "largestStepDb": 2.7,
-      "liftOffDropDb": 8.8,
-      "idleAfterDb": -26.5
-    },
-    {
-      "family": "v12",
-      "power": 440,
+      "family": "i4",
+      "power": 110,
+      "exhaust": "sport",
+      "source": "engine-i4-sport",
       "sweep": [
         {
           "revs": 0.15,
           "levelDb": -23.3,
-          "crossingsHz": 148
+          "crossingsHz": 248
         },
         {
           "revs": 0.3,
-          "levelDb": -23.6,
-          "crossingsHz": 1588
+          "levelDb": -24.4,
+          "crossingsHz": 1030
         },
         {
           "revs": 0.5,
-          "levelDb": -21.2,
-          "crossingsHz": 2466
+          "levelDb": -21.5,
+          "crossingsHz": 1632
         },
         {
           "revs": 0.7,
-          "levelDb": -21,
-          "crossingsHz": 2966
+          "levelDb": -21.4,
+          "crossingsHz": 1846
         },
         {
           "revs": 0.9,
-          "levelDb": -21,
-          "crossingsHz": 3434
+          "levelDb": -21.4,
+          "crossingsHz": 2090
+        }
+      ],
+      "peak": 0.36,
+      "pullLevelDb": -22.2,
+      "pullHeardDb": -23.7,
+      "idleHeardDb": -40.4,
+      "pitchRises": true,
+      "levelRangeDb": 3.3,
+      "largestStepDb": 0.8,
+      "liftOffDropDb": 8.5,
+      "idleAfterDb": -26.1
+    },
+    {
+      "family": "i4",
+      "power": 110,
+      "exhaust": "race",
+      "source": "engine-i4-sport",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -21.7,
+          "crossingsHz": 318
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -22.7,
+          "crossingsHz": 1082
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -20,
+          "crossingsHz": 1622
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -19.9,
+          "crossingsHz": 1980
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -20,
+          "crossingsHz": 2222
         }
       ],
       "peak": 0.42,
+      "pullLevelDb": -20.7,
+      "pullHeardDb": -22.3,
+      "idleHeardDb": -38.7,
       "pitchRises": true,
-      "levelRangeDb": 2.7,
-      "largestStepDb": 1.2,
-      "liftOffDropDb": 9.3,
-      "idleAfterDb": -25.2
+      "levelRangeDb": 3.1,
+      "largestStepDb": 0.9,
+      "liftOffDropDb": 8.8,
+      "idleAfterDb": -24.8
+    },
+    {
+      "family": "v8",
+      "power": 290,
+      "exhaust": "stock",
+      "source": "engine-v8",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -24,
+          "crossingsHz": 152
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -24.9,
+          "crossingsHz": 156
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -21.6,
+          "crossingsHz": 144
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -22.1,
+          "crossingsHz": 170
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -22.6,
+          "crossingsHz": 176
+        }
+      ],
+      "peak": 0.23,
+      "pullLevelDb": -22.9,
+      "pullHeardDb": -37.3,
+      "idleHeardDb": -44.2,
+      "pitchRises": false,
+      "levelRangeDb": 3.8,
+      "largestStepDb": 1.3,
+      "liftOffDropDb": 9.4,
+      "idleAfterDb": -27
+    },
+    {
+      "family": "v8",
+      "power": 290,
+      "exhaust": "sport",
+      "source": "engine-v8-sport",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -21.2,
+          "crossingsHz": 126
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -22.1,
+          "crossingsHz": 360
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -19.4,
+          "crossingsHz": 510
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -20.1,
+          "crossingsHz": 734
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -19.7,
+          "crossingsHz": 684
+        }
+      ],
+      "peak": 0.35,
+      "pullLevelDb": -20.3,
+      "pullHeardDb": -25.6,
+      "idleHeardDb": -40.6,
+      "pitchRises": false,
+      "levelRangeDb": 3.2,
+      "largestStepDb": 1.1,
+      "liftOffDropDb": 8.6,
+      "idleAfterDb": -23.6
+    },
+    {
+      "family": "v8",
+      "power": 290,
+      "exhaust": "race",
+      "source": "engine-v8-sport",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -19.4,
+          "crossingsHz": 134
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -21.9,
+          "crossingsHz": 386
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -18.1,
+          "crossingsHz": 556
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -18,
+          "crossingsHz": 636
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -18.3,
+          "crossingsHz": 732
+        }
+      ],
+      "peak": 0.46,
+      "pullLevelDb": -18.9,
+      "pullHeardDb": -24.1,
+      "idleHeardDb": -39,
+      "pitchRises": true,
+      "levelRangeDb": 4,
+      "largestStepDb": 1.4,
+      "liftOffDropDb": 8.2,
+      "idleAfterDb": -23.1
+    },
+    {
+      "family": "v12",
+      "power": 440,
+      "exhaust": "stock",
+      "source": "engine-v12",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -23.1,
+          "crossingsHz": 152
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -24.2,
+          "crossingsHz": 1594
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -20.9,
+          "crossingsHz": 2476
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -20.9,
+          "crossingsHz": 3128
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -21.4,
+          "crossingsHz": 3324
+        }
+      ],
+      "peak": 0.4,
+      "pullLevelDb": -21.9,
+      "pullHeardDb": -22.7,
+      "idleHeardDb": -42.5,
+      "pitchRises": true,
+      "levelRangeDb": 3.4,
+      "largestStepDb": 1,
+      "liftOffDropDb": 9.7,
+      "idleAfterDb": -25.5
+    },
+    {
+      "family": "v12",
+      "power": 440,
+      "exhaust": "sport",
+      "source": "engine-v12-sport",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -20.6,
+          "crossingsHz": 172
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -21.6,
+          "crossingsHz": 1404
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -18.1,
+          "crossingsHz": 2052
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -18.8,
+          "crossingsHz": 2726
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -18.4,
+          "crossingsHz": 3018
+        }
+      ],
+      "peak": 0.55,
+      "pullLevelDb": -19.2,
+      "pullHeardDb": -20.6,
+      "idleHeardDb": -38.4,
+      "pitchRises": true,
+      "levelRangeDb": 4.4,
+      "largestStepDb": 1.5,
+      "liftOffDropDb": 9,
+      "idleAfterDb": -23.4
+    },
+    {
+      "family": "v12",
+      "power": 440,
+      "exhaust": "race",
+      "source": "engine-v12-sport",
+      "sweep": [
+        {
+          "revs": 0.15,
+          "levelDb": -18.1,
+          "crossingsHz": 172
+        },
+        {
+          "revs": 0.3,
+          "levelDb": -19.6,
+          "crossingsHz": 1690
+        },
+        {
+          "revs": 0.5,
+          "levelDb": -16.7,
+          "crossingsHz": 2644
+        },
+        {
+          "revs": 0.7,
+          "levelDb": -16.8,
+          "crossingsHz": 2766
+        },
+        {
+          "revs": 0.9,
+          "levelDb": -16.7,
+          "crossingsHz": 3424
+        }
+      ],
+      "peak": 0.67,
+      "pullLevelDb": -17.5,
+      "pullHeardDb": -19,
+      "idleHeardDb": -36.3,
+      "pitchRises": true,
+      "levelRangeDb": 3.2,
+      "largestStepDb": 0.9,
+      "liftOffDropDb": 9.1,
+      "idleAfterDb": -21.6
     }
   ],
+  "exhausts": [
+    {
+      "family": "i4",
+      "sport": {
+        "recording": "engine-i4-sport",
+        "louderDb": 2.4,
+        "louderAsHeardDb": 2.1,
+        "idleLouderAsHeardDb": 4.8,
+        "peak": 0.36
+      },
+      "race": {
+        "recording": "engine-i4-sport",
+        "louderDb": 3.9,
+        "louderAsHeardDb": 3.5,
+        "idleLouderAsHeardDb": 6.5,
+        "peak": 0.42
+      }
+    },
+    {
+      "family": "v8",
+      "sport": {
+        "recording": "engine-v8-sport",
+        "louderDb": 2.6,
+        "louderAsHeardDb": 11.7,
+        "idleLouderAsHeardDb": 3.6,
+        "peak": 0.35
+      },
+      "race": {
+        "recording": "engine-v8-sport",
+        "louderDb": 4,
+        "louderAsHeardDb": 13.2,
+        "idleLouderAsHeardDb": 5.2,
+        "peak": 0.46
+      }
+    },
+    {
+      "family": "v12",
+      "sport": {
+        "recording": "engine-v12-sport",
+        "louderDb": 2.7,
+        "louderAsHeardDb": 2.1,
+        "idleLouderAsHeardDb": 4.1,
+        "peak": 0.55
+      },
+      "race": {
+        "recording": "engine-v12-sport",
+        "louderDb": 4.4,
+        "louderAsHeardDb": 3.7,
+        "idleLouderAsHeardDb": 6.2,
+        "peak": 0.67
+      }
+    }
+  ],
+  "boost": {
+    "spool": [
+      {
+        "boost": 0.25,
+        "levelDb": -52.7,
+        "whistleHz": 2304
+      },
+      {
+        "boost": 0.5,
+        "levelDb": -42.9,
+        "whistleHz": 2918
+      },
+      {
+        "boost": 0.75,
+        "levelDb": -37.4,
+        "whistleHz": 3542
+      },
+      {
+        "boost": 1,
+        "levelDb": -33.2,
+        "whistleHz": 4145
+      }
+    ],
+    "whistleRises": true,
+    "fullBoostDb": -33.2,
+    "fullBoostHeardDb": -32.9,
+    "afterLiftDb": -180,
+    "nitrousDb": -27.6,
+    "nitrousHeardDb": -28.3,
+    "afterNitrousDb": -81.7
+  },
   "horns": [
     {
       "family": "i4",
@@ -376,27 +823,34 @@
     "scrape": "recorded",
     "lightSwitch": "recorded",
     "shutter": "recorded",
-    "gearShift": "recorded"
+    "gearShift": "recorded",
+    "blowoff": "recorded",
+    "nitroStart": "recorded",
+    "backfire": "recorded",
+    "sold": "recorded"
   },
   "inGame": {
     "beforeFirstClick": {
       "ready": false,
       "muted": false,
       "clips": 0,
-      "recorded": []
+      "recorded": [],
+      "engine": "none"
     },
     "afterFirstClick": {
       "ready": true,
       "muted": false,
-      "clips": 47,
+      "clips": 59,
       "recorded": [
         "road",
         "ambience",
         "steps",
-        "horn"
-      ]
+        "horn",
+        "boost"
+      ],
+      "engine": "none"
     },
-    "clipRequests": 47,
+    "clipRequests": 59,
     "clipRequestsOffOrigin": []
   },
   "errors": []
