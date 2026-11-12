@@ -6,6 +6,8 @@ export interface TouchInput {
   throttle: number;
   brake: number;
   handbrake: boolean;
+  /** Held nitrous button. The game treats it as a full throttle as well, so one thumb can do both. */
+  nitro: boolean;
 }
 
 export interface TouchContext {
@@ -25,7 +27,8 @@ interface TouchOptions {
   actions?: TapAction[];
 }
 
-type HeldRole = 'throttle' | 'brake' | 'handbrake';
+type HeldRole = 'throttle' | 'brake' | 'handbrake' | 'nitro';
+const HELD_ROLES: readonly HeldRole[] = ['throttle', 'brake', 'handbrake', 'nitro'];
 type PointerRole = HeldRole | 'stick' | 'look' | 'tap';
 interface TrackedPointer {
   role: PointerRole;
@@ -39,7 +42,7 @@ interface TrackedPointer {
   cancelled?: boolean;
 }
 
-const neutral = (): TouchInput => ({ moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false });
+const neutral = (): TouchInput => ({ moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, nitro: false });
 
 /** A circular dead zone keeps resting thumbs still, without accelerating diagonals. */
 export function normalizeTouchStick(x: number, y: number): { x: number; y: number } {
@@ -84,11 +87,12 @@ export class TouchControls {
       throttle: find<HTMLButtonElement>('touch-throttle'),
       brake: find<HTMLButtonElement>('touch-brake'),
       handbrake: find<HTMLButtonElement>('touch-handbrake'),
+      nitro: find<HTMLButtonElement>('touch-nitro'),
     };
 
     this.listen(this.stick, 'pointerdown', event => this.begin(event as PointerEvent, 'stick', this.stick));
     this.listen(options.canvas, 'pointerdown', event => this.begin(event as PointerEvent, 'look', options.canvas));
-    for (const role of ['throttle', 'brake', 'handbrake'] as const) {
+    for (const role of HELD_ROLES) {
       const button = this.heldButtons[role];
       this.listen(button, 'pointerdown', event => this.begin(event as PointerEvent, role, button));
       this.listen(button, 'click', event => { event.preventDefault(); event.stopPropagation(); });
@@ -181,6 +185,17 @@ export class TouchControls {
     if (this.actionDetail.textContent !== action.detail) this.actionDetail.textContent = action.detail;
     this.actionButton.setAttribute('aria-label', [action.label, action.detail].filter(Boolean).join(' · '));
     this.actionButton.disabled = !this.active || !action.enabled;
+  }
+
+  /** Show the nitrous button only for a car that carries a kit. Hiding it lets go of a finger that was on it. */
+  setNitro(fitted: boolean) {
+    if (this.disposed) return;
+    const button = this.heldButtons.nitro;
+    if (button.hidden === !fitted) return;
+    button.hidden = !fitted;
+    this.options.root.dataset.nitro = String(fitted);
+    if (fitted) return;
+    for (const [id, pointer] of [...this.pointers]) if (pointer.role === 'nitro') this.end(id);
   }
 
   private renderContext() {
@@ -281,8 +296,9 @@ export class TouchControls {
     this.state.throttle = roles.has('throttle') ? 1 : 0;
     this.state.brake = roles.has('brake') ? 1 : 0;
     this.state.handbrake = roles.has('handbrake');
+    this.state.nitro = roles.has('nitro');
     this.stick.dataset.held = String(roles.has('stick'));
-    for (const role of ['throttle', 'brake', 'handbrake'] as const) {
+    for (const role of HELD_ROLES) {
       this.heldButtons[role].dataset.held = String(roles.has(role));
       this.heldButtons[role].setAttribute('aria-pressed', String(roles.has(role)));
     }

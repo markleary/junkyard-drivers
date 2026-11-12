@@ -1,4 +1,4 @@
-const actionAttributes = ['data-action', 'data-buy', 'data-category', 'data-select', 'data-install', 'data-paint', 'id'];
+const actionAttributes = ['data-action', 'data-buy', 'data-category', 'data-select', 'data-install', 'data-paint', 'data-fit', 'data-unfit', 'id'];
 
 function controls(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'))
@@ -12,11 +12,14 @@ export function renderOverlay(container: HTMLElement, markup: string, initial = 
   const value = attribute ? active!.getAttribute(attribute) : null;
   const oldIndex = active ? controls(container).indexOf(active) : -1;
   const slot = active?.closest<HTMLElement>('[data-slot]')?.dataset.slot;
+  const tuning = active?.closest<HTMLElement>('[data-tuning]')?.dataset.tuning;
   const scrollPositions = [container, ...container.querySelectorAll<HTMLElement>('.build-scroll, .inventory')].map(element => element.scrollTop);
   container.innerHTML = markup;
   [container, ...container.querySelectorAll<HTMLElement>('.build-scroll, .inventory')].forEach((element, index) => { element.scrollTop = scrollPositions[index] ?? 0; });
   const match = attribute && value !== null ? container.querySelector<HTMLElement>(`[${attribute}="${CSS.escape(value)}"]:not(:disabled)`) : null;
-  const installedHeading = attribute === 'data-install' && slot ? container.querySelector<HTMLElement>(`[data-slot="${slot}"] h3`) : null;
+  // A part that has just been fitted or lifted off is no longer behind the same button: confirm on the name of what is there now.
+  const installedHeading = attribute === 'data-install' && slot ? container.querySelector<HTMLElement>(`[data-slot="${slot}"] h3`)
+    : (attribute === 'data-fit' || attribute === 'data-unfit') && tuning ? container.querySelector<HTMLElement>(`[data-tuning="${CSS.escape(tuning)}"] b[tabindex="-1"]`) : null;
   const candidates = controls(container);
   const fallback = oldIndex >= 0 ? candidates[Math.min(oldIndex, candidates.length - 1)] : null;
   const target = match ?? installedHeading ?? container.querySelector<HTMLElement>(initial) ?? fallback ?? candidates[0];

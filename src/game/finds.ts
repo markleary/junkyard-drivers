@@ -1,4 +1,4 @@
-import { AUTO_PARTS_STORE, type Point, type TownLayout } from '../world/layout';
+import { AUTO_PARTS_STORE, lotPoint, type Point, type TownLayout } from '../world/layout';
 
 /**
  * Twelve small pieces of motoring history left around the yard and the town.
@@ -17,8 +17,7 @@ export function findSpots(layout: TownLayout): Find[] {
   // A point in a lot's own frame: across its frontage, and out toward its street.
   const inLot = (kind: 'fuel' | 'usedCars' | 'park', across: number, toward: number, fallback: Point): Point => {
     const found = lot(kind);
-    if (!found) return fallback;
-    return { x: found.x + found.face.z * across + found.face.x * toward, z: found.z - found.face.x * across + found.face.z * toward };
+    return found ? lotPoint(found, across, toward) : fallback;
   };
   const carLot = lot('usedCars');
   const carLotDepth = carLot ? Math.min(carLot.w, carLot.d) : 16;

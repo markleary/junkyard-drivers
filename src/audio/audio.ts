@@ -6,16 +6,18 @@
  * silently; no public method ever throws.
  */
 import { Ambience } from './ambience';
+import { BoostVoice } from './boost';
 import { EngineVoice } from './engine';
 import { Horn } from './horn';
 import { RoadVoice } from './road';
-import { SAMPLED_CATCH, SampleBank, SampledAmbience, SampledEngine, SampledHorn, SampledRoad, SampledSteps, clipFor } from './sampled';
+import { SAMPLED_CATCH, SampleBank, SampledAmbience, SampledBoost, SampledEngine, SampledHorn, SampledRoad, SampledSteps, clipFor } from './sampled';
 import { IGNITION_CATCH, SfxPlayer } from './sfx';
 import { clamp, clamp01, createNoiseBuffer, finite } from './synth';
 import type {
   AmbienceState,
   DriveAudioState,
   EngineProfile,
+  ExhaustNote,
   SfxName,
   SfxOptions,
   SurfaceKind,
@@ -28,6 +30,7 @@ export type {
   DriveAudioState,
   EngineFamily,
   EngineProfile,
+  ExhaustNote,
   SfxName,
   SfxOptions,
   SurfaceKind,
@@ -61,9 +64,12 @@ function closeQuietly(ctx: AudioContext | undefined): void {
   }
 }
 
+const EXHAUST_NOTES: readonly ExhaustNote[] = ['stock', 'sport', 'race'];
+
 function cleanProfile(profile: EngineProfile | null): EngineProfile | null {
   if (!profile || typeof profile !== 'object') return null;
-  return { family: profile.family, power: clamp(finite(profile.power, 110), 60, 600) };
+  const exhaust = EXHAUST_NOTES.includes(profile.exhaust as ExhaustNote) ? profile.exhaust as ExhaustNote : 'stock';
+  return { family: profile.family, power: clamp(finite(profile.power, 110), 60, 700), exhaust };
 }
 
 /** The synthesized and the recorded voices are interchangeable behind these shapes. */
@@ -81,6 +87,12 @@ interface BedLike {
   update(state: AmbienceState, dt: number, quiet: boolean): void;
   dispose(): void;
 }
+/** Turbocharger whistle and nitrous rush. */
+interface BoostLike {
+  update(state: DriveAudioState, dt: number): void;
+  silence(): void;
+  dispose(): void;
+}
 
 interface Graph {
   ctx: AudioContext;
@@ -91,6 +103,7 @@ interface Graph {
   ambienceBus: GainNode;
   sfx: SfxPlayer;
   road: RoadLike;
+  boost: BoostLike;
   horn: Horn;
   bed: BedLike;
   /** Recordings; empty until they have decoded. */
@@ -150,7 +163,18 @@ export class GameAudio {
       graph.steps && 'steps',
       graph.klaxon && 'horn',
       this.voice instanceof SampledEngine && 'engine',
+      graph.boost instanceof SampledBoost && 'boost',
     ].filter((name): name is string => typeof name === 'string');
+  }
+
+  /**
+   * What the engine voice is made from right now: the pair of recordings in use (`engine-v8`, or `engine-v8-sport`
+   * with a modified exhaust), `synth` with the family and exhaust while the synthesizer is standing in, or `none`.
+   */
+  get engineSource(): string {
+    if (this.voice instanceof SampledEngine) return this.voice.source;
+    if (!this.voice || !this.profile) return 'none';
+    return 'synth-' + this.profile.family + (this.profile.exhaust && this.profile.exhaust !== 'stock' ? '-' + this.profile.exhaust : '');
   }
 
   /** Call from a user gesture. Creates the context and graph on first call, resumes it afterwards. */
@@ -191,7 +215,7 @@ export class GameAudio {
     try {
       const next = cleanProfile(profile);
       const current = this.profile;
-      const unchanged = next?.family === current?.family && next?.power === current?.power;
+      const unchanged = next?.family === current?.family && next?.power === current?.power && next?.exhaust === current?.exhaust;
       // Repeat calls are free, but a voice that failed to build earlier gets another try.
       if (unchanged && (this.voice || !next || !this.graph)) return;
       this.profile = next;
@@ -209,6 +233,7 @@ export class GameAudio {
       this.parkedFor = 0;
       this.voice?.update(state.rpm, state.throttle, dt);
       graph.road.update(state, dt);
+      graph.boost.update(state, dt);
     } catch {
       // Stay silent.
     }
@@ -225,6 +250,7 @@ export class GameAudio {
       if (this.parkedFor > DRIVE_TIMEOUT) {
         this.voice?.update(0, 0, dt);
         graph.road.silence();
+        graph.boost.silence();
       }
     } catch {
       // Stay silent.
@@ -296,6 +322,7 @@ export class GameAudio {
       graph.klaxon?.dispose();
       graph.horn.dispose();
       graph.road.dispose();
+      graph.boost.dispose();
       graph.bed.dispose();
       graph.master.disconnect();
     } catch {
@@ -334,6 +361,7 @@ export class GameAudio {
         ambienceBus,
         sfx: new SfxPlayer(ctx, noise, sfxBus),
         road: new RoadVoice(ctx, noise, engineBus),
+        boost: new BoostVoice(ctx, noise, engineBus),
         horn: new Horn(ctx, noise, engineBus),
         bed: new Ambience(ctx, noise, ambienceBus),
         bank,
@@ -361,6 +389,12 @@ export class GameAudio {
       if (!SampledRoad.available(bank)) return;
       const old = graph.road;
       graph.road = new SampledRoad(graph.ctx, bank, graph.engineBus);
+      old.dispose();
+    });
+    swap(() => {
+      if (!SampledBoost.available(bank)) return;
+      const old = graph.boost;
+      graph.boost = new SampledBoost(graph.ctx, bank, graph.engineBus);
       old.dispose();
     });
     swap(() => {

@@ -5,6 +5,7 @@ import { createPitchedRoof, createTankLettering } from '../architecture';
 import { STREET_TINTS, placeCar, type BodyStyle } from '../wrecks';
 import type { Vegetation } from '../vegetation';
 import { STORE_LOT, distanceToRoad, overlapsBox, roadIntersectsBox, type Building, type Lot, type Point, type Road } from '../../world/layout';
+import { SALES_HUT, TRADE_BAY } from '../../world/dealer';
 import { C, Part, airConditioner, bench, hydrant, lightPool, mailbox, newsBox, planter, postSign, roadSign, sign, streetLamp, trashCan, utilityPole, vent, wire, type SceneContext } from './kit';
 import type { GroundMarks } from './ground';
 
@@ -412,21 +413,34 @@ function carLot(ctx: SceneContext, lot: Lot, marks: GroundMarks) {
   const along = Math.max(lot.w, lot.d), depth = Math.min(lot.w, lot.d);
   p.box(surface('gravel'), 0, .03, 0, along, .06, depth, { color: 0xa39780, cast: false });
   p.solid(0, .03, 0, along, .06, depth);
-  // Sales hut.
-  const hut = p.child(-along / 2 + 3.4, 0, -depth / 2 + 2.6);
-  hut.box(surface('wood'), 0, 1.5, 0, 5, 3, 3.6, { color: 0xe2d8bf, shade: .82 });
-  hut.solid(0, 1.5, 0, 5, 3, 3.6);
+  // Sales hut, with a hatch in the front wall where the dealer does business.
+  const hut = p.child(-along / 2 + SALES_HUT.fromEnd, 0, -depth / 2 + SALES_HUT.fromBack);
+  hut.box(surface('wood'), 0, 1.5, 0, SALES_HUT.w, 3, SALES_HUT.d, { color: 0xe2d8bf, shade: .82 });
+  hut.solid(0, 1.5, 0, SALES_HUT.w, 3, SALES_HUT.d);
   hut.box(surface('roof'), 0, 3.12, 0, 5.6, .14, 4.3, { color: 0x7a3f34, pitch: .06 });
   hut.box(windowGlass, .9, 1.7, 1.83, 2, 1.1, .06, { color: 0xffd9a0, cast: false });
   hut.box(flat.satin, -1.5, 1.2, 1.83, .95, 2.2, .06, { color: C.oxide });
+  // A shelf under the hatch with a bell on it, and a striped awning over the top.
+  hut.box(surface('wood'), .9, 1.1, 2, 2.2, .06, .34, { color: C.woodDark });
+  for (const dx of [-.05, 1.85]) hut.box(flat.metal, dx, .96, 1.98, .04, .24, .04, { color: C.steelDark, pitch: .5 });
+  hut.cyl(flat.chrome, 1.5, 1.17, 2.02, .06, .07, { color: 0xc8cdc9, segments: 10, taper: .5 });
+  hut.box(flat.sheet, .9, 2.44, 2.2, 2.4, .05, .8, { color: C.oxide, pitch: .32 });
+  // The stripes overhang the cloth at both edges, so their ends are not in its plane.
+  for (let stripe = 0; stripe < 3; stripe++) hut.box(flat.sheet, .1 + stripe * .8, 2.455, 2.2, .4, .05, .84, { color: 0xe9e2cc, pitch: .32 });
   const [hx, hz] = hut.at(0, 1.9);
-  sign(ctx, 'SECOND CHANCE MOTORS', hx, 2.7, hz, 4.6, .5, { bg: '#7c4432', yaw, bare: true });
-  // A front row of cars for sale, each with a price card in the screen.
+  sign(ctx, 'SECOND CHANCE MOTORS', hx, 2.82, hz, 4.6, .4, { bg: '#7c4432', yaw, bare: true });
+  const [cashX, cashZ] = hut.at(-1.5, 1.87);
+  sign(ctx, 'CASH PAID', cashX, 1.75, cashZ, .8, .3, { style: 'plank', bg: '#e8dcc0', color: '#a63e2e', yaw, bare: true });
+  // A front row of cars for sale, each with a price card in the screen. The row stops short of the trade-in bay.
   const styles: BodyStyle[] = ['coupe', 'sedan', 'wagon', 'compact', 'pickup', 'sedan'];
+  const bayEdge = TRADE_BAY.across - TRADE_BAY.w / 2 - 1.7;
   const count = Math.floor((along - 4) / 3.4);
   for (let i = 0; i < count; i++) {
     const dx = -along / 2 + 3 + i * 3.4, [cx, cz] = p.at(dx, depth / 2 - 3.6);
-    placeCar(b, styles[i % styles.length], cx, .06, cz, { tint: STREET_TINTS[(i * 5 + 4) % STREET_TINTS.length], yaw: yaw + Math.PI + (rng() - .5) * .08, collide: true });
+    // Every candidate draws its number whether or not it is parked, so the rest of the lot is laid out as before.
+    const lean = (rng() - .5) * .08;
+    if (dx + 1.1 > bayEdge) continue;
+    placeCar(b, styles[i % styles.length], cx, .06, cz, { tint: STREET_TINTS[(i * 5 + 4) % STREET_TINTS.length], yaw: yaw + Math.PI + lean, collide: true });
     const [sx, sz] = p.at(dx, depth / 2 - 1.1);
     sign(ctx, `$${(1.4 + ((i * 7) % 9) * .45).toFixed(1)}K`, sx, .62, sz, .9, .5, { style: 'plank', bg: '#e8dcc0', color: '#a63e2e', yaw, bare: true });
     b.box(surface('wood'), sx - Math.sin(yaw) * .05, .34, sz - Math.cos(yaw) * .05, .06, .68, .06, { color: C.woodDark });
@@ -436,6 +450,24 @@ function carLot(ctx: SceneContext, lot: Lot, marks: GroundMarks) {
     placeCar(b, styles[(i + 2) % styles.length], cx, .06, cz, { tint: STREET_TINTS[(i * 3 + 1) % STREET_TINTS.length], yaw: yaw + Math.PI / 2 + (rng() - .5) * .1, collide: true });
     b.quad(marks.oil, cx, .07, cz, 2, 3, { yaw });
   }
+  // The trade-in bay: an empty, painted space opposite the dropped kerb, where a car is driven in to be valued.
+  const bay = p.child(TRADE_BAY.across, 0, TRADE_BAY.toward);
+  for (const side of [-1, 1]) bay.box(flat.marking, side * TRADE_BAY.w / 2, .066, 0, .14, .006, TRADE_BAY.d, { color: C.yellow, cast: false });
+  bay.box(flat.marking, 0, .066, -TRADE_BAY.d / 2 + .07, TRADE_BAY.w - .14, .006, .14, { color: C.yellow, cast: false });
+  // Chevrons point the way in from the street.
+  for (let i = 0; i < 3; i++) for (const side of [-1, 1]) {
+    bay.box(flat.marking, side * .42, .066, TRADE_BAY.d / 2 - .9 - i * 1.5, .16, .006, 1.1, { color: 0xe9e6dc, yaw: side * .7, cast: false });
+  }
+  bay.quad(marks.tracks, 0, .069, .4, 2.6, TRADE_BAY.d - 1.2);
+  // A staked board beside the bay, facing the street.
+  const [boardX, boardZ] = bay.at(TRADE_BAY.w / 2 + .85, TRADE_BAY.d / 2 - .5);
+  sign(ctx, 'TRADE-INS', boardX, 1.02, boardZ, 1.5, .7, { style: 'plank', bg: '#e8dcc0', color: '#a63e2e', sub: 'STOP HERE FOR AN OFFER', yaw });
+  for (const dx of [-.55, .55]) bay.box(surface('wood'), TRADE_BAY.w / 2 + .85 + dx, .5, TRADE_BAY.d / 2 - .56, .07, 1, .07, { color: C.woodDark });
+  // A tall board at the end the test loop arrives from, turned to face the traffic, and one facing the street.
+  const [postX, postZ] = p.at(along / 2 - 1.4, depth / 2 - 1.3);
+  postSign(ctx, 'WE BUY CARS', postX, postZ, 4.2, { sub: 'PULL IN · CASH OFFER TODAY', bg: '#7c4432', yaw: yaw + Math.PI / 2 });
+  const [streetX, streetZ] = p.at(TRADE_BAY.across - TRADE_BAY.w / 2 - 1.1, depth / 2 - .9);
+  postSign(ctx, 'WE BUY CARS', streetX, streetZ, 3.6, { sub: 'ANY CAR THAT RUNS', bg: '#7c4432', yaw });
   // Bunting between four poles, the unmistakable sign of a used-car lot.
   const poles = [[-along / 2 + .6, depth / 2 - .6], [along / 2 - .6, depth / 2 - .6], [along / 2 - .6, -depth / 2 + .6], [-along / 2 + 7, -depth / 2 + .6]];
   const tops = poles.map(([dx, dz]) => {
@@ -456,6 +488,12 @@ function carLot(ctx: SceneContext, lot: Lot, marks: GroundMarks) {
   const [lx, lz] = p.at(0, depth / 2 - 3.6);
   ctx.lamps.push({ x: lx, y: 4.6, z: lz, color: C.lampWarm, reach: 20 });
   lightPool(ctx, lx, lz, 9, C.lampWarm, .6, .08);
+  // The bay has a lamp of its own, so an offer can be read after dark.
+  const [bayX, bayZ] = bay.at(0, 0);
+  ctx.lamps.push({ x: bayX, y: 4.2, z: bayZ, color: C.lampWarm, reach: 14 });
+  lightPool(ctx, bayX, bayZ, 5.5, C.lampWarm, .7, .09);
+  const [hatchX, hatchZ] = hut.at(.9, SALES_HUT.d / 2 + .1);
+  ctx.interactables.push({ id: 'dealer', kind: 'dealer', position: new THREE.Vector3(hatchX, 1.5, hatchZ), label: 'Second Chance Motors' });
 }
 
 function park(ctx: SceneContext, lot: Lot, plants: Vegetation) {

@@ -40,6 +40,48 @@ describe('progress save', () => {
     expect(styleFor(repaired, 'car-hachiro')).toEqual({ finish: 'gloss', stripe: 'none' });
   });
 
+  it('keeps what the dealer and the hidden salvage add, and repairs each of those on its own', () => {
+    let progress: Progress = {
+      ...newProgress(), stash: 0x9e3779b1, fitted: { 'car-hachiro': { turbo: 'instance-part-turbo-street', nitro: 'instance-part-nitro-75' } },
+      sales: { count: 2, takings: 9120, profit: 2110, best: 5400 }, restock: { 'shell-wren': 2, 'part-rare-turbo': 1 },
+    };
+    progress = recordLap(progress, 'hachiro', 61.2).progress;
+    progress = recordLap(progress, 'wren', 55.004).progress;
+    // A slower lap neither replaces the record nor the proof the dealer goes by.
+    progress = recordLap(progress, 'hachiro', 64).progress;
+    expect(progress.proof).toEqual({ hachiro: 61.2, wren: 55 });
+    expect(parseProgress(JSON.stringify(progress), FIND_IDS)).toEqual(progress);
+
+    const repaired = parseProgress(`{"version":1,"stash":-4.5,"proof":{"hachiro":58.25,"wren":-1,"bison":"quick","kart":40},
+      "sales":{"count":2.9,"takings":5000.4,"profit":9000,"best":7000},
+      "restock":{"shell-wren":3.7,"part-rare-turbo":0,"__proto__":4,"Shell Wren":2,"part-rare-i4":"many"}}`);
+    expect(repaired.stash).toBe(0);
+    expect(repaired.proof).toEqual({ hachiro: 58.25 });
+    // Whole dollars, and neither the profit nor the best sale can be more than was ever paid out.
+    expect(repaired.sales).toEqual({ count: 2, takings: 5000, profit: 5000, best: 5000 });
+    expect(repaired.restock).toEqual({ 'shell-wren': 3 });
+    expect(Object.getPrototypeOf(repaired.restock)).toBe(Object.prototype);
+    // The rest of a record survives a field of the wrong shape.
+    const mangled = parseProgress(JSON.stringify({ version: 1, laps: 4, sales: 'plenty', restock: [3], proof: null, stash: 2 ** 32, fitted: 'all of it' }));
+    expect(mangled).toEqual({ ...newProgress(), laps: 4 });
+    for (const stash of [12.5, Number.NaN, '7']) expect(parseProgress(JSON.stringify({ version: 1, stash })).stash).toBe(0);
+    expect(parseProgress(JSON.stringify({ version: 1, stash: 0xffffffff })).stash).toBe(0xffffffff);
+  });
+
+  it('counts laps from before the dealer opened as proof, once', () => {
+    // A record as the previous release wrote it: laps, but no word of proof.
+    const earlier = JSON.stringify({ version: 1, laps: 9, bestLap: { hachiro: 51.9, veloce: 54.25 }, odometer: { hachiro: 9000 } });
+    const loaded = parseProgress(earlier);
+    expect(loaded.proof).toEqual({ hachiro: 51.9, veloce: 54.25 });
+    expect(loaded.bestLap).toEqual({ hachiro: 51.9, veloce: 54.25 });
+    // Once the record has been written by this release the proof stands on its own: a car sold on takes its proof with it,
+    // and the record lap that stays behind does not vouch for the next car of that model.
+    const sold: Progress = { ...loaded, proof: { veloce: 54.25 } };
+    expect(parseProgress(JSON.stringify(sold)).proof).toEqual({ veloce: 54.25 });
+    expect(parseProgress(JSON.stringify({ ...loaded, proof: {} })).proof).toEqual({});
+    expect(parseProgress(JSON.stringify(newProgress())).proof).toEqual({});
+  });
+
   it('falls back to a fresh logbook for unreadable or foreign data', () => {
     for (const raw of ['', 'not json', 'null', '[]', '{"version":2,"finds":["pocket"]}']) expect(parseProgress(raw)).toEqual(newProgress());
   });

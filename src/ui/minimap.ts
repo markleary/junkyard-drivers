@@ -1,4 +1,5 @@
 import { AUTO_PARTS_STORE, GARAGE, YARD_BOUNDS, type Point, type TownLayout } from '../world/layout';
+import { dealerSite } from '../world/dealer';
 
 /** World rectangle covered by the printed map, a little beyond the barriers. */
 const WORLD = { minX: -100, maxX: 208, minZ: -70, maxZ: 216 };
@@ -24,8 +25,12 @@ export class Minimap {
   private sheet: HTMLCanvasElement;
   private context: CanvasRenderingContext2D;
   private size = 0;
+  /** Lettered places: the Garage, the parts store, and the dealer who pays for finished cars. */
+  private places: [string, number, number][];
 
   constructor(private canvas: HTMLCanvasElement, layout: TownLayout) {
+    const dealer = dealerSite(layout);
+    this.places = [['G', GARAGE.x, -15], ['P', AUTO_PARTS_STORE.x, AUTO_PARTS_STORE.z], ...(dealer ? [['$', dealer.lot.x, dealer.lot.z] as [string, number, number]] : [])];
     this.context = canvas.getContext('2d')!;
     this.sheet = document.createElement('canvas');
     this.sheet.width = (WORLD.maxX - WORLD.minX) * SCALE;
@@ -71,6 +76,9 @@ export class Minimap {
     // Workshop in yard red, parts store in counter blue.
     c.fillStyle = '#a63e2e'; rect(GARAGE.x, -15, 18, 18);
     c.fillStyle = '#24566a'; rect(AUTO_PARTS_STORE.x, AUTO_PARTS_STORE.z, AUTO_PARTS_STORE.w, AUTO_PARTS_STORE.d);
+    // The used-car lot in banknote green, so the place to sell stands out from the other lots.
+    const dealer = dealerSite(layout);
+    if (dealer) { c.fillStyle = '#4e7a5c'; rect(dealer.lot.x, dealer.lot.z, dealer.lot.w, dealer.lot.d); }
     c.fillStyle = '#7e8f92';
     c.beginPath(); c.arc(px(layout.landmark.x), pz(layout.landmark.z), 6 * SCALE, 0, Math.PI * 2); c.fill();
     c.strokeStyle = '#3b4a4c'; c.lineWidth = 2; c.stroke();
@@ -97,12 +105,12 @@ export class Minimap {
     c.drawImage(this.sheet, 0, 0);
     c.restore();
 
-    // Letters for the two places a player returns to. They are placed on the turned sheet but drawn
+    // Letters for the places a player returns to. They are placed on the turned sheet but drawn
     // upright, so a P never reads as a d when the map swings round.
     const cosine = Math.cos(view.heading), sine = Math.sin(view.heading);
     c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `800 ${Math.round(size * .14)}px "Barlow Condensed", Impact, sans-serif`;
     c.lineJoin = 'round'; c.lineWidth = size * .028; c.strokeStyle = 'rgba(32,41,44,.55)'; c.fillStyle = '#f3ead2';
-    for (const [letter, x, z] of [['G', GARAGE.x, -15], ['P', AUTO_PARTS_STORE.x, AUTO_PARTS_STORE.z]] as const) {
+    for (const [letter, x, z] of this.places) {
       const dx = x - view.x, dz = z - view.z;
       const lx = (dx * cosine - dz * sine) / view.range * half, ly = (dx * sine + dz * cosine) / view.range * half;
       if (Math.hypot(lx, ly) > half - size * .1) continue;

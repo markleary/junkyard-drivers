@@ -7,7 +7,7 @@ import { surface } from '../surfaces';
 
 export interface WorldInteractable {
   id: string;
-  kind: 'workbench' | 'listing' | 'rack' | 'store';
+  kind: 'workbench' | 'listing' | 'rack' | 'store' | 'dealer';
   listingId?: string;
   position: THREE.Vector3;
   label: string;

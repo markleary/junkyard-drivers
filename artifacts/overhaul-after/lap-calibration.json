@@ -109,6 +109,99 @@
       "pace": "fast",
       "lap": 48.87,
       "topKmh": 90
+    },
+    {
+      "shell": "wren",
+      "engine": "i4-stock",
+      "wheels": "street-1",
+      "pace": "brisk",
+      "lap": 64.83,
+      "topKmh": 50
+    },
+    {
+      "shell": "wren",
+      "engine": "i4-stock",
+      "wheels": "street-1",
+      "pace": "fast",
+      "lap": 52.7,
+      "topKmh": 52
+    },
+    {
+      "shell": "wren",
+      "engine": "crate-i4-performance",
+      "wheels": "new-sport-1",
+      "pace": "brisk",
+      "lap": 61.85,
+      "topKmh": 76
+    },
+    {
+      "shell": "wren",
+      "engine": "crate-i4-performance",
+      "wheels": "new-sport-1",
+      "pace": "fast",
+      "lap": 49.78,
+      "topKmh": 76
+    },
+    {
+      "shell": "wren",
+      "engine": "crate-i4-performance",
+      "wheels": "new-sport-1",
+      "tuning": [
+        "turbo-race",
+        "exhaust-race",
+        "nitro-150"
+      ],
+      "nitroShare": 0.08,
+      "pace": "fast",
+      "lap": 48.4,
+      "topKmh": 110
+    },
+    {
+      "shell": "packhorse",
+      "engine": "v8-stock",
+      "wheels": "street-1",
+      "pace": "brisk",
+      "lap": 65.38,
+      "topKmh": 47
+    },
+    {
+      "shell": "packhorse",
+      "engine": "v8-stock",
+      "wheels": "street-1",
+      "pace": "fast",
+      "lap": 53.5,
+      "topKmh": 47
+    },
+    {
+      "shell": "packhorse",
+      "engine": "crate-v8-performance",
+      "wheels": "new-sport-1",
+      "pace": "brisk",
+      "lap": 62.58,
+      "topKmh": 68
+    },
+    {
+      "shell": "packhorse",
+      "engine": "crate-v8-performance",
+      "wheels": "new-sport-1",
+      "pace": "fast",
+      "lap": 50.38,
+      "topKmh": 68
+    },
+    {
+      "shell": "packhorse",
+      "engine": "crate-v8-performance",
+      "wheels": "new-sport-1",
+      "tuning": [
+        "turbo-race",
+        "exhaust-race",
+        "nitro-150"
+      ],
+      "nitroShare": 0.08,
+      "pace": "fast",
+      "lap": 48.87,
+      "topKmh": 95
     }
-  ]
+  ],
+  "tuned": "the two cars found as rare salvage also ran the quick pace with a race turbocharger, straight-through pipes and the 150-shot nitrous kit, the driver holding N wherever it was flat out and pointing straight; nitroShare is the fraction of the lap the valve was open"
 }

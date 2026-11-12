@@ -4,10 +4,15 @@ export type SurfaceKind = 'asphalt' | 'gravel' | 'concrete' | 'grass';
 
 export type EngineFamily = 'i4' | 'v8' | 'v12';
 
+/** How far the exhaust departs from the factory system: untouched, a free-flowing sport system, or straight-through pipes. */
+export type ExhaustNote = 'stock' | 'sport' | 'race';
+
 export interface EngineProfile {
   family: EngineFamily;
   /** Rated horsepower, 110 to 440. Louder and deeper with more power. */
   power: number;
+  /** A modified exhaust has its own recordings and its own synthesizer voicing. Stock when left out. */
+  exhaust?: ExhaustNote;
 }
 
 export interface DriveAudioState {
@@ -22,6 +27,10 @@ export interface DriveAudioState {
   surface: SurfaceKind;
   /** True while at least one wheel touches the ground. */
   grounded: boolean;
+  /** 0..1 turbocharger boost: the whistle of the turbine. Zero or left out for a car without one. */
+  boost?: number;
+  /** 1 while nitrous is flowing, otherwise 0. */
+  nitro?: number;
 }
 
 export interface AmbienceState {
@@ -39,7 +48,8 @@ export type SfxName =
   | 'click' | 'open' | 'close' | 'buy' | 'install' | 'ratchet' | 'paint' | 'stamp' | 'error'
   | 'enterCar' | 'exitCar' | 'ignition' | 'shutdown' | 'recover'
   | 'checkpoint' | 'lapComplete' | 'medal' | 'find' | 'unlock'
-  | 'handbrake' | 'thud' | 'scrape' | 'lightSwitch' | 'shutter' | 'gearShift';
+  | 'handbrake' | 'thud' | 'scrape' | 'lightSwitch' | 'shutter' | 'gearShift'
+  | 'blowoff' | 'nitroStart' | 'backfire' | 'sold';
 
 export interface SfxOptions {
   volume?: number;

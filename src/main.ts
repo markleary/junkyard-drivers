@@ -2,8 +2,11 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { createLighting, type GradeName, type Lighting } from './render/lighting';
 import { QUALITY_LABEL } from './render/quality';
-import { DEFAULT_PAINT, SHELLS, getShell, type PartKind, type PartSource, type ShellId } from './game/catalog';
+import { DEFAULT_PAINT, LISTINGS, PARTS, SHELLS, SHOP_CATEGORIES, getShell, type PartSource, type ShellId, type ShopCategory, type UpgradeKind } from './game/catalog';
 import { loadGame, saveGame, newGame, purchase, install, paintCar, getPart, buildIssues, type GameState, type OwnedCar } from './game/state';
+import { buildTuning, fitUpgrade, fittedUpgrades, reconcileFitted, removeUpgrade, type BuildTuning } from './game/upgrades';
+import { appraise, completeSale } from './game/dealer';
+import { stashLayout, type StashItem } from './game/stash';
 import { FINISHES, MEDAL_TIMES, PROGRESS_KEY, STRIPES, finishUnlocked, formatLap, loadProgress, newProgress, recordDriving, recordFind, recordLap, saveProgress, setStyle, stripeUnlocked, styleFor,
   type CameraMode, type FinishId, type LightMode, type Medal, type Progress, type QualityPreference, type StripeId, type TimePreference } from './game/progress';
 import { FIND_IDS, findSpots, type Find } from './game/finds';
@@ -11,8 +14,11 @@ import { advanceTrial, newTrial, runningTime, type Trial } from './game/trial';
 import { createCar, type CarAppearance, type CarVisual } from './render/cars';
 import { createWorld, type WorldView } from './render/world';
 import { createFindMarkers, type FindMarkers } from './render/finds';
+import { createStashView, type StashView } from './render/stash';
 import { Effects } from './render/vfx';
-import { GARAGE, YARD_BOUNDS, generateTown, type Point, type TownLayout } from './world/layout';
+import { GARAGE, YARD_BOUNDS, YARD_SPAWN, generateTown, type Point, type TownLayout } from './world/layout';
+import { atDealer, dealerSite } from './world/dealer';
+import { SHELL_SOLID } from './world/yard';
 import { surfaceAt } from './world/surface';
 import { TIME_LABEL, TIME_PRESETS, advanceHour, clockLabel } from './world/daylight';
 import { Vehicle, FIXED_DT } from './physics/vehicle';
@@ -20,7 +26,7 @@ import { Drivetrain } from './physics/drivetrain';
 import { Character } from './physics/character';
 import { GameAudio, type EngineFamily } from './audio/audio';
 import { GamepadInput } from './input/gamepad';
-import { appMarkup, bannerMarkup, garageMarkup, inspectionMarkup, jobStepsMarkup, logbookMarkup, pauseMarkup, resetMarkup, routeMarkup, shopMarkup, type BannerOptions } from './ui/templates';
+import { appMarkup, bannerMarkup, dealerMarkup, garageMarkup, inspectionMarkup, jobStepsMarkup, logbookMarkup, pauseMarkup, resetMarkup, routeMarkup, shopMarkup, type BannerOptions } from './ui/templates';
 import { renderOverlay, containTab } from './ui/focus';
 import { TouchControls } from './ui/touch';
 import { touchMarkup } from './ui/touch-markup';
@@ -51,13 +57,25 @@ let progress: Progress = loadProgress(undefined, FIND_IDS);
 try {
   if (localStorage.getItem(PROGRESS_KEY) === null && matchMedia('(prefers-reduced-motion: reduce)').matches) progress = { ...progress, settings: { ...progress.settings, motion: false } };
 } catch { /* Storage or media queries are unavailable: keep the defaults. */ }
+const randomSeed = () => {
+  try { return crypto.getRandomValues(new Uint32Array(1))[0] || 1; } catch { return Math.floor(Math.random() * 0xfffffffe) + 1; }
+};
+// Tuning parts are recorded against cars in the progress save; anything the collection no longer backs is dropped here.
+progress = reconcileFitted(state, progress);
+// The first visit decides where this game hides its rare salvage. After that the save remembers.
+if (!progress.stash) { progress = { ...progress, stash: randomSeed() }; saveProgress(progress); }
+/** The used-car dealer's mood: rolled when the game opens, the same until it is closed. */
+const SESSION_SEED = randomSeed();
 let selectedId = state.cars[0]?.id ?? '';
 let mode: 'foot' | 'drive' = 'foot';
-let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' = 'none', started = false, dragMode = false;
+let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' | 'dealer' = 'none', started = false, dragMode = false;
 let yaw = 0, pitch = 0, dragging = false;
 let vehicle: Vehicle | undefined, drivenVisual: CarVisual | undefined, drivetrain: Drivetrain | undefined;
+/** What is fitted to the car being driven. */
+let tuning: BuildTuning | undefined;
 let parked: CarVisual | undefined, parkedCollider: RAPIER.Collider | undefined;
-let inspectListing = '', rackKind: PartKind = 'engine', rackSource: PartSource = 'yard';
+let inspectListing = '', rackKind: ShopCategory = 'engine', rackSource: PartSource = 'yard';
+let stash: StashItem[] = stashLayout(progress.stash, progress.restock), stashView: StashView;
 let lighting: Lighting;
 let scene: THREE.Scene, camera: THREE.PerspectiveCamera, renderer: THREE.WebGLRenderer, world: RAPIER.World;
 let walker: Character, character: RAPIER.RigidBody, characterCollider: RAPIER.Collider;
@@ -70,11 +88,18 @@ let hour = progress.settings.time === 'auto' ? progress.hour : TIME_PRESETS[prog
 let lampsOn = false, hornHeld = false, lookBack = false, mapRange = 62;
 let trauma = 0, lastSpeed = 0, strideLeft = 0, bonnet = 0, driveSaveTimer = 0, exhaustTimer = 0, orbit = 0, frameCost = 0, framesDrawn = 0;
 let pendingMetres = 0, peakSpeed = 0;
+// Driving feedback for the tuning parts: the last frame's pedal and boost, the view's kick under nitrous, and whether the dealer is in reach.
+let pedalWas = 0, nitroWas = false, blownOff = true, boostKick = 0, flameTimer = 0, glintTimer = 0, dealerNear = false;
 let qaCamera: { position: [number, number, number]; target: [number, number, number] } | undefined;
 let photo: { yaw: number; pitch: number; distance: number; focus: THREE.Vector3; grade: number; savedHour: number; capture: boolean } | undefined;
 const keys = new Set<string>(), audio = new GameAudio(), pad = new GamepadInput();
 const shellViews = new Map<ShellId, { visual: CarVisual; collider: RAPIER.Collider }>();
-const shellPositions: Record<ShellId, THREE.Vector3> = { hachiro: new THREE.Vector3(-15, .72, 12), bison: new THREE.Vector3(-15, .72, 1), veloce: new THREE.Vector3(-38, .72, -23) };
+// Three shells stand where they always have. The rare ones lie wherever this game's stash puts them (see placeShells).
+const shellPositions: Record<ShellId, THREE.Vector3> = {
+  hachiro: new THREE.Vector3(-15, .72, 12), bison: new THREE.Vector3(-15, .72, 1), veloce: new THREE.Vector3(-38, .72, -23),
+  wren: new THREE.Vector3(0, .72, 0), packhorse: new THREE.Vector3(0, .72, 0),
+};
+const shellYaw: Record<ShellId, number> = { hachiro: -.12, bison: -.12, veloce: .25, wren: 0, packhorse: 0 };
 const BAY = new THREE.Vector3(-20, .8, -13);
 const tmp = new THREE.Vector3(), direction = new THREE.Vector3(), aim = new THREE.Vector3(), q = new THREE.Quaternion();
 const carPosition = new THREE.Vector3(), carRight = new THREE.Vector3(), carForward = new THREE.Vector3();
@@ -102,7 +127,8 @@ const touch = new TouchControls({
 });
 touch.setContext({ enabled: touchEnabled, paused, mode });
 
-interface Target { id: string; kind: 'workbench' | 'listing' | 'rack' | 'store' | 'car'; position: THREE.Vector3; label: string; listingId?: string }
+interface Target { id: string; kind: 'workbench' | 'listing' | 'rack' | 'store' | 'dealer' | 'car'; position: THREE.Vector3; label: string; listingId?: string }
+const dollars = (value: number) => `$${value.toLocaleString()}`;
 
 function notify(message: string) { $('toast').textContent = message; $('toast').classList.add('visible'); toastUntil = performance.now() + 4200; }
 /** A stamped card for the moments worth marking: medals, finds, unlocks. */
@@ -161,7 +187,7 @@ function updateObjective() {
     else message = mode === 'drive' ? 'Follow the amber arrows through Willow Creek. Return to the Garage.'
       : touchEnabled ? 'Your car is ready. Walk to its Garage bay and tap Enter car.' : 'Your car is ready. Walk to its Garage bay and press E.';
   }
-  if (trial.complete) message = touchEnabled ? 'Loop complete. Return to the Garage, stop, then tap Exit car.' : 'Loop complete. Back at the Garage, stop and press E to make changes.';
+  if (trial.complete) message = touchEnabled ? 'Loop complete. Return to the Garage, stop, then tap Exit car. Or sell it at Second Chance Motors.' : 'Loop complete. Back at the Garage, stop and press E to make changes. Or sell it at Second Chance Motors.';
   $('objective').querySelector('p')!.textContent = message;
   const engine = !!car && getPart(state, car.engineId)?.kind === 'engine', wheels = !!car && getPart(state, car.wheelsId)?.kind === 'wheels';
   $('job-steps').innerHTML = jobStepsMarkup([
@@ -173,12 +199,29 @@ function updateObjective() {
 /** How a saved car should look: fresh paint once painted or finished, its fitted engine, and any earned extras. */
 function appearanceOf(car: OwnedCar): CarAppearance {
   const complete = buildIssues(state, car).length === 0, style = styleFor(progress, car.id);
-  const engine = getPart(state, car.engineId);
+  const engine = getPart(state, car.engineId), fitted = fittedUpgrades(state, progress, car.id);
   return {
     paint: car.paint, restored: complete || car.paint.toLowerCase() !== DEFAULT_PAINT[car.shellId], wheels: !!car.wheelsId,
     finish: style.finish, stripe: STRIPES.find(item => item.id === style.stripe)?.color ?? null,
-    engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source === 'yard', performance: engine.id.includes('performance') } : null,
+    // Anything that did not come new from the counter shows its age; the uprated and rare engines carry the red covers.
+    engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
+    tuning: { exhaust: !!fitted.exhaust, turbo: !!fitted.turbo, nitro: !!fitted.nitro },
   };
+}
+
+/** Stand each rare shell in the hiding place this game gives it. The three display shells never move. */
+function placeShells() {
+  for (const item of stash) {
+    if (item.kind !== 'shell') continue;
+    const id = item.itemId as ShellId, view = shellViews.get(id);
+    shellPositions[id].set(item.x, .72, item.z);
+    shellYaw[id] = item.yaw;
+    if (!view) continue;
+    view.visual.group.position.copy(shellPositions[id]);
+    view.visual.group.rotation.y = item.yaw;
+    view.collider.setTranslation({ x: item.x, y: .92, z: item.z });
+    view.collider.setRotation({ x: 0, y: Math.sin(item.yaw / 2), z: 0, w: Math.cos(item.yaw / 2) });
+  }
 }
 
 function syncCars() {
@@ -186,6 +229,7 @@ function syncCars() {
     const owned = state.cars.some(car => car.shellId === shell.id), view = shellViews.get(shell.id);
     if (view) { view.visual.group.visible = !owned; view.collider.setEnabled(!owned); }
   }
+  stashView.sync(stash, state.purchasedListings);
   worldView.updateListings(state.purchasedListings);
   if (parked) { scene.remove(parked.group); parked.dispose(); parked = undefined; }
   if (parkedCollider) { world.removeCollider(parkedCollider, true); parkedCollider = undefined; }
@@ -251,15 +295,31 @@ function closePanel() { audio.play('close'); void resume(); }
 function renderInspect(listingId: string) { inspectListing = listingId; panel.className = 'inspect-panel'; delete panel.dataset.source; renderOverlay(panel, inspectionMarkup(state, listingId)); }
 function renderRack() { panel.className = 'shop-panel'; panel.dataset.source = rackSource; renderOverlay(panel, shopMarkup(state, rackSource, rackKind)); }
 function renderGarage() { panel.className = 'garage-panel'; delete panel.dataset.source; renderOverlay(panel, garageMarkup(state, selectedId, progress)); }
+/** In the car: the offer for that car. On foot at the hatch: what each car in the collection would fetch. */
+function renderDealer() {
+  const car = selectedCar(), driving = mode === 'drive' && !!car;
+  panel.className = 'dealer-panel'; delete panel.dataset.source;
+  // Focus goes to the heading, never to Sell: a key still held from driving (Space is the handbrake) would
+  // otherwise press the button on its way up and sell the car unasked.
+  renderOverlay(panel, dealerMarkup((driving ? [car!] : state.cars).map(item => appraise(state, progress, item, SESSION_SEED)), driving));
+}
 
 function interact() {
-  if (mode === 'drive') { exitCar(); return; }
+  if (mode === 'drive') {
+    if (!dealerNear) { exitCar(); return; }
+    // At the lot the same control asks for an offer instead of getting out.
+    if (Math.abs(vehicle?.speed ?? 0) > 1) { notify(touchEnabled ? 'Stop the car to ask for an offer. Hold Brake.' : 'Stop the car to ask for an offer. Hold S to brake.'); return; }
+    flushDriving();
+    openPanel('dealer'); renderDealer();
+    return;
+  }
   if (!activeTarget) return;
   const t = activeTarget;
   if (t.kind === 'listing') { openPanel('inspect'); renderInspect(t.listingId!); }
   else if (t.kind === 'store') { rackSource = 'store'; rackKind = 'engine'; openPanel('rack'); renderRack(); }
   else if (t.kind === 'rack') { rackSource = 'yard'; rackKind = t.id === 'rack-engines' ? 'engine' : t.id === 'rack-wheels' ? 'wheels' : 'paint'; openPanel('rack'); renderRack(); }
   else if (t.kind === 'workbench') { openPanel('garage'); renderGarage(); }
+  else if (t.kind === 'dealer') { openPanel('dealer'); renderDealer(); }
   else enterCar();
 }
 
@@ -268,12 +328,14 @@ function enterCar() {
   if (!car) return;
   const issues = buildIssues(state, car);
   if (issues.length) { audio.play('error'); notify(`Not drivable yet. ${issues.join(' ')} Use the workbench.`); return; }
-  const shell = getShell(car.shellId), engine = getPart(state, car.engineId)!;
+  const engine = getPart(state, car.engineId)!;
   mode = 'drive';
   bonnet = 0;
   syncCars();
-  vehicle = new Vehicle(world, { mass: shell.mass, power: engine.power!, grip: getPart(state, car.wheelsId)!.grip! });
-  drivetrain = new Drivetrain(engine.power!);
+  // Engine, exhaust, tires, and whatever is bolted on: one description for the physics, the gearbox and the engine note.
+  tuning = buildTuning(state, progress, car);
+  vehicle = new Vehicle(world, tuning);
+  drivetrain = new Drivetrain(tuning.peak);
   drivenVisual = createCar(car.shellId, appearanceOf(car));
   scene.add(drivenVisual.group);
   // The beams ride with the car; they are created once so the light count never changes.
@@ -288,15 +350,21 @@ function enterCar() {
   walker.teleport({ x: BAY.x, y: -60, z: BAY.z });
   clearInputs();
   trial = newTrial(); lastSpeed = 0; pendingMetres = 0; peakSpeed = 0;
+  pedalWas = 0; nitroWas = false; blownOff = true; boostKick = 0; dealerNear = false;
   effects.breakSkids();
   $('speed').hidden = false; $('recover').hidden = false; $('crosshair').hidden = true;
+  // The boost and nitrous gauges, and the touch button, exist only for a car that carries the parts.
+  $('boost-gauge').hidden = !tuning.boost; $('nitro-gauge').hidden = !tuning.shot;
+  setText('drive-keys', tuning.shot ? 'N · NITRO' : 'W / S · DRIVE');
+  touch.setNitro(tuning.shot > 0);
   audio.play('enterCar');
-  audio.setEngine({ family: engine.mount!.toLowerCase() as EngineFamily, power: engine.power! });
+  audio.setEngine({ family: engine.mount!.toLowerCase() as EngineFamily, power: tuning.peak, exhaust: tuning.exhaust });
   audio.play('ignition');
   // The car sits in the bay facing the door, so its tailpipes point at the back wall.
   for (const pipe of drivenVisual.exhausts) effects.emit('exhaust', BAY.x - pipe.x, BAY.y + pipe.y, BAY.z - pipe.z, 0, .4, -1.2, { count: 9, spread: .5, scale: 1.6 });
   updateObjective(); syncUiScreen();
-  notify(touchEnabled ? 'Left pad steers · hold the accelerator to pull away · brake to stop or reverse' : 'W to pull away · A / D steer · S brake / reverse · R recover');
+  const nitroHint = !tuning.shot ? '' : touchEnabled ? ' · hold Nitro for a burst' : ' · hold N for nitro';
+  notify((touchEnabled ? 'Left pad steers · hold the accelerator to pull away · brake to stop or reverse' : 'W to pull away · A / D steer · S brake / reverse · R recover') + nitroHint);
 }
 
 /** Bank the distance and top speed gathered since the last save. */
@@ -314,20 +382,54 @@ function exitCar() {
   const p = vehicle.body.translation();
   if (Math.hypot(p.x + 20, p.z + 6) > 22) { notify(touchEnabled ? 'Return to the Garage apron to exit, or tap Recover to Garage.' : 'Return to the Garage apron to exit. R recovers the car there.'); return; }
   flushDriving();
-  headlights.forEach(light => { scene.add(light, light.target); light.intensity = 0; });
-  vehicle.dispose(); vehicle = undefined; drivetrain = undefined;
-  if (drivenVisual) { scene.remove(drivenVisual.group); drivenVisual.dispose(); drivenVisual = undefined; }
-  mode = 'foot';
-  walker.teleport({ x: -24, y: 1, z: -6 });
-  characterCollider.setEnabled(true);
-  yaw = 0; pitch = 0;
-  syncCars(); clearInputs();
-  $('speed').hidden = true; $('recover').hidden = true; $('route').hidden = true; $('crosshair').hidden = false;
-  if (beacon) beacon.visible = false;
-  audio.setEngine(null);
+  leaveVehicle({ x: -24, y: 1, z: -6 });
   audio.play('shutdown'); audio.play('exitCar');
   updateObjective(); syncUiScreen();
   notify(touchEnabled ? 'Car parked in the bay. Walk to the workbench and tap Open to change your build.' : 'Car parked in the bay. E at the workbench to change your build.');
+}
+
+/** Take the driven car out of the world and put the driver back on their feet at `at`. */
+function leaveVehicle(at: { x: number; y: number; z: number }) {
+  if (!vehicle) return;
+  headlights.forEach(light => { scene.add(light, light.target); light.intensity = 0; });
+  vehicle.dispose(); vehicle = undefined; drivetrain = undefined; tuning = undefined;
+  if (drivenVisual) { scene.remove(drivenVisual.group); drivenVisual.dispose(); drivenVisual = undefined; }
+  mode = 'foot';
+  walker.teleport(at);
+  characterCollider.setEnabled(true);
+  yaw = 0; pitch = 0; dealerNear = false; boostKick = 0;
+  syncCars(); clearInputs();
+  $('speed').hidden = true; $('recover').hidden = true; $('route').hidden = true; $('crosshair').hidden = false;
+  touch.setNitro(false);
+  if (beacon) beacon.visible = false;
+  audio.setEngine(null);
+}
+
+/** Take the dealer's offer for the car that was driven onto the lot. */
+function sellDrivenCar() {
+  const car = selectedCar();
+  if (!car || !vehicle) return;
+  flushDriving();
+  const shell = getShell(car.shellId), sale = completeSale(state, progress, car.id, SESSION_SEED);
+  state = sale.state; progress = sale.progress;
+  const saved = saveGame(state);
+  persist();
+  $('save-status').textContent = saved ? 'LOGBOOK SAVED' : 'SAVE UNAVAILABLE · KEEP THIS TAB OPEN';
+  selectedId = state.cars[0]?.id ?? '';
+  // Rare pieces that went with the car come back into the yard somewhere new.
+  stash = stashLayout(progress.stash, progress.restock);
+  placeShells();
+  // The dealer runs the seller back to the yard gate.
+  leaveVehicle({ x: YARD_SPAWN.x, y: 1, z: YARD_SPAWN.z });
+  trial = newTrial();
+  audio.play('sold');
+  closePanel();
+  updateObjective();
+  announce({ kicker: 'SOLD · SECOND CHANCE MOTORS', title: dollars(sale.amount), detail: `${shell.name} · ${dollars(sale.profit)} over what you put in`, tone: 'gold', glyph: 'cash' });
+  pad.rumble(220, .6);
+  notify(sale.restocked.length
+    ? 'Sold. The dealer ran you back to the yard gate. The rare pieces that went with the car have turned up somewhere new in the yard.'
+    : 'Sold. The dealer ran you back to the yard gate. Another shell like it has come in: build it again, or try a different car.');
 }
 
 function recover() {
@@ -367,8 +469,10 @@ function targets(): Target[] {
     id: `shell-${shell.id}`, kind: 'listing' as const, listingId: `shell-${shell.id}`,
     position: shellPositions[shell.id].clone().add(new THREE.Vector3(0, .3, 0)), label: shell.name,
   }));
+  // Rare parts still lying where the yard hides them carry the same inspection tag as a shell.
+  const salvage = stashView.targets().map(item => ({ id: item.listingId, kind: 'listing' as const, listingId: item.listingId, position: item.position, label: item.label }));
   const car = selectedCar();
-  return [...list, ...cars, ...(car ? [{ id: 'garage-car', kind: 'car' as const, position: BAY, label: `${getShell(car.shellId).name} · ${buildIssues(state, car).length ? 'incomplete build' : 'drive'}` }] : [])];
+  return [...list, ...cars, ...salvage, ...(car ? [{ id: 'garage-car', kind: 'car' as const, position: BAY, label: `${getShell(car.shellId).name} · ${buildIssues(state, car).length ? 'incomplete build' : 'drive'}` }] : [])];
 }
 
 function updateTarget() {
@@ -384,18 +488,23 @@ function updateTarget() {
     if (dist < 4.8 && dot > .25 && dist < nearest) { nearest = dist; activeTarget = t; }
   }
   const hint = $('hint');
-  hint.hidden = paused || mode === 'drive' || !activeTarget;
-  if (activeTarget) {
-    const verb = activeTarget.kind === 'listing' ? 'Inspect' : (activeTarget.kind === 'rack' || activeTarget.kind === 'store') ? 'Browse' : activeTarget.kind === 'workbench' ? 'Open' : '';
-    const markup = `<kbd>E</kbd><span>${verb} ${activeTarget.label}</span>`;
-    if (hint.dataset.content !== markup) { hint.innerHTML = markup; hint.dataset.content = markup; }
+  // On foot the hint names whatever is in reach. In the car it appears only at the dealer's, once the car has slowed to pull in.
+  const offer = mode === 'drive' && !!vehicle && dealerNear && Math.abs(vehicle.speed) < 6;
+  hint.hidden = paused || (mode === 'drive' ? !offer : !activeTarget);
+  let markup = '';
+  if (offer) markup = '<kbd>E</kbd><span>Stop and ask Second Chance Motors for an offer</span>';
+  else if (activeTarget) {
+    const verb = activeTarget.kind === 'listing' ? 'Inspect' : (activeTarget.kind === 'rack' || activeTarget.kind === 'store') ? 'Browse' : activeTarget.kind === 'workbench' ? 'Open' : activeTarget.kind === 'dealer' ? 'Ask at' : '';
+    markup = `<kbd>E</kbd><span>${verb} ${activeTarget.label}</span>`;
   }
+  if (markup && hint.dataset.content !== markup) { hint.innerHTML = markup; hint.dataset.content = markup; }
   if (mode === 'drive' && vehicle) {
     const v = vehicle.body.translation(), nearGarage = Math.hypot(v.x + 20, v.z + 6) < 22, stopped = Math.abs(vehicle.speed) <= 1;
-    touch.setAction({ label: 'Exit car', detail: !nearGarage ? 'Return to the Garage' : !stopped ? 'Brake to a stop' : 'Park in the Garage bay', enabled: nearGarage && stopped });
+    if (dealerNear) touch.setAction({ label: 'Sell car', detail: stopped ? 'Ask Second Chance Motors' : 'Brake to a stop', enabled: stopped });
+    else touch.setAction({ label: 'Exit car', detail: !nearGarage ? 'Return to the Garage' : !stopped ? 'Brake to a stop' : 'Park in the Garage bay', enabled: nearGarage && stopped });
   } else if (activeTarget) {
     const t = activeTarget;
-    touch.setAction({ label: t.kind === 'listing' ? 'Inspect' : t.kind === 'rack' || t.kind === 'store' ? 'Browse' : t.kind === 'workbench' ? 'Open' : 'Enter car', detail: t.label, enabled: true });
+    touch.setAction({ label: t.kind === 'listing' ? 'Inspect' : t.kind === 'rack' || t.kind === 'store' ? 'Browse' : t.kind === 'workbench' ? 'Open' : t.kind === 'dealer' ? 'Ask prices' : 'Enter car', detail: t.label, enabled: true });
   } else touch.setAction({ label: 'Interact', detail: 'Look towards a nearby item', enabled: false });
 }
 
@@ -484,16 +593,23 @@ function step() {
     tmp.applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw);
     walker.move(tmp, FIXED_DT);
   } else if (vehicle) {
-    const forward = Math.max(keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0, touch.input.throttle, pad.state.throttle);
+    const forward = pedal();
     const back = Math.max(keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0, touch.input.brake, pad.state.brake);
     const brake = back > 0 && (vehicle.speed > 1 || forward > 0);
     vehicle.update({
       throttle: brake ? 0 : back > 0 ? -.55 * back : forward,
       steer: THREE.MathUtils.clamp((keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) + touch.input.steer + pad.state.steer, -1, 1),
       brake, handbrake: keys.has('Space') || touch.input.handbrake || pad.state.handbrake,
+      // Nitrous: N or Shift on the keyboard, B on a controller, the Nitro button on a touch screen.
+      nitro: keys.has('KeyN') || keys.has('ShiftLeft') || keys.has('ShiftRight') || pad.state.nitro || touch.input.nitro,
     });
   }
   world.step();
+}
+
+/** The accelerator from every device. The touch Nitro button counts as a full pedal, so one thumb can do both. */
+function pedal() {
+  return Math.max(keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0, touch.input.throttle, pad.state.throttle, touch.input.nitro ? 1 : 0);
 }
 
 /** Everything the moving car drives besides its physics: wheels, lamps, dust, smoke, sound, the lap. */
@@ -504,7 +620,7 @@ function updateDriving(dt: number) {
   carPosition.set(p.x, p.y, p.z);
   carForward.set(0, 0, -1).applyQuaternion(q); carRight.set(1, 0, 0).applyQuaternion(q);
   const speed = vehicle.speed, absolute = Math.abs(speed);
-  const throttle = Math.max(keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0, touch.input.throttle, pad.state.throttle);
+  const throttle = pedal();
   const braking = Math.max(keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0, touch.input.brake, pad.state.brake) > 0;
   const handbrake = keys.has('Space') || touch.input.handbrake || pad.state.handbrake;
   drivetrain.update(speed, throttle, dt);
@@ -540,6 +656,7 @@ function updateDriving(dt: number) {
       effects.emit('exhaust', tmp.x, tmp.y, tmp.z, -carForward.x * 1.4 + velocity.x * .5, .3, -carForward.z * 1.4 + velocity.z * .5, { spread: .12, scale: .7 + throttle * .9 });
     }
   }
+  updateTuningFeedback(dt, throttle, velocity);
   // A sudden loss of speed is a knock: sound, sparks, a jolt through the view and the pad.
   const loss = Math.abs(lastSpeed) - absolute;
   if (loss > 2.4 && !braking && !handbrake) {
@@ -577,8 +694,56 @@ function updateDriving(dt: number) {
   setText('motion-state', speed < -.3 ? 'REVERSE' : absolute < .3 ? 'IDLE' : 'DRIVE');
   updateLap();
   collectFinds(p.x, p.z, 3.4);
-  audio.updateDrive({ rpm: drivetrain.rpm, throttle, speed, slip, surface: ground, grounded }, dt);
+  dealerNear = atDealer(layout, p.x, p.z);
+  audio.updateDrive({ rpm: drivetrain.rpm, throttle, speed, slip, surface: ground, grounded, boost: tuning?.boost ? vehicle.spool : 0, nitro: vehicle.nitro ? 1 : 0 }, dt);
   if (p.y < -10) recover();
+}
+
+/** What the turbocharger, the nitrous and an open exhaust add to a drive: gauges, flame, a kick in the view, and their sounds. */
+function updateTuningFeedback(dt: number, throttle: number, velocity: { x: number; y: number; z: number }) {
+  if (!vehicle || !drivenVisual || !drivetrain || !tuning) return;
+  const flame = (color: number, count: number, scale: number) => {
+    for (const pipe of drivenVisual!.exhausts) {
+      tmp.copy(pipe).applyQuaternion(q).add(carPosition);
+      effects.emit('flame', tmp.x, tmp.y, tmp.z, -carForward.x * 3.2 + velocity.x, .25, -carForward.z * 3.2 + velocity.z, { count, spread: .16, color, scale });
+    }
+  };
+  if (tuning.boost) {
+    const gauge = $('boost-gauge');
+    gauge.style.setProperty('--level', vehicle.spool.toFixed(2));
+    gauge.classList.toggle('full', vehicle.spool > .9);
+    // Lifting off with the turbine spinning dumps the boost through the blow-off valve: once per lift.
+    if (throttle > .6) blownOff = false;
+    else if (!blownOff && throttle < .15 && vehicle.spool > .45) { blownOff = true; audio.play('blowoff', { volume: .5 + vehicle.spool * .5 }); }
+  }
+  if (tuning.shot) {
+    const gauge = $('nitro-gauge'), spent = vehicle.charge <= 0 || (!vehicle.nitro && vehicle.charge < .25);
+    gauge.style.setProperty('--level', vehicle.charge.toFixed(2));
+    gauge.classList.toggle('firing', vehicle.nitro);
+    gauge.classList.toggle('spent', spent);
+    const button = $('touch-nitro');
+    button.style.setProperty('--level', vehicle.charge.toFixed(2));
+    if (button.dataset.spent !== String(spent)) button.dataset.spent = String(spent);
+    if (vehicle.nitro && !nitroWas) {
+      // The valve opens: a thump in the back, a burst of blue flame, and the view opens out.
+      audio.play('nitroStart');
+      trauma = Math.min(1, trauma + .22);
+      pad.rumble(260, .55, .8);
+      flame(0x8fd0ff, 7, 1.5);
+    }
+    if (vehicle.nitro) {
+      flameTimer -= dt;
+      if (flameTimer <= 0) { flameTimer = .035; flame(0x7fc4ff, 1, 1); }
+    }
+    nitroWas = vehicle.nitro;
+  }
+  boostKick += ((vehicle.nitro ? 1 : 0) - boostKick) * Math.min(1, dt * (vehicle.nitro ? 9 : 3.5));
+  // Straight-through pipes spit unburnt fuel when the throttle snaps shut at high revs.
+  if (tuning.exhaust === 'race' && pedalWas > .7 && throttle < .15 && drivetrain.rpm > .5) {
+    audio.play('backfire', { volume: .55 + drivetrain.rpm * .45 });
+    flame(0xffa24a, 3, 1.2);
+  }
+  pedalWas = throttle;
 }
 
 function updateWalking(dt: number) {
@@ -596,6 +761,14 @@ function updateWalking(dt: number) {
     }
   }
   collectFinds(p.x, p.z, 2.2);
+  // Rare parts have no beacon. From a few paces off, bare metal catches the light now and then: enough to reward a careful look.
+  glintTimer -= dt;
+  if (glintTimer <= 0) {
+    glintTimer = 1.1 + Math.random() * .9;
+    for (const item of stashView.targets()) {
+      if (Math.hypot(item.position.x - p.x, item.position.z - p.z) < 13) effects.emit('sparkle', item.position.x, item.position.y + .25, item.position.z, 0, .5, 0, { count: 2, spread: .7 });
+    }
+  }
 }
 
 function updateCamera(dt: number) {
@@ -631,7 +804,8 @@ function updateCamera(dt: number) {
     q.set(r.x, r.y, r.z, r.w);
     const behind = (lookBack || pad.state.lookBack) ? -1 : 1;
     if (view === 'bonnet') {
-      tmp.set(0, .92, -.25 * behind).applyQuaternion(q).add(direction.set(p.x, p.y, p.z));
+      // Just over the roof, which is taller on some cars than others.
+      tmp.set(0, Math.max(.92, drivenVisual.roofHeight + .2), -.25 * behind).applyQuaternion(q).add(direction.set(p.x, p.y, p.z));
       camera.position.copy(tmp);
       direction.set(0, .7, -9 * behind).applyQuaternion(q).add(aim.set(p.x, p.y, p.z));
     } else {
@@ -649,8 +823,8 @@ function updateCamera(dt: number) {
       direction.set(0, .6, -4.5 * behind).applyQuaternion(q).add(aim.set(p.x, p.y, p.z));
     }
     camera.lookAt(direction);
-    // The view opens out a little with speed.
-    if (progress.settings.motion) fov = base + Math.min(9, speed * .32);
+    // The view opens out a little with speed, and a little more while the nitrous is flowing.
+    if (progress.settings.motion) fov = base + Math.min(9, speed * .32) + boostKick * 5;
   }
   if (trauma > 0) {
     trauma = Math.max(0, trauma - dt * 1.5);
@@ -830,7 +1004,8 @@ app.addEventListener('click', event => {
     if (action === 'time') { setPreference({ time: TIME_CYCLE[(TIME_CYCLE.indexOf(progress.settings.time) + 1) % TIME_CYCLE.length] }); updateClock(0); pause(); return; }
     if (action === 'map') { setPreference({ map: !progress.settings.map }); pause(); return; }
     if (action === 'motion') { setPreference({ motion: !progress.settings.motion }); pause(); return; }
-    if (action === 'logbook') { renderOverlay(menu, logbookMarkup(state, progress, finds), '[data-action="back-to-pause"]'); audio.play('open'); return; }
+    if (action === 'logbook') { renderOverlay(menu, logbookMarkup(state, progress, finds, stash), '[data-action="back-to-pause"]'); audio.play('open'); return; }
+    if (action === 'sell') { sellDrivenCar(); return; }
     if (action === 'back-to-pause') { pause(); return; }
     if (action === 'photo') { menu.hidden = true; enterPhoto(); return; }
     if (action === 'new') { renderOverlay(menu, resetMarkup(), '[data-action="cancel-new"]'); return; }
@@ -841,16 +1016,23 @@ app.addEventListener('click', event => {
       else notify('Reset could not be saved. Allow browser storage and try again. Your current collection is intact.');
       return;
     }
-    if (button.dataset.category && ['engine', 'wheels', 'paint'].includes(button.dataset.category)) { rackKind = button.dataset.category as PartKind; audio.click(); renderRack(); return; }
+    if (button.dataset.category && (SHOP_CATEGORIES as string[]).includes(button.dataset.category)) { rackKind = button.dataset.category as ShopCategory; audio.click(); renderRack(); return; }
     if (button.dataset.buy) {
-      const previous = state;
-      commit(purchase(state, button.dataset.buy));
+      const previous = state, listing = button.dataset.buy;
+      commit(purchase(state, listing));
       if (!selectedId) selectedId = state.cars[0]?.id ?? '';
       updateObjective();
       if (previous !== state) {
         syncCars();
         audio.play('buy');
-        notify(button.dataset.buy.startsWith('shell-') ? 'Shell delivered to the Garage. Visit the yard racks or Auto Parts store.' : 'Added to your inventory.');
+        notify(listing.startsWith('shell-') ? 'Shell delivered to the Garage. Visit the yard racks or Auto Parts store.' : 'Added to your inventory.');
+        // Something the yard was hiding: worth a stamped card of its own.
+        const found = stash.find(item => item.listingId === listing);
+        if (found) {
+          const item = LISTINGS.find(entry => entry.id === listing)!;
+          const name = item.kind === 'shell' ? getShell(item.itemId).name : PARTS.find(part => part.id === item.itemId)!.name;
+          announce({ kicker: 'RARE SALVAGE', title: name, detail: item.kind === 'shell' ? 'Delivered to the Garage.' : 'Carried to the Garage. Fit it at the workbench.', tone: 'find', glyph: 'rare' }, 'find');
+        }
       }
       if (panelKind === 'inspect') renderInspect(inspectListing); else renderRack();
     }
@@ -872,6 +1054,17 @@ app.addEventListener('click', event => {
       const colour = Number.parseInt((selectedCar()?.paint ?? '#ffffff').slice(1), 16);
       effects.emit('mist', BAY.x, BAY.y + .5, BAY.z, 0, .3, 0, { count: 40, spread: 2.6, color: colour, scale: 1.4 });
       notify('Paint applied.');
+    }
+    if (button.dataset.fit || button.dataset.unfit) {
+      const fitting = !!button.dataset.fit;
+      progress = fitting ? fitUpgrade(state, progress, selectedId, button.dataset.fit!) : removeUpgrade(progress, selectedId, button.dataset.unfit as UpgradeKind);
+      persist(); syncCars(); renderGarage();
+      audio.play(fitting ? 'ratchet' : 'install');
+      // Sparks where the work is: under the bonnet, or at the tailpipes for an exhaust.
+      const exhaust = (fitting ? getPart(state, button.dataset.fit)?.kind : button.dataset.unfit) === 'exhaust';
+      const rear = selectedCar()?.shellId === 'veloce';
+      effects.emit('spark', BAY.x + (exhaust ? .5 : 0), BAY.y + (exhaust ? -.2 : .4), BAY.z + (exhaust ? -2 : rear ? -1.5 : 1.3), 0, 1.6, 0, { count: 18, spread: 1 });
+      notify(fitting ? 'Fitted. Anything it replaced is back in your inventory.' : 'Removed. It is back in your inventory.');
     }
     if (button.dataset.finish || button.dataset.stripe) {
       progress = setStyle(progress, selectedId, button.dataset.finish ? { finish: button.dataset.finish as FinishId } : { stripe: button.dataset.stripe as StripeId });
@@ -1013,6 +1206,7 @@ async function boot() {
     finds = findSpots(layout);
     findMarkers = createFindMarkers(scene, finds, progress.finds, worldView.trophyPegs);
     findMarkers.hang(progress.finds);
+    stashView = createStashView(scene, world);
     effects = new Effects(scene, lighting.settings.particles);
     minimap = new Minimap($<HTMLCanvasElement>('minimap-canvas'), layout);
     beacon = buildBeacon();
@@ -1028,12 +1222,13 @@ async function boot() {
     for (const shell of SHELLS) {
       const visual = createCar(shell.id, { restored: false, wheels: false });
       visual.group.position.copy(shellPositions[shell.id]);
-      visual.group.rotation.y = shell.id === 'veloce' ? .25 : -.12;
+      visual.group.rotation.y = shellYaw[shell.id];
       scene.add(visual.group);
       const p = shellPositions[shell.id];
-      const collider = world.createCollider(RAPIER.ColliderDesc.cuboid(.96, .65, 2.25).setTranslation(p.x, p.y + .2, p.z));
+      const collider = world.createCollider(RAPIER.ColliderDesc.cuboid(SHELL_SOLID.w / 2, SHELL_SOLID.h / 2, SHELL_SOLID.d / 2).setTranslation(p.x, p.y + .2, p.z));
       shellViews.set(shell.id, { visual, collider });
     }
+    placeShells();
     syncCars(); updateObjective();
     world.step();
     performance.mark('jd-ready');
@@ -1052,8 +1247,16 @@ async function boot() {
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, memory: { ...renderer.info.memory }, programs: renderer.info.programs?.length ?? 0, world: worldView.stats,
         graphicsQuality: lighting.quality, hour: lighting.atmosphere.sample.hour, particles: effects.live, photo: !!photo,
         camera: progress.settings.camera, lamps: lampsOn, gear: drivetrain?.gear ?? null, rpm: drivetrain?.rpm ?? 0,
-        audio: { ready: audio.ready, muted: audio.muted, clips: audio.clips, recorded: audio.recorded }, frameMs: frameCost,
+        audio: { ready: audio.ready, muted: audio.muted, clips: audio.clips, recorded: audio.recorded, engine: audio.engineSource }, frameMs: frameCost,
         touchEnabled, touchInput: { ...touch.input },
+        // Where this game hides its rare salvage, what is fitted to the car being driven, and what the dealer would pay for the selected car.
+        stash: stash.map(item => ({ ...item, held: state.purchasedListings.includes(item.listingId) })),
+        tuning: tuning ? { ...tuning } : null, boost: vehicle?.spool ?? 0, nitro: { charge: vehicle?.charge ?? 0, active: vehicle?.nitro ?? false },
+        dealer: (() => {
+          const site = dealerSite(layout), car = selectedCar();
+          const sheet = car ? appraise(state, progress, car, SESSION_SEED) : null;
+          return { bay: site?.bay ?? null, hatch: site?.hatch ?? null, near: dealerNear, invested: sheet?.investment.total ?? 0, range: sheet?.range ?? null, offer: sheet && !sheet.issues.length ? sheet.offer : null };
+        })(),
       }) });
       Object.assign(window, { __JD_QA: {
         camera(position?: [number, number, number], target?: [number, number, number]) { qaCamera = position && target ? { position, target } : undefined; },

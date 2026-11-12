@@ -30,9 +30,10 @@ const CLIPS: Record<string, Clip> = {
   handbrake: { level: .6, gap: .2 }, 'gear-shift': { level: .45, gap: .15 }, 'light-switch': { level: .9 },
   thud: { level: .9, gap: .14 }, scrape: { level: .5, gap: .3 }, recover: { level: .5, gap: .3 }, shutter: { level: .7, gap: .1 },
   checkpoint: { level: .55, gap: .2 }, 'lap-complete': { level: .5, gap: .5 }, medal: { level: .5, gap: .5 }, find: { level: .6, gap: .2 }, unlock: { level: .5, gap: .3 },
+  blowoff: { level: .5, gap: .25 }, 'nitro-start': { level: .7, gap: .4 }, backfire: { level: .7, gap: .1 }, sold: { level: .6, gap: .6 },
 };
 
-const FILE: Partial<Record<SfxName, string>> = { enterCar: 'enter-car', exitCar: 'exit-car', lapComplete: 'lap-complete', lightSwitch: 'light-switch', gearShift: 'gear-shift' };
+const FILE: Partial<Record<SfxName, string>> = { enterCar: 'enter-car', exitCar: 'exit-car', lapComplete: 'lap-complete', lightSwitch: 'light-switch', gearShift: 'gear-shift', nitroStart: 'nitro-start' };
 const FAMILIES: EngineFamily[] = ['i4', 'v8', 'v12'];
 const TIME = .07;
 
@@ -125,8 +126,8 @@ function trimSilence(buffer: AudioBuffer): [number, number] {
   } catch { return [0, 0]; }
 }
 
-/** Clips that play end to end without a gap: beds, tires, wind and engines. */
-const LOOPED = /^(amb|roll|engine)-|^(skid|wind)$/;
+/** Clips that play end to end without a gap: beds, tires, wind, engines, the turbine and the nitrous jet. */
+const LOOPED = /^(amb|roll|engine)-|^(skid|wind|turbo-spool|nitro-loop)$/;
 
 /**
  * Make a loop's seam exact after decoding. Lossy encoding can leave a small step where the end
@@ -198,11 +199,21 @@ export class SampledEngine {
   private tone: BiquadFilterNode;
   private out: GainNode;
   private level: number;
+  /** How far the lowpass opens: a modified exhaust lets more of the top through. */
+  private open: number;
   private stopped = false;
+  /** Which pair of recordings is playing, without the idle or rev suffix: `engine-v8` or `engine-v8-sport`. */
+  readonly source: string;
 
   static available(bank: SampleBank, family: EngineFamily) { return bank.has(`engine-${family}-idle`, `engine-${family}-rev`); }
+  /** A modified exhaust has its own pair of recordings for each engine family. */
+  static modified(bank: SampleBank, family: EngineFamily) { return bank.has(`engine-${family}-sport-idle`, `engine-${family}-sport-rev`); }
 
   constructor(private ctx: BaseAudioContext, bank: SampleBank, destination: AudioNode, profile: EngineProfile, startAt: number) {
+    const exhaust = profile.exhaust ?? 'stock', modified = exhaust !== 'stock';
+    // With the pipes changed the car plays the modified recordings. Should those be missing, the standard pair is
+    // opened up and turned up instead, so the part still changes the sound.
+    this.source = `engine-${profile.family}${modified && SampledEngine.modified(bank, profile.family) ? '-sport' : ''}`;
     this.tone = ctx.createBiquadFilter();
     this.tone.type = 'lowpass';
     this.tone.frequency.value = 2400;
@@ -210,10 +221,12 @@ export class SampledEngine {
     this.out = ctx.createGain();
     this.out.gain.value = 0;
     this.tone.connect(this.out).connect(destination);
-    this.idle = new Loop(ctx, bank, `engine-${profile.family}-idle`, this.tone);
-    this.rev = new Loop(ctx, bank, `engine-${profile.family}-rev`, this.tone);
-    // More power: a little louder and fuller.
-    this.level = .62 + clamp01((profile.power - 100) / 340) * .3;
+    this.idle = new Loop(ctx, bank, `${this.source}-idle`, this.tone);
+    this.rev = new Loop(ctx, bank, `${this.source}-rev`, this.tone);
+    // More power: a little louder and fuller. Every engine recording is levelled to the same loudness on a meter, so
+    // what a changed exhaust adds is set here: a sport system about 2.6 dB, straight-through pipes about 4 dB.
+    this.level = (.62 + clamp01((profile.power - 100) / 340) * .3) * (exhaust === 'race' ? 1.6 : exhaust === 'sport' ? 1.35 : 1);
+    this.open = exhaust === 'race' ? 1.35 : exhaust === 'sport' ? 1.15 : 1;
     this.out.gain.setTargetAtTime(1, Math.max(ctx.currentTime, startAt), .22);
   }
 
@@ -225,7 +238,7 @@ export class SampledEngine {
     // leaves entirely: pitched up under the rev recording, it keeps the firing pulse and the low end.
     this.idle.set(this.level * (1 - cross * .7) * (.6 + load * .25), 1 + r * 1.7);
     this.rev.set(this.level * cross * (.34 + load * .66), .52 + r * .8);
-    this.tone.frequency.setTargetAtTime(700 + 6300 * (.22 + .78 * load) * (.3 + .7 * r), this.ctx.currentTime, .09);
+    this.tone.frequency.setTargetAtTime(Math.min(16000, (700 + 6300 * (.22 + .78 * load) * (.3 + .7 * r)) * this.open), this.ctx.currentTime, .09);
   }
 
   /** Stay silent until the starter has finished cranking. */
@@ -290,6 +303,37 @@ export class SampledRoad {
   dispose() {
     for (const loop of [this.asphalt, this.gravel, this.skid, this.wind]) loop.dispose();
     try { this.soften.disconnect(); } catch { /* Already gone. */ }
+  }
+}
+
+/** The turbine's whistle and the rush of nitrous, from recordings. */
+export class SampledBoost {
+  private spool: Loop;
+  private jet: Loop;
+
+  static available(bank: SampleBank) { return bank.has('turbo-spool', 'nitro-loop'); }
+
+  constructor(ctx: BaseAudioContext, bank: SampleBank, destination: AudioNode) {
+    this.spool = new Loop(ctx, bank, 'turbo-spool', destination);
+    this.jet = new Loop(ctx, bank, 'nitro-loop', destination);
+  }
+
+  update(state: DriveAudioState, _dt: number) {
+    const boost = clamp01(finite(state.boost ?? 0, 0)), nitro = clamp01(finite(state.nitro ?? 0, 0)), revs = clamp01(finite(state.rpm, 0));
+    // The whistle climbs in pitch as well as level while the boost builds: the recording holds about 2.2 kHz,
+    // so it runs from under 2 kHz as the turbine wakes to past 4 kHz on full boost at the red line.
+    this.spool.set(Math.pow(boost, 1.5) * .3, .8 + boost * .9 + revs * boost * .3, .06);
+    this.jet.set(nitro * .5, .94 + revs * .14, nitro ? .04 : .1);
+  }
+
+  silence() {
+    this.spool.set(0, 1, .1);
+    this.jet.set(0, 1, .1);
+  }
+
+  dispose() {
+    this.spool.dispose();
+    this.jet.dispose();
   }
 }
 

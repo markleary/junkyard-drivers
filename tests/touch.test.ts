@@ -45,7 +45,7 @@ function click(target: EventTarget, detail = 1, pointerType?: string, pointerId?
 
 function rig(mode: 'foot' | 'drive' = 'foot') {
   const document = new TestDocument(), root = new Surface(document), canvas = new Surface(document);
-  const ids = ['touch-stick', 'touch-stick-label', 'touch-interact', 'touch-action-label', 'touch-action-detail', 'touch-throttle', 'touch-brake', 'touch-handbrake'];
+  const ids = ['touch-stick', 'touch-stick-label', 'touch-interact', 'touch-action-label', 'touch-action-detail', 'touch-throttle', 'touch-brake', 'touch-handbrake', 'touch-nitro'];
   for (const id of ids) root.children.set(`#${id}`, new Surface(document));
   const element = (id: string) => root.children.get(`#touch-${id}`)!;
   const pause = new Surface(document), recover = new Surface(document);
@@ -104,6 +104,37 @@ describe('touch input', () => {
     r.controls.dispose();
   });
 
+  it('holds the nitrous with its own finger, and lets go of it when the kit comes off the car', () => {
+    const r = rig('drive'), button = r.element('nitro');
+    // As in the page: the button is there, hidden, until a car with a kit is driven.
+    button.hidden = true;
+    r.controls.setNitro(true);
+    expect(button.hidden).toBe(false);
+    expect(r.root.dataset.nitro).toBe('true');
+    pointer(r.element('throttle'), 'pointerdown', 1);
+    pointer(button, 'pointerdown', 2);
+    expect(r.controls.input).toMatchObject({ throttle: 1, nitro: true, brake: 0, handbrake: false });
+    expect(button.dataset.held).toBe('true');
+    expect(button.attributes.get('aria-pressed')).toBe('true');
+    // The two are separate fingers: lifting the pedal leaves the valve open.
+    pointer(r.document, 'pointerup', 1);
+    expect(r.controls.input).toMatchObject({ throttle: 0, nitro: true });
+    r.controls.setNitro(false);
+    expect(r.controls.input.nitro).toBe(false);
+    expect(button.hidden).toBe(true);
+    expect(button.dataset.held).toBe('false');
+    expect(r.root.dataset.nitro).toBe('false');
+    // Telling it twice changes nothing, and the finger that was on the button does not come back with it.
+    r.controls.setNitro(false);
+    r.controls.setNitro(true);
+    expect(r.controls.input.nitro).toBe(false);
+    pointer(button, 'pointerdown', 3);
+    expect(r.controls.input.nitro).toBe(true);
+    pointer(r.document, 'pointercancel', 3);
+    expect(r.controls.input.nitro).toBe(false);
+    r.controls.dispose();
+  });
+
   it('retains a held pedal until every finger holding that pedal has ended', () => {
     const r = rig('drive');
     pointer(r.element('brake'), 'pointerdown', 4);
@@ -156,7 +187,7 @@ describe('touch input', () => {
     pointer(r.element('stick'), 'pointerdown', 2, 46, 480);
     if (type === 'visibilitychange') { r.document.hidden = true; r.document.dispatchEvent(new Event(type)); }
     else r.document.defaultView.dispatchEvent(new Event(type));
-    expect(r.controls.input).toEqual({ moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false });
+    expect(r.controls.input).toEqual({ moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, nitro: false });
     expect(r.element('throttle').captures.size).toBe(0);
     expect(r.element('stick').captures.size).toBe(0);
     expect(r.element('throttle').dataset.held).toBe('false');

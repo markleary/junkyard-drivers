@@ -66,6 +66,36 @@ export const FLOODLIGHTS: [number, number, number][] = [[-27.9, 28.4, 2.6], [-12
 /** Tire walls behind the parts racks. */
 export const TIRE_WALL = { x: -40.9, zFrom: 3.2, zTo: 16.4 };
 
+/**
+ * Hiding places for rare salvage: corners no lane passes and that a stack, a heap or a freight box screens from
+ * the paths. Which piece lies in which place is decided per game (game/stash.ts). A part rests on a pallet about
+ * a metre square; a shell needs room for its whole footprint. `hint` is what the logbook says about the place.
+ */
+export interface StashSpot { x: number; z: number; yaw: number; hint: string }
+/** Solid size of a salvage shell wherever it stands, and of a rare part on its pallet. */
+export const SHELL_SOLID = { w: 1.92, h: 1.3, d: 4.5 };
+export const PART_SOLID = { w: 1, h: .9, d: 1 };
+export const PART_SPOTS: StashSpot[] = [
+  { x: -58.1, z: -20.2, yaw: .2, hint: 'Deep in the sorted rows, in the gap between two stacks of shells.' },
+  { x: -84, z: -50.2, yaw: 1.1, hint: 'In the far back corner, past the pipe rack.' },
+  { x: -84, z: -9.4, yaw: .4, hint: 'Behind the baling press, against the west fence.' },
+  { x: -83.7, z: -26.9, yaw: 2.2, hint: 'At the dead end behind the stacked bales.' },
+  { x: -6.2, z: 21, yaw: 1.5, hint: 'Behind the stacked shells by the gate, hard against the east fence.' },
+  { x: -39.6, z: 9.2, yaw: 1.62, hint: 'Behind the wheel rack, between the shelving and the tire wall.' },
+  { x: -60.5, z: -47.4, yaw: .1, hint: 'Along the back fence, between a stack of shells and the freight boxes.' },
+  { x: -5.9, z: -2.8, yaw: 1.55, hint: 'Squeezed behind the rust-red freight box beside the workshop apron.' },
+  { x: -35.5, z: -50.9, yaw: 2.9, hint: 'Behind the scrap heap at the back fence, on the side nobody walks.' },
+  { x: -18.6, z: -51, yaw: .3, hint: 'Behind the second heap along the back fence.' },
+  { x: -75.2, z: -45.2, yaw: 2.6, hint: 'Behind the stack beside the far lane, near the pipe rack.' },
+  { x: -6.2, z: -25.8, yaw: .9, hint: 'Past the tire stacks at the far end of the alley behind the workshop.' },
+];
+export const SHELL_SPOTS: (StashSpot & { w: number; d: number })[] = [
+  { x: -9.8, z: -46.8, yaw: .35, w: 2, d: 4.7, hint: 'In the far corner beyond the last scrap heap, where the fences meet.' },
+  { x: -82.9, z: 25.4, yaw: -.3, w: 2, d: 4.7, hint: 'In the corner by the south fence, behind the stacked shells and the heap.' },
+  { x: -56.8, z: 27.2, yaw: QUARTER + .08, w: 2, d: 4.7, hint: 'Against the south fence, behind the big heap, between the donor cars.' },
+  { x: -84.55, z: -17.4, yaw: .04, w: 2, d: 4.7, hint: 'Along the west fence, hidden behind the largest scrap heap.' },
+];
+
 /** Rectangles that must stay open: every route a player or test walks, plus the driveway. */
 export const KEEP_CLEAR: Bounds[] = [
   // Driveway, gate and apron.

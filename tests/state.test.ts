@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PARTS, SHELLS } from '../src/game/catalog';
+import { SHELLS, getPartsForSale } from '../src/game/catalog';
 import {
   DEFAULT_SEED, STORAGE_KEY, availableInventory, buildIssues, getPart, install,
   loadGame, newGame, paintCar, parseSave, purchase, saveGame,
@@ -109,13 +109,15 @@ describe('build rules and paint', () => {
 
   it('has enough independent compatible stock to complete every shell', () => {
     let state = newGame();
+    // The racks alone must do it: an engine and a wheel set apiece, none shared.
+    const wheels = getPartsForSale('yard', 'wheels');
     for (const [index, shell] of SHELLS.entries()) {
-      const engine = PARTS.find((part) => part.kind === 'engine' && part.mount === shell.mount)!;
-      state = buy(state, `shell-${shell.id}`, `part-${engine.id}`, `part-street-${index + 1}`);
+      const engine = getPartsForSale('yard', 'engine').find((part) => part.mount === shell.mount && !state.purchasedListings.includes(`part-${part.id}`))!;
+      state = buy(state, `shell-${shell.id}`, `part-${engine.id}`, `part-${wheels[index].id}`);
       state = install(state, `car-${shell.id}`, `instance-part-${engine.id}`);
-      state = install(state, `car-${shell.id}`, `instance-part-street-${index + 1}`);
+      state = install(state, `car-${shell.id}`, `instance-part-${wheels[index].id}`);
     }
-    expect(state.cars).toHaveLength(3);
+    expect(state.cars).toHaveLength(SHELLS.length);
     expect(state.cars.every((car) => buildIssues(state, car).length === 0)).toBe(true);
     expect(availableInventory(state)).toHaveLength(0);
   });

@@ -17,7 +17,7 @@ npm test                   # Vitest only
 npx vitest run tests/state.test.ts            # one unit file
 npx vitest run tests/state.test.ts -t "name"  # one unit test by name
 npm run build              # typecheck + production build into dist/
-npm run test:browser       # full Playwright suite (16 tests, minutes, real-time driving)
+npm run test:browser       # full Playwright suite (19 tests, minutes, real-time driving)
 npm run test:browser:ci    # only the three tests tagged @deployment
 npx playwright test tests/browser/menus.spec.ts -g "title text"   # one browser test
 ```
@@ -30,7 +30,7 @@ There is no linter or formatter; `tsc` in strict mode is the only static check.
 - Outside CI it uses `reuseExistingServer`, which attaches to whatever already answers on 4173, including a stale build or another project's preview. If every test fails waiting for `#begin`, check what is listening there. To be certain, start your own preview on another port and point the suite at it: `PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port>/junkyard-drivers/ npx playwright test` (keep the trailing slash). Setting `PLAYWRIGHT_BASE_URL` also disables the built-in web server, which is how the published site is tested.
 - The full suite needs GPU rendering (the config enables ANGLE Metal on macOS). CI runs on software rendering and only has time for the `@deployment` subset; a new test that drives or walks in real time should not get that tag.
 - Tests assert no console errors, no failed requests, and no off-origin requests. Anything the game loads must ship in `dist`.
-- Test runs rewrite tracked captures and JSON under `artifacts/` (top level and `artifacts/tablet`), so expect a dirty working tree afterwards.
+- Test runs rewrite tracked captures and JSON under `artifacts/` (top level, `artifacts/tablet`, `artifacts/overhaul-after/play` and `artifacts/salvage`), so expect a dirty working tree afterwards.
 
 ### Evidence scripts
 
@@ -53,10 +53,19 @@ Keyboard, touch and gamepad are merged into the same intents inside `step()` in 
 
 ### Two saves
 
-- `junkyard-drivers-save-v1` (`game/state.ts`): purchases, inventory, installed parts, paint, town seed. Its format is frozen at what the first release wrote; do not add fields to it.
-- `junkyard-drivers-progress-v1` (`game/progress.ts`): laps, medals, finds, finishes and stripes, settings, hour. New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
+- `junkyard-drivers-save-v1` (`game/state.ts`): purchases, inventory, installed parts, paint, town seed. Its format is frozen at what the first release wrote; do not add fields to it. Catalog ids are part of that format: a save is rejected whole if it names a listing the build does not know, so never rename or remove one, and expect an older build to start a new game on a save that holds newer parts.
+- `junkyard-drivers-progress-v1` (`game/progress.ts`): laps, medals, finds, finishes and stripes, settings, hour, and everything the dealer, tuning parts and rare salvage need (`fitted`, `proof`, `sales`, `stash`, `restock`). New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
 
 Both loaders take an injectable storage object, which is how the unit tests exercise them.
+
+### Tuning parts, rare salvage and the dealer
+
+These three features are built around the frozen save rather than into it:
+
+- A turbocharger, exhaust or nitrous kit is an ordinary catalog part and inventory instance. `install` refuses them; which car one is bolted to is `progress.fitted[carId]`, changed only through `game/upgrades.ts`. `reconcileFitted` drops fittings whose car or instance no longer exists, and `buildTuning` is the one place a build is turned into power, boost, nitrous and exhaust note for physics and audio.
+- Rare parts and the two rare shells are ordinary listings with `source: 'hidden'` / `hidden: true`, bought where they lie. Where that is comes from `stashLayout(progress.stash, progress.restock)` in `game/stash.ts`; the hiding places are data in `world/yard.ts` (`PART_SPOTS`, `SHELL_SPOTS`). `tests/stash.test.ts` holds each place clear of the `KEEP_CLEAR` routes and floods the built yard with a walker-sized body to prove every one can be reached, so add or move a place there first and let that test judge it. `seedPlacing` finds a seed that puts a piece in a place, for browser tests.
+- `game/dealer.ts` is pure: outlay, lap proof against `MEDAL_TIMES`, offer range, and an offer drawn from a session seed that `main.ts` rolls once per page load. `completeSale` removes the car, its parts and their receipts from the purchase save (so they can be bought again), clears that car's `proof` and `fitted`, logs `sales`, and bumps `restock` for rare pieces so they reappear elsewhere. The offer sheet shows one figure; the range is deliberately not displayed.
+- A new shell needs a `BODIES` entry in `render/cars.ts`, a profile in `ui/icons.ts`, positions in `main.ts`, and medal times measured with `scripts/lap-calibration.mjs`.
 
 ### Scenery: builder, cells, and the coplanar check
 
@@ -72,7 +81,7 @@ Yard obstacles are data in `world/yard.ts`, and `tests/yard.test.ts` holds them 
 
 ### Audio
 
-`audio/audio.ts` exposes `GameAudio`. Every sound has two implementations on one Web Audio graph: a recording from `src/audio/samples/*.mp3` (picked up by `import.meta.glob` in `sampled.ts`) and a synthesized stand-in that plays until the clip decodes, or permanently if it cannot. A new sound needs both. Clips are fetched only after the first click, public methods never throw, and `tests/audio.test.ts` runs the module on a fake Web Audio graph. The mix was set from measurements (`scripts/audio-review.mjs`), not by ear.
+`audio/audio.ts` exposes `GameAudio`. Every sound has two implementations on one Web Audio graph: a recording from `src/audio/samples/*.mp3` (picked up by `import.meta.glob` in `sampled.ts`) and a synthesized stand-in that plays until the clip decodes, or permanently if it cannot. A new sound needs both. Engine recordings come as an idle and a rev loop per family, once for the standard exhaust and once for a modified one (`engine-<family>[-sport]-idle|rev`), all levelled to the same loudness with the rev loops at the same firing pitch per family; what an exhaust adds in level is set in `SampledEngine`. Clips are fetched only after the first click, public methods never throw, and `tests/audio.test.ts` runs the module on a fake Web Audio graph. The mix was set from measurements (`scripts/audio-review.mjs`), not by ear.
 
 ### QA hooks
 

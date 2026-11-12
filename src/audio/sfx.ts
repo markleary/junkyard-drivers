@@ -526,6 +526,54 @@ const RECIPES: Record<Exclude<SfxName, 'ratchet'>, Recipe> & Partial<Record<'rat
       burst(v, t + 0.075, { from: 1300, peak: 0.04, decay: 0.045 });
     },
   },
+  // Blow-off valve: boost dumped to the air when the throttle shuts. A sharp sneeze that falls in pitch, then flutters.
+  blowoff: {
+    gap: 0.25,
+    vary: 0.06,
+    level: 0.7,
+    build: (v, t) => {
+      burst(v, t, { type: 'highpass', from: 5200, to: 1700, peak: 0.07, attack: 0.004, hold: 0.03, decay: 0.2 });
+      burst(v, t, { from: 2600, to: 900, q: 1.6, peak: 0.06, attack: 0.004, decay: 0.18 });
+      for (const delay of [0.11, 0.16, 0.2]) burst(v, t + delay, { from: 1500, q: 2, peak: 0.022, attack: 0.003, decay: 0.03 });
+    },
+  },
+  // Nitrous valve opening: a rising hiss that lands on a low thump from the exhaust.
+  nitroStart: {
+    gap: 0.4,
+    vary: 0.04,
+    level: 0.8,
+    build: (v, t) => {
+      burst(v, t, { from: 900, to: 4200, q: 0.9, peak: 0.09, attack: 0.05, hold: 0.04, decay: 0.3 });
+      tone(v, t + 0.03, { from: 110, to: 58, glide: 0.12, peak: 0.14, attack: 0.008, decay: 0.32 });
+      burst(v, t + 0.03, { type: 'lowpass', from: 500, peak: 0.1, decay: 0.14 });
+    },
+  },
+  // One flat bang from an open tailpipe.
+  backfire: {
+    gap: 0.12,
+    vary: 0.12,
+    level: 0.75,
+    build: (v, t) => {
+      tone(v, t, { from: 150, to: 60, glide: 0.05, peak: 0.16, attack: 0.001, decay: 0.16 });
+      burst(v, t, { from: 1100, q: 0.7, peak: 0.13, attack: 0.001, decay: 0.07 });
+      burst(v, t + 0.012, { type: 'lowpass', from: 700, peak: 0.09, decay: 0.12 });
+    },
+  },
+  // Sold: keys dropped on the counter, then the till rings and its drawer runs out.
+  sold: {
+    gap: 0.6,
+    vary: 0,
+    level: 0.62,
+    build: (v, t) => {
+      for (const [delay, frequency] of [[0, 4200], [0.03, 5300], [0.07, 3600]] as const) tone(v, t + delay, { from: frequency, peak: 0.02, decay: 0.09 });
+      burst(v, t, { from: 3200, q: 1.4, peak: 0.04, decay: 0.05 });
+      bell(v, t + 0.22, 1568, 0.12, 0.9);
+      bell(v, t + 0.22, 2093, 0.07, 0.8);
+      tone(v, t + 0.32, { from: 140, to: 82, peak: 0.12, decay: 0.16 });
+      burst(v, t + 0.32, { type: 'lowpass', from: 420, peak: 0.08, decay: 0.09 });
+      bell(v, t + 0.44, 2637, 0.08, 1.2, 0.2);
+    },
+  },
   // Tiny mechanical clunk with a detent tick.
   gearShift: {
     gap: 0.08,

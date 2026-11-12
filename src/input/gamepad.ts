@@ -15,6 +15,8 @@ export interface PadState {
   handbrake: boolean;
   lookBack: boolean;
   horn: boolean;
+  /** B, held: nitrous while driving. The same button closes a sheet when one is open. */
+  nitro: boolean;
 }
 export type PadButton = 'interact' | 'recover' | 'camera' | 'lights' | 'pause' | 'back' | 'photo' | 'map';
 
@@ -28,7 +30,7 @@ export function stickCurve(value: number, dead = .14): number {
   return Math.sign(value) * (scaled * .6 + scaled * scaled * (3 - 2 * scaled) * .4);
 }
 
-const neutral = (): PadState => ({ connected: false, moveX: 0, moveY: 0, lookX: 0, lookY: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, lookBack: false, horn: false });
+const neutral = (): PadState => ({ connected: false, moveX: 0, moveY: 0, lookX: 0, lookY: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, lookBack: false, horn: false, nitro: false });
 
 export class GamepadInput {
   readonly state: PadState = neutral();
@@ -58,6 +60,7 @@ export class GamepadInput {
     state.handbrake = !!pad.buttons[0]?.pressed;
     state.lookBack = !!pad.buttons[4]?.pressed;
     state.horn = !!pad.buttons[10]?.pressed;
+    state.nitro = !!pad.buttons[1]?.pressed;
     for (const [name, button] of Object.entries(BUTTONS) as [PadButton, number][]) {
       const down = !!pad.buttons[button]?.pressed;
       if (down && !this.held.has(button)) this.pressed.add(name);

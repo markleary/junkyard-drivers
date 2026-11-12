@@ -6,7 +6,7 @@ import { FOG_SUN_UNIFORMS } from './atmosphere';
  * gravel, tire smoke, exhaust haze, sparks, paint mist, and the rubber a sliding
  * tire leaves behind. Two point clouds and one ribbon mesh, all preallocated.
  */
-export type ParticleKind = 'dust' | 'smoke' | 'exhaust' | 'spark' | 'mist' | 'sparkle';
+export type ParticleKind = 'dust' | 'smoke' | 'exhaust' | 'spark' | 'mist' | 'sparkle' | 'flame';
 
 interface Recipe { life: [number, number]; size: [number, number]; grow: number; alpha: number; drag: number; gravity: number; additive: boolean; color: number }
 const RECIPES: Record<ParticleKind, Recipe> = {
@@ -16,6 +16,8 @@ const RECIPES: Record<ParticleKind, Recipe> = {
   spark: { life: [.25, .6], size: [.05, .1], grow: -.6, alpha: 1, drag: .6, gravity: 9, additive: true, color: 0xffb04a },
   mist: { life: [.6, 1.2], size: [.16, .32], grow: 2.4, alpha: .3, drag: 2.2, gravity: -.1, additive: false, color: 0xffffff },
   sparkle: { life: [.6, 1.3], size: [.07, .16], grow: -.4, alpha: 1, drag: 1.4, gravity: -1.2, additive: true, color: 0xffd98a },
+  // A jet from the tailpipe: blue under nitrous, orange for a backfire. Gone almost as soon as it appears.
+  flame: { life: [.1, .24], size: [.16, .3], grow: 1.6, alpha: .95, drag: 3.2, gravity: -.6, additive: true, color: 0x7fc4ff },
 };
 
 const vertexShader = /* glsl */`

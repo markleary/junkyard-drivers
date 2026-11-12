@@ -324,8 +324,8 @@ body[data-screen="drive"] #objective { display: none; }
 
 /* Status receipts sit beside open paperwork, never over the next action. */
 body[data-screen="intro"] #toast, body[data-screen="pause"] #toast { display: none; }
-body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { left: 28px; bottom: 25px; max-width: min(480px, calc(100vw - 550px)); text-align: left; transform: translateY(10px); transition: opacity .15s; }
-body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast.visible { transform: translateY(0); }
+body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"], [data-screen="dealer"]) #toast { left: 28px; bottom: 25px; max-width: min(480px, calc(100vw - 550px)); text-align: left; transform: translateY(10px); transition: opacity .15s; }
+body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"], [data-screen="dealer"]) #toast.visible { transform: translateY(0); }
 @media (max-width: 1050px) {
   .intro { width: 480px; }
   #panel { width: 430px; right: 20px; top: 75px; bottom: 22px; padding: 23px; }
@@ -464,13 +464,13 @@ body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #
   #route div > span > strong { font-size: 11px; }
 }
 @media (max-width: 1050px) and (min-width: 801px) {
-  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { max-width: calc(100vw - 505px); }
+  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"], [data-screen="dealer"]) #toast { max-width: calc(100vw - 505px); }
 }
 @media (max-width: 800px) {
-  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { left: 18px; bottom: 18px; max-width: calc(100vw - 440px); }
+  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"], [data-screen="dealer"]) #toast { left: 18px; bottom: 18px; max-width: calc(100vw - 440px); }
 }
 @media (max-width: 680px) {
-  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"]) #toast { width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  body:is([data-screen="inspect"], [data-screen="rack"], [data-screen="garage"], [data-screen="dealer"]) #toast { width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
 }
 @media (max-width: 520px) {
   #menu:has(.intro) { padding: 14px; align-items: flex-start; }
@@ -590,6 +590,7 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
 .lap-table td b { font: 500 15px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
 .lap-table small { margin-top: 3px; font-size: 8px; letter-spacing: .5px; }
 .lap-table .unowned th, .lap-table .unowned td { color: #8a8a78; }
+.lap-table .sold th small { color: var(--green); }
 .lap-table .blank { color: #8a8a78; font: 10px/1.6 var(--mono); }
 .medal { display: inline-block; margin-left: 7px; padding: 2px 5px; border: 2px solid currentColor; font: 700 13px/1 var(--display); letter-spacing: .5px; text-transform: uppercase; transform: rotate(-3deg); vertical-align: 2px; }
 .medal.gold { color: #a87a14; }
@@ -703,3 +704,113 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
 /* --- Second review: sheets settle on a row, not through one; the fade is longer. --- */
 .garage-panel > .build-scroll { scroll-snap-type: y proximity; scroll-padding-top: 12px; padding-bottom: 40px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); }
 .build-scroll > .build-slot, .build-scroll .inventory > button { scroll-snap-align: start; }
+
+/* --- Dealer, rare salvage and tuning parts. --- */
+/* Boost and nitrous: two slim gauges in the empty top corners of the speed dial, so the pod never changes size. */
+.side-gauge { position: absolute; top: 2px; width: 7px; height: 30px; background: #37454a; border: 1px solid #a5b0a766; border-radius: 2px; }
+.side-gauge.boost { left: 0; --fill: var(--yellow); }
+.side-gauge.nitro { right: 0; --fill: #6fb7ff; }
+.side-gauge i { position: absolute; inset: 0; background: var(--fill); border-radius: 1px; transform-origin: 50% 100%; transform: scaleY(var(--level, 0)); }
+/* One letter fits under each bar: T for the turbocharger's boost, N for nitrous. */
+.side-gauge span { position: absolute; top: 33px; left: -1px; width: 7px; color: #c6cabb; font: 6px/1 var(--mono); text-align: center; }
+.side-gauge.nitro.firing { --fill: #d6ecff; box-shadow: 0 0 8px 1px #6fb7ff; border-color: #cfe8ff; }
+.side-gauge.nitro.spent { --fill: #e3613c; }
+.side-gauge.boost.full { box-shadow: 0 0 6px #e3b44999; }
+
+/* The dealer's offer sheet: a cash buyer's docket in banknote green. */
+#panel.dealer-panel { border-top-color: var(--green); }
+.dealer-panel .eyebrow { color: var(--green); }
+.dealer-panel .primary { background: var(--green); border-color: #1f3a2a; box-shadow: 0 3px 0 #1f3a2a; }
+.dealer-panel .primary:hover:not(:disabled) { background: #3f7052; }
+.dealer-panel .secondary { margin-top: 0; }
+/*
+ * The total, the lap, the offer and both buttons stay in view. Only the list of what went into the car scrolls, and
+ * only when a build has more lines than the sheet has room for; a shadow at its edge shows there is more that way.
+ */
+#panel.dealer-panel:has(.dealer-scroll) { display: flex; flex-direction: column; }
+#panel.dealer-panel:has(.dealer-scroll)::after { display: none; }
+.dealer-panel:has(.dealer-scroll) > * { flex-shrink: 0; }
+.outlay-head { padding: 7px 0; border-top: 1px solid var(--ink); border-bottom: 2px solid var(--ink); font: 500 9px/1.3 var(--mono); letter-spacing: .5px; }
+.dealer-panel > .dealer-scroll { flex: 0 1 auto; min-height: 58px; overflow-y: auto; overscroll-behavior: contain;
+  background: linear-gradient(var(--paper), var(--paper)) top / 100% 12px no-repeat local, linear-gradient(var(--paper), var(--paper)) bottom / 100% 12px no-repeat local,
+    linear-gradient(#2a322e38, #2a322e00) top / 100% 10px no-repeat scroll, linear-gradient(#2a322e00, #2a322e38) bottom / 100% 10px no-repeat scroll; }
+.dealer-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.offer-table { width: 100%; margin: 0; border-collapse: collapse; }
+.offer-table th, .offer-table td { padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: baseline; }
+.offer-table tr:last-child > * { border-bottom: 0; }
+.offer-table th { width: 27%; color: #5e695b; font: 500 10px/1.3 var(--mono); text-transform: uppercase; }
+.offer-table td { font-size: 12px; line-height: 1.3; }
+.offer-table td:last-child { padding-right: 0; font: 500 13px/1.2 var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.outlay { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 11px; padding: 8px 0 7px; border-top: 1px solid var(--line); border-bottom: 2px solid var(--ink); }
+.outlay span { font: 500 10px/1.3 var(--mono); }
+.outlay b { font: 700 23px/1 var(--display); font-variant-numeric: tabular-nums; }
+.lap-proof { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; margin: 0; padding: 8px 12px; background: #f8f0dd80; border: 1px solid #8c948477; border-left: 5px solid #89949a; }
+.lap-proof > span { font: 500 9px/1.3 var(--mono); letter-spacing: .7px; }
+.lap-proof b { font: 700 22px/1.05 var(--display); text-transform: uppercase; }
+.lap-proof small { flex: 1 0 100%; margin: 0; font-size: 10px; }
+.lap-proof.gold { border-left-color: #c8962b; }
+.lap-proof.bronze { border-left-color: #a9683c; }
+.lap-proof.none { border-left-style: dashed; }
+.dealer-panel .price { margin: 10px 0 4px; }
+#panel.dealer-panel > .primary { margin: 12px 0 8px; }
+#panel.dealer-panel > small { margin-top: 10px; }
+@media (max-height: 860px) and (min-width: 801px) {
+  /* A fully tuned car has seven lines to list: on a short window the sheet takes the height of the HUD strip as well, and closes up a little. */
+  #panel.dealer-panel { top: 20px; bottom: 20px; }
+  .dealer-panel .outlay { margin-bottom: 8px; }
+  .dealer-panel .price { margin: 7px 0 2px; }
+  #panel.dealer-panel > .primary { margin: 9px 0 7px; }
+  #panel.dealer-panel > small { margin-top: 6px; }
+}
+.dealer-panel .price b { color: var(--green); }
+.dealer-car { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; border-bottom: 1px solid #2b39374d; }
+.dealer-car h3 { margin: 0 0 6px; font: 700 22px/1 var(--display); text-transform: uppercase; }
+.dealer-car p { margin: 0; color: #555e53; font-size: 12px; line-height: 1.5; }
+.dealer-quote { flex: 0 0 auto; text-align: right; }
+.dealer-quote span { display: block; font: 500 9px/1.3 var(--mono); letter-spacing: .7px; }
+.dealer-quote b { color: var(--green); font: 700 27px/1 var(--display); font-variant-numeric: tabular-nums; }
+.dealer-car.unfinished h3, .dealer-car.unfinished .dealer-quote { color: #77776a; }
+
+/* A rare part's salvage tag carries its pictogram where a shell's carries the car's profile. */
+.part-drawing { justify-content: center; }
+.part-drawing > .ui-icon { width: 92px; height: 92px; flex: 0 0 92px; color: #45504a; stroke-width: 1.15; }
+
+/* Build sheet slot 05: one row for each kind of tuning part. */
+.tuning-row { margin-top: 11px; padding-top: 10px; border-top: 1px dotted #6d716270; }
+.tuning-fitted { display: flex; align-items: center; gap: 10px; }
+.tuning-fitted > .ui-icon { width: 26px; height: 26px; color: var(--ink); }
+.tuning-fitted > div { flex: 1; min-width: 0; }
+.tuning-fitted span { display: block; color: #60695c; font: 500 9px/1.3 var(--mono); letter-spacing: .7px; }
+.tuning-fitted b { display: block; font: 700 20px/1.1 var(--display); }
+.tuning-fitted b:focus { outline: none; }
+.tuning-fitted small { margin-top: 2px; color: #5e695b; font-size: 10px; }
+.tuning-fitted button { flex: 0 0 auto; padding: 7px 10px; color: var(--rust); background: transparent; border: 1px solid var(--rust); font: 700 15px/1.1 var(--display); text-transform: uppercase; }
+.tuning-fitted button:hover { color: var(--paper-light); background: var(--rust); }
+.tuning-row .inventory { max-height: none; overflow: visible; }
+
+/* Logbook: what the dealer has paid, and the rare salvage still out there. */
+.sales-ledger { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0 0; }
+.sales-ledger div { padding: 7px 8px; background: #f8f0dd80; border: 1px solid #8c948477; }
+.sales-ledger dt { color: #64695c; font: 500 9px/1.3 var(--mono); letter-spacing: .5px; }
+.sales-ledger dd { margin: 3px 0 0; font: 700 20px/1 var(--display); font-variant-numeric: tabular-nums; }
+.sales-ledger .blank { color: #8a8a78; font: 10px/1.6 var(--mono); }
+.rare-list { margin: 0; padding: 0; list-style: none; }
+.rare-list li { display: flex; align-items: center; gap: 9px; padding: 5px 0; border-bottom: 1px solid var(--line); color: #77776a; }
+.rare-list li > .ui-icon:first-child { width: 18px; height: 18px; flex: 0 0 18px; }
+.rare-list li > div { flex: 1; min-width: 0; }
+.rare-list b { display: block; font: 700 17px/1.05 var(--display); text-transform: uppercase; }
+.rare-list small { margin-top: 2px; font-size: 9px; line-height: 1.35; }
+.rare-list li.held { color: var(--ink); }
+.rare-list li.held > .ui-icon:last-child { width: 16px; height: 16px; color: var(--green); }
+@media (max-width: 800px) {
+  .offer-table th, .offer-table td { padding: 5px 6px 5px 0; }
+  .offer-table td { font-size: 11px; }
+  .outlay { margin-bottom: 8px; padding: 6px 0 5px; }
+  .outlay b { font-size: 21px; }
+  .lap-proof { padding: 6px 10px 7px; }
+  .lap-proof b { font-size: 19px; }
+  .dealer-panel .price { margin: 8px 0 2px; }
+  #panel.dealer-panel > small { margin-top: 6px; }
+  .dealer-panel .price strong { font-size: 38px; }
+  .tuning-fitted b { font-size: 18px; }
+}

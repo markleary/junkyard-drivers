@@ -8,7 +8,7 @@ import { LISTINGS } from '../../src/game/catalog';
 test.use({ viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
 
 const output = process.env.PLAYWRIGHT_ARTIFACT_DIR || 'artifacts/tablet';
-const zeroInput = { moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false };
+const zeroInput = { moveX: 0, moveForward: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, nitro: false };
 async function expectStopped(page: Page) {
   const before = (await read(page)).position;
   await page.waitForTimeout(350);
