@@ -1,0 +1,12 @@
+Generated with the built-in imagegen tool on 2026-11-13.
+Final asset: public/social-preview.jpg (1200 x 630 JPEG).
+
+Use case: ads-marketing
+Asset type: social sharing card for the browser game Junkyard Drivers, landscape 1200 x 630 pixels (1.9048:1).
+Primary request: Create polished illustrated game key art with bold readable typography, reflecting a stylized low-poly 3D scrapyard restoration and driving game.
+Scene/backdrop: A small salvage yard with a corrugated-metal open garage, stacks of tires, rusty car shells, and distant pine-covered hills. Late afternoon golden light and long shadows, muted olive green and oxidized red workshop details.
+Subject: A restored saffron-yellow angular 1980s compact coupe, black bumpers, rectangular headlights, simple silver wheels, no recognizable real-world badge. Front three-quarter view in the lower right foreground, complete car clearly visible, parked at the edge of the yard ready to drive. It is the visual hero.
+Style/medium: Artful low-poly 3D game illustration, faceted silhouettes, tactile lightly weathered surfaces, cohesive warm palette, clean cinematic composition, premium indie game poster.
+Composition/framing: Wide horizontal 1200x630 sharing card, title on the left over an uncluttered dark olive area integrated into the scene, yellow car on the right, workshop behind. Keep essential text and the car comfortably inside a 7% safe margin. No outer border. Strong contrast and clear hierarchy readable as a small link preview.
+Text (verbatim): Large stacked title "JUNKYARD" then "DRIVERS" in bold condensed cream-colored trade lettering. Beneath it, smaller clear cream text "Find a forgotten classic." then "Build it your way."
+Constraints: Render ONLY the specified title and two tagline lines. Title spelling must be exact. No HUD, no buttons, no watermark, no URL, no manufacturer branding, no people, no racing liveries. Keep the look stylized and close to a simple angular browser game rather than photorealistic car advertising. The output must be a wide landscape sharing image.
