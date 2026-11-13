@@ -57,6 +57,8 @@ svg { display: block; }
 #crosshair { position: fixed; z-index: 1; left: 50%; top: 50%; transform: translate(-50%, -50%); font: 15px/1 var(--mono); color: #f8f0dd; text-shadow: 0 1px 2px #0009; }
 #hint { position: fixed; z-index: 3; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: calc(100vw - 48px); display: flex; align-items: center; gap: 12px; padding: 9px 15px 9px 9px; color: var(--paper-light); background: #1d272bee; border: 1px solid #d4cbb34a; box-shadow: 3px 3px 0 #10202644; font-size: 13px; line-height: 1.3; }
 kbd { display: inline-flex; justify-content: center; align-items: center; min-width: 28px; padding: 5px 7px; border: 1px solid #8d8d80; background: var(--paper-light); color: var(--ink); box-shadow: 0 2px 0 #bab4a4; font: 500 11px/1.15 var(--mono); white-space: nowrap; border-radius: 2px; }
+body:not([data-gamepad]) .gamepad-only,
+body[data-gamepad] .keyboard-only { display: none !important; }
 #hint kbd { background: var(--yellow); border-color: #ddb04a; box-shadow: 0 2px 0 #9e762b; font-size: 15px; min-width: 34px; min-height: 31px; }
 #footer { position: fixed; z-index: 2; right: 28px; bottom: 17px; left: auto; color: #ece7d4; font: 9px/1.2 var(--mono); text-shadow: 0 1px 3px #0e1b20; pointer-events: none; }
 #footer > span:first-child:not(:last-child) { display: none; }
@@ -85,7 +87,7 @@ kbd { display: inline-flex; justify-content: center; align-items: center; min-wi
 .ticket-instructions b, .admission-steps b { display: block; color: var(--rust); font: 700 24px/1 var(--display); text-transform: uppercase; }
 .ticket-instructions span, .admission-steps span { display: block; margin-top: 6px; font: 10px/1.5 var(--mono); }
 .admission-stamp { position: absolute; right: 25px; top: 23px; width: 92px; padding: 6px; transform: rotate(8deg); border: 3px double var(--rust); color: var(--rust); font: 700 19px/.95 var(--display); text-transform: uppercase; text-align: center; }
-.admission-stamp small { font: 8px/1.3 var(--mono); color: inherit; margin-top: 5px; }
+.admission-stamp small { display: block; font: 8px/1.3 var(--mono); color: inherit; margin-top: 5px; }
 .ticket-stub { position: relative; padding: 19px 28px 18px; border-top: 2px dashed #6d6b5b80; background: #e0d3b345; }
 .ticket-stub::before, .ticket-stub::after { content: ''; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: #2c3331; }
 .ticket-stub::before { left: -9px; }
@@ -571,11 +573,11 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
 .pause-links .ui-icon { width: 24px; height: 24px; color: var(--rust); }
 .pause-links span { font: 700 19px/1 var(--display); text-transform: uppercase; }
 .pause-links small { margin-top: 3px; font-size: 9px; letter-spacing: .5px; }
-.controls.desktop-only { grid-template-columns: 1fr 1fr; column-gap: 22px; margin: 16px 0 10px; }
-.controls.desktop-only > div { justify-content: flex-start; padding: 6px 0; }
-.controls.desktop-only > div:nth-last-child(2) { border-bottom: 0; }
+.controls:is(.desktop-only, .gamepad-only) { grid-template-columns: 1fr 1fr; column-gap: 22px; margin: 16px 0 10px; }
+.controls:is(.desktop-only, .gamepad-only) > div { justify-content: flex-start; padding: 6px 0; }
+.controls:is(.desktop-only, .gamepad-only) > div:nth-last-child(2) { border-bottom: 0; }
 .controls.desktop-only kbd { flex: 0 0 62px; min-width: 62px; }
-.pad-note { margin: 0 0 14px !important; color: #64695c; font: 10px/1.5 var(--mono) !important; }
+.controls.gamepad-only kbd { flex: 0 0 83px; min-width: 83px; }
 .pause-actions button[aria-pressed="true"] { background: #d9cfb5; }
 
 /* Logbook page: lap table, the twelve finds, and what they unlock. */
@@ -642,8 +644,8 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
   #banner { top: 70px; }
   .banner-card b { font-size: 23px; }
   .pause-card { width: 500px; }
-  .controls.desktop-only { column-gap: 14px; margin: 12px 0 8px; }
-  .controls.desktop-only > div { padding: 5px 0; gap: 9px; }
+  .controls:is(.desktop-only, .gamepad-only) { column-gap: 14px; margin: 12px 0 8px; }
+  .controls:is(.desktop-only, .gamepad-only) > div { padding: 5px 0; gap: 9px; }
   .controls.desktop-only kbd { flex-basis: 54px; min-width: 54px; }
   .pause-links button { padding: 7px 9px; }
   .pause-links span { font-size: 17px; }
@@ -654,7 +656,7 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
   #photo-bar { bottom: 14px; padding: 8px 10px; gap: 6px; }
 }
 @media (max-width: 560px) {
-  .controls.desktop-only, .find-list { grid-template-columns: 1fr; }
+  .controls:is(.desktop-only, .gamepad-only), .find-list { grid-template-columns: 1fr; }
   .pause-links { grid-template-columns: 1fr; }
   .lap-table th { width: 34%; }
   .photo-title { flex-basis: 100%; justify-content: center; margin: 0; }
@@ -687,14 +689,14 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
   .pause-card::after { height: 12px; margin-top: -4px; }
   .pause-card .document-top { margin-bottom: 7px; padding-bottom: 6px; }
   .pause-card h2 { font-size: 27px; margin: 3px 0 5px; }
-  .pause-card > p, .pad-note { display: none; }
+  .pause-card > p { display: none; }
   .pause-card > .primary { margin-top: 5px; min-height: 38px; padding: 8px 14px; font-size: 18px; }
   .pause-links { margin-top: 6px; gap: 6px; }
   .pause-links button { padding: 5px 9px; }
   .pause-links .ui-icon { width: 20px; height: 20px; }
-  .controls.desktop-only { margin: 8px 0 7px; }
-  .controls.desktop-only > div { padding: 3px 0; }
-  .controls.desktop-only kbd { padding: 3px 6px; }
+  .controls:is(.desktop-only, .gamepad-only) { margin: 8px 0 7px; }
+  .controls:is(.desktop-only, .gamepad-only) > div { padding: 3px 0; }
+  .controls:is(.desktop-only, .gamepad-only) kbd { padding: 3px 6px; }
   .pause-actions { margin-bottom: 7px; gap: 5px; }
   .pause-actions button { padding: 6px 8px; }
   .reset-card > p { display: block; }
