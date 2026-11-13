@@ -174,6 +174,8 @@ Then open the preview URL with `/junkyard-drivers/` appended. Keep the leading a
 
 The source repository is [markleary/junkyard-drivers](https://github.com/markleary/junkyard-drivers). GitHub Actions publishes its `main` branch at [markleary.github.io/junkyard-drivers](https://markleary.github.io/junkyard-drivers/). The site is public and does not require the computer running the local development server.
 
+Link previews use the 1200 × 630 JPEG at `public/social-preview.jpg`, generated with the built-in imagegen tool ([prompt](artifacts/social-preview-prompt.txt)). The canonical, Open Graph and Twitter tags in `index.html` use absolute URLs for the published site; update those URLs when deploying a fork or custom domain.
+
 To configure another repository or fork:
 
 1. Create or choose a GitHub repository and push these files to its `main` branch. Keep `.env` excluded.
@@ -189,6 +191,7 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 
 | Area | Responsibility |
 | --- | --- |
+| `index.html` / `public/social-preview.jpg` | Page metadata and the Open Graph / Twitter sharing image |
 | `src/game/catalog.ts` | Fictional shells, mount families, parts (including tuning parts and rare salvage), prices, and tuning values |
 | `src/game/state.ts` | Purchase and affordability checks, build and sale operations, and versioned save validation |
 | `src/game/progress.ts` | Budget, lap records, medals, finds, finishes and stripes, settings, fitted tuning parts, sales, and rare salvage locations |
