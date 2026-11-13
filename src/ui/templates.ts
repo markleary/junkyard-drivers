@@ -23,10 +23,10 @@ function effect(part: Part): string {
 }
 const MEDAL_NAME: Record<Medal, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
 
-export const appMarkup = `<canvas id="world" tabindex="-1" aria-label="Junkyard Drivers 3D game"></canvas>
+export const appMarkup = (funds: number) => `<canvas id="world" tabindex="-1" aria-label="Junkyard Drivers 3D game"></canvas>
   <header id="hud">
     <div class="yard-mark"><span class="yard-monogram">JD</span><span class="yard-name">JUNKYARD<br><b>DRIVERS</b></span><span id="clock" class="yard-clock" aria-label="Time of day"></span></div>
-    <div class="hud-tools"><button id="pause-button" aria-label="Pause and controls">${icon('pause')}<kbd>ESC</kbd><span class="touch-only">PAUSE</span></button></div>
+    <div class="hud-tools"><button id="pause-button" aria-label="Pause and controls">${icon('pause')}<kbd id="pause-key">ESC</kbd><span class="touch-only">PAUSE</span></button></div>
   </header>
   <div id="objective" class="job-note"><span class="eyebrow">CURRENT JOB</span><p>Find a project car in the yard.</p><ol id="job-steps" class="job-steps" aria-label="Restoration steps"></ol></div>
   <div id="crosshair" aria-hidden="true">+</div><div id="hint" hidden></div>
@@ -39,9 +39,9 @@ export const appMarkup = `<canvas id="world" tabindex="-1" aria-label="Junkyard 
       <div id="nitro-gauge" class="side-gauge nitro" hidden><i></i><span>N</span></div>
     </div>
     <div class="speed-readout"><span id="gear" class="gear" aria-label="Gear">N</span><strong>00</strong><span class="speed-unit">km/h</span></div>
-    <div class="instrument-bottom"><span id="motion-state">IDLE</span><span id="lamp-state" class="tell-tale" hidden>LIGHTS</span><span id="drive-keys" class="desktop-only">W / S · DRIVE</span><span class="touch-only">PEDALS · DRIVE</span></div>
+    <div class="instrument-bottom"><span id="motion-state">IDLE</span><span id="lamp-state" class="tell-tale" hidden>LIGHTS</span><span id="drive-keys">W / S · DRIVE</span><span class="touch-only">PEDALS · DRIVE</span></div>
   </div>
-  <button id="recover" hidden>${icon('wrench')}<span>Recover to Garage</span><kbd>R</kbd></button>
+  <button id="recover" hidden>${icon('wrench')}<span>Recover to Garage</span><kbd id="recover-key">R</kbd></button>
   <div id="route" hidden></div>
   <div id="banner" role="status" hidden></div>
   <div id="photo-bar" hidden>
@@ -54,16 +54,21 @@ export const appMarkup = `<canvas id="world" tabindex="-1" aria-label="Junkyard 
     <span class="photo-help desktop-only">DRAG TO ORBIT · SCROLL TO ZOOM</span><span class="photo-help touch-only">DRAG TO ORBIT · PINCH TO ZOOM</span>
   </div>
   <div id="toast" role="status"></div>
-  <div id="menu">${introMarkup()}</div><div id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden></div>
+  <div id="menu">${introMarkup(funds)}</div><div id="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden></div>
   <footer id="footer"><span id="save-status">AUTOSAVE READY</span></footer>`;
 
-function introMarkup() {
+function introMarkup(funds: number) {
   return `<section class="intro yard-ticket">
     <div class="ticket-top">${icon('wrench')}<span>WILLOW CREEK<br><b>MOTOR SALVAGE</b></span><small>YARD PASS<br>No. 001</small></div>
     <h1 class="title-logo"><span>JUNKYARD</span><span>DRIVERS</span></h1>
-    <div class="ticket-copy"><p>Pick a shell. Find its parts.<br>Get it running.</p><span class="admission-stamp">UNLIMITED<br>SHOP CREDIT</span></div>
+    <div class="ticket-copy"><p>Pick a shell. Find its parts.<br>Get it running.</p><span class="admission-stamp">${money(funds)}<small>BALANCE</small></span></div>
     <div class="intro-bottom"><button class="primary" id="begin" disabled>Opening the yard…</button></div>
-    <div class="ticket-stub"><div class="entry-controls desktop-only"><span><kbd>WASD</kbd> WALK</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>E</kbd> INSPECT</span></div><div class="entry-controls touch-only"><span><b class="touch-key">STICK</b> MOVE</span><span><b class="touch-key">DRAG</b> LOOK</span><span><b class="touch-key">TAP</b> INTERACT</span></div><p class="touch-layout-tip touch-only">Best with your tablet in landscape. Portrait works too.</p><div id="loading" class="loading">Opening the gate…</div></div>
+    <div class="ticket-stub">
+      <div class="entry-controls desktop-only keyboard-only"><span><kbd>WASD</kbd> WALK</span><span><kbd>MOUSE</kbd> LOOK</span><span><kbd>E</kbd> INSPECT</span></div>
+      <div class="entry-controls gamepad-only"><span><kbd>LEFT STICK</kbd> WALK</span><span><kbd>RIGHT STICK</kbd> LOOK</span><span><kbd>X</kbd> INSPECT</span></div>
+      <div class="entry-controls touch-only"><span><b class="touch-key">STICK</b> MOVE</span><span><b class="touch-key">DRAG</b> LOOK</span><span><b class="touch-key">TAP</b> INTERACT</span></div>
+      <p class="touch-layout-tip touch-only">Best with your tablet in landscape. Portrait works too.</p><div id="loading" class="loading">Opening the gate…</div>
+    </div>
   </section>`;
 }
 
@@ -72,6 +77,7 @@ export interface PauseOptions {
   routeOn: boolean;
   carCount: number;
   touchEnabled: boolean;
+  funds: number;
   graphics: string;
   time: string;
   motion: boolean;
@@ -88,8 +94,8 @@ export function pauseMarkup(options: PauseOptions) {
     <span class="eyebrow">DRIVER'S LOGBOOK</span><h2>Shift paused.</h2>
     <p>Your purchases and builds save automatically.</p>
     <button class="primary" data-action="resume">Resume game ${icon('arrow')}</button>
-    <div class="pause-links"><button data-action="logbook">${icon('book')}<span>Logbook<small>${String(options.finds).padStart(2, '0')} / ${options.findTotal} FINDS</small></span></button><button data-action="photo" ${options.canPhoto ? '' : 'disabled'}>${icon('camera')}<span>Photo mode<small class="desktop-only">KEY P</small><small class="touch-only">FREE CAMERA</small></span></button></div>
-    <div class="controls desktop-only">
+    <div class="pause-links"><button data-action="logbook">${icon('book')}<span>Logbook<small>${String(options.finds).padStart(2, '0')} / ${options.findTotal} FINDS</small></span></button><button data-action="photo" ${options.canPhoto ? '' : 'disabled'}>${icon('camera')}<span>Photo mode<small class="desktop-only keyboard-only">KEY P</small><small class="gamepad-only">VIEW</small><small class="touch-only">FREE CAMERA</small></span></button></div>
+    <div class="controls desktop-only keyboard-only">
       <div><kbd>W A S D</kbd><span>Walk / drive</span></div><div><kbd>MOUSE</kbd><span>Look around</span></div>
       <div><kbd>E</kbd><span>Inspect / use / exit</span></div><div><kbd>SPACE</kbd><span>Handbrake</span></div>
       <div><kbd>C / B</kbd><span>Camera / look back</span></div><div><kbd>N</kbd><span>Nitro boost, if fitted</span></div>
@@ -97,21 +103,28 @@ export function pauseMarkup(options: PauseOptions) {
       <div><kbd>R</kbd><span>Recover to Garage</span></div><div><kbd>M</kbd><span>Map zoom</span></div>
       <div><kbd>P</kbd><span>Photo mode</span></div><div><kbd>ESC</kbd><span>Pause / free mouse</span></div>
     </div>
-    <p class="pad-note desktop-only">Controllers work too: sticks to move and look, triggers to drive, X to interact, B for nitro, Start to pause.</p>
+    <div class="controls gamepad-only">
+      <div><kbd>LEFT STICK</kbd><span>Walk / steer</span></div><div><kbd>RIGHT STICK</kbd><span>Look around on foot</span></div>
+      <div><kbd>RT / LT</kbd><span>Accelerate / brake / reverse</span></div><div><kbd>A</kbd><span>Handbrake</span></div>
+      <div><kbd>X</kbd><span>Inspect / use / exit</span></div><div><kbd>B</kbd><span>Nitro / close panel</span></div>
+      <div><kbd>RB / LB</kbd><span>Camera / look back</span></div><div><kbd>Y</kbd><span>Recover to Garage</span></div>
+      <div><kbd>D-PAD ↑ / ↓</kbd><span>Headlamps / map zoom</span></div><div><kbd>L3</kbd><span>Horn</span></div>
+      <div><kbd>VIEW</kbd><span>Photo mode</span></div><div><kbd>START</kbd><span>Pause / resume</span></div>
+    </div>
     <div class="controls touch-only">
       <div><b class="touch-control-name">Thumbstick</b><span>Move · push farther to run</span></div><div><b class="touch-control-name">Drag scene</b><span>Look around on foot</span></div>
       <div><b class="touch-control-name">Action tag</b><span>Inspect, use, or exit at Garage</span></div><div><b class="touch-control-name">Drive</b><span>Stick to steer · hold pedals · hold Nitro if fitted</span></div>
       <div><b class="touch-control-name">Brake</b><span>Stop, then hold to reverse</span></div><div><b class="touch-control-name">Recovery</b><span>Tap Recover to Garage</span></div>
     </div>
     <div class="pause-actions"><button data-action="sound" aria-pressed="${soundOn}">Sound: ${soundOn ? 'on' : 'off'}</button><button data-action="route" aria-pressed="${routeOn}">Marked loop: ${routeOn ? 'on' : 'off'}</button><button data-action="touch-controls" aria-pressed="${touchEnabled}">Touch controls: ${touchEnabled ? 'on' : 'off'}</button><button data-action="graphics">Graphics: ${options.graphics}</button><button data-action="time">Time: ${options.time}</button><button data-action="map" aria-pressed="${options.map}">Map: ${options.map ? 'on' : 'off'}</button><button data-action="motion" aria-pressed="${options.motion}">Camera motion: ${options.motion ? 'on' : 'off'}</button><button data-action="new">New game…</button></div>
-    <small class="paper-footnote">${String(carCount).padStart(2, '0')} CARS IN COLLECTION · SHOP CREDIT UNLIMITED</small>
+    <small class="paper-footnote">${String(carCount).padStart(2, '0')} CARS IN COLLECTION · ${money(options.funds)} AVAILABLE</small>
   </section>`;
 }
 
 export function resetMarkup() {
   return `<section class="pause-card reset-card"><div class="document-top">${icon('warning')}<span>COLLECTION RESET</span></div>
     <span class="eyebrow">VOID CURRENT LOGBOOK</span><h2>Clear this collection?</h2>
-    <p>This removes all purchased shells, parts, and paint, along with lap times, finds, and unlocked finishes, from the saved game on this device.</p>
+    <p>This clears your collection, lap times, finds, and unlocked finishes on this device, and resets your balance to the starting amount.</p>
     <button class="primary" data-action="confirm-new">Yes, start a new game</button><button class="secondary" data-action="cancel-new">Keep my collection</button>
   </section>`;
 }
@@ -167,7 +180,14 @@ function panelHeader(kicker: string, title: string, code: string) {
     <div class="document-type"><span class="eyebrow">${kicker}</span><span class="document-code">${code}</span></div><h2 id="panel-title" tabindex="-1">${title}</h2></div>`;
 }
 
-export function inspectionMarkup(state: GameState, listingId: string) {
+function buyButton(id: string, name: string, price: number, funds: number, sold: boolean, ownedLabel: string, buyLabel: string, primary = false) {
+  const affordable = price <= funds;
+  const label = sold ? ownedLabel : affordable ? buyLabel : 'Insufficient funds';
+  const description = sold ? `Owned ${name}` : affordable ? `Buy ${name} for ${money(price)}` : `Insufficient funds for ${name}, ${money(price)}`;
+  return `<button ${primary ? 'class="primary"' : ''} data-buy="${id}" aria-label="${description}" ${sold || !affordable ? 'disabled' : ''}>${label}</button>`;
+}
+
+export function inspectionMarkup(state: GameState, listingId: string, funds: number) {
   const listing = LISTINGS.find(item => item.id === listingId)!;
   const sold = state.purchasedListings.includes(listingId);
   if (listing.kind === 'part') {
@@ -178,8 +198,8 @@ export function inspectionMarkup(state: GameState, listingId: string) {
       <div class="vehicle-drawing part-drawing">${partIcon(part.kind)}<span class="condition-stamp">RARE FIND</span></div>
       <div class="tag">${RARE_NOUN[part.kind]} · not on any rack</div><p class="description">${part.description}</p>
       <div class="spec-grid"><div><span>CONDITION</span><b>Salvage, complete</b></div><div><span>FITS</span><b>${part.mount ? `${part.mount} mount` : 'Any car'}</b></div><div><span>WHAT IT DOES</span><b>${effect(part)}</b></div><div><span>FIT IT AT</span><b>${tuning ? 'Build sheet · slot 05' : `Build sheet · slot ${part.kind === 'engine' ? '01' : '02'}`}</b></div></div>
-      <div class="price"><div><span>ASKING PRICE</span><strong>${money(part.price)}</strong></div><span>SHOP CREDIT<b>∞ Unlimited</b></span></div>
-      <button class="primary" data-buy="${listingId}" aria-label="${sold ? 'Owned' : 'Buy'} ${part.name}${sold ? '' : ` for ${money(part.price)}`}" ${sold ? 'disabled' : ''}>${sold ? 'In your inventory' : `Buy part ${icon('arrow')}`}</button>
+      <div class="price"><div><span>ASKING PRICE</span><strong>${money(part.price)}</strong></div><span>AVAILABLE FUNDS<b>${money(funds)}</b></span></div>
+      ${buyButton(listingId, part.name, part.price, funds, sold, 'In your inventory', `Buy part ${icon('arrow')}`, true)}
       <small class="paper-footnote">${sold ? 'CARRIED TO THE GARAGE · FIT IT AT THE WORKBENCH' : 'ONE OF A KIND · IF IT IS SOLD ON WITH A CAR IT TURNS UP SOMEWHERE ELSE'}</small>`;
   }
   const shell = getShell(listing.itemId);
@@ -188,12 +208,12 @@ export function inspectionMarkup(state: GameState, listingId: string) {
     <div class="vehicle-drawing">${vehicleStamp(shell.id)}<span class="condition-stamp">${shell.rare ? 'RARE FIND' : 'AS FOUND'}</span></div>
     <div class="tag">${shell.era}</div><p class="description">${shell.description}</p>
     <div class="spec-grid"><div><span>CONDITION</span><b>Unrestored shell</b></div><div><span>ENGINE MOUNT</span><b>${shell.mount}</b></div><div><span>INCLUDED</span><b>Body & chassis</b></div><div><span>TO GET RUNNING</span><b>Engine + wheels</b></div></div>
-    <div class="price"><div><span>ASKING PRICE</span><strong>${money(shell.price)}</strong></div><span>SHOP CREDIT<b>∞ Unlimited</b></span></div>
-    <button class="primary" data-buy="${listingId}" aria-label="${sold ? 'Owned' : 'Buy'} ${shell.name}${sold ? '' : ` for ${money(shell.price)}`}" ${sold ? 'disabled' : ''}>${sold ? 'Delivered to your Garage' : `Buy shell ${icon('arrow')}`}</button>
+    <div class="price"><div><span>ASKING PRICE</span><strong>${money(shell.price)}</strong></div><span>AVAILABLE FUNDS<b>${money(funds)}</b></span></div>
+    ${buyButton(listingId, shell.name, shell.price, funds, sold, 'Delivered to your Garage', `Buy shell ${icon('arrow')}`, true)}
     <small class="paper-footnote">${sold ? 'DELIVERY COMPLETE · CHECK YOUR GARAGE BAY' : 'INCLUDES DELIVERY TO THE GARAGE BAY'}</small>`;
 }
 
-export function shopMarkup(state: GameState, source: PartSource, kind: ShopCategory) {
+export function shopMarkup(state: GameState, source: PartSource, kind: ShopCategory, funds: number) {
   const store = source === 'store';
   const labels: Record<ShopCategory, string> = { engine: 'Engines', wheels: 'Wheels', paint: 'Paint', tuning: 'Tuning' };
   const titles: Record<ShopCategory, string> = { engine: 'Engine rack', wheels: 'Wheel rack', paint: 'Paint shelf', tuning: 'Tuning parts' };
@@ -204,11 +224,11 @@ export function shopMarkup(state: GameState, source: PartSource, kind: ShopCateg
   const items = getCategoryStock(source, kind);
   return `${panelHeader(store ? 'HOLLOWAY AUTO PARTS' : 'WILLOW CREEK SALVAGE', store ? 'Parts counter' : titles[kind], store ? 'NEW STOCK' : 'YARD STOCK')}
     ${store ? `<p class="shop-intro">Factory-new parts. Collect here, install at the Garage.</p><div class="shop-tabs" role="group" aria-label="Parts categories">${SHOP_CATEGORIES.map((category, index) => `<button data-category="${category}" aria-pressed="${kind === category}"><span>0${index + 1}</span>${labels[category]}</button>`).join('')}</div>` : ''}
-    <div class="shop-meta"><span>${advice[kind]}</span><span class="shop-credit">FUNDS<b>∞</b>UNLIMITED</span></div>
+    <div class="shop-meta"><span>${advice[kind]}</span><span class="shop-credit">FUNDS<b>${money(funds)}</b></span></div>
     <div class="catalog-heading"><span>STOCK / DESCRIPTION</span><span>PRICE</span></div>
     <div class="item-list">${items.map((part, index) => {
       const id = `part-${part.id}`, sold = state.purchasedListings.includes(id);
-      return `<article class="shop-item ${sold ? 'sold' : ''}"><span class="stock-number">${String(index + 1).padStart(2, '0')}</span><div class="part-icon ${part.kind}" ${part.color ? `style="--swatch:${part.color}"` : ''}>${partIcon(part.kind)}</div><div class="part-details"><h3>${part.name}</h3><p>${part.description}</p></div><div class="item-buy"><b>${money(part.price)}</b><button data-buy="${id}" aria-label="${sold ? 'Owned' : 'Buy'} ${part.name}${sold ? '' : ` for ${money(part.price)}`}" ${sold ? 'disabled' : ''}>${sold ? 'Owned' : 'Buy part'}</button></div></article>`;
+      return `<article class="shop-item ${sold ? 'sold' : ''}"><span class="stock-number">${String(index + 1).padStart(2, '0')}</span><div class="part-icon ${part.kind}" ${part.color ? `style="--swatch:${part.color}"` : ''}>${partIcon(part.kind)}</div><div class="part-details"><h3>${part.name}</h3><p>${part.description}</p></div><div class="item-buy"><b>${money(part.price)}</b>${buyButton(id, part.name, part.price, funds, sold, 'Owned', 'Buy part')}</div></article>`;
     }).join('')}</div><small class="paper-footnote">One item per listing. Parts held in inventory until installed. Paint is reusable.</small>`;
 }
 

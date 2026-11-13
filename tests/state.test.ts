@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { SHELLS, getPartsForSale } from '../src/game/catalog';
+import { LISTINGS, SHELLS, getPartsForSale } from '../src/game/catalog';
 import {
-  DEFAULT_SEED, STORAGE_KEY, availableInventory, buildIssues, getPart, install,
+  DEFAULT_SEED, STORAGE_KEY, availableFunds, availableInventory, buildIssues, getPart, install,
   loadGame, newGame, paintCar, parseSave, purchase, saveGame,
 } from '../src/game/state';
 import type { GameState, SaveStorage } from '../src/game/state';
@@ -23,9 +23,27 @@ function memoryStorage(): SaveStorage {
 }
 
 describe('purchases and inventory ownership', () => {
-  it('starts from an empty deterministic save with unlimited purchasing', () => {
+  it('starts from an empty deterministic save', () => {
     expect(newGame()).toEqual({ version: 1, seed: DEFAULT_SEED, purchasedListings: [], cars: [], inventory: [], paints: [] });
     expect(newGame(123).seed).toBe(123);
+  });
+
+  it('charges each listing once and refuses purchases over the available balance', () => {
+    const budget = 2050;
+    const shell = purchase(newGame(), 'shell-hachiro', budget);
+    expect(availableFunds(shell, budget)).toBe(650);
+    const spent = purchase(shell, 'part-i4-stock', budget);
+    expect(availableFunds(spent, budget)).toBe(0);
+    expect(purchase(spent, 'part-i4-stock', budget)).toBe(spent);
+    for (const id of ['part-street-1', 'part-paint-saffron', 'part-rare-turbo', 'shell-bison']) {
+      expect(() => purchase(spent, id, budget)).toThrow(/insufficient funds/i);
+    }
+    expect(parseSave(JSON.stringify(spent))).toEqual(spent);
+  });
+
+  it('can buy the complete catalog with the default budget', () => {
+    const catalog = buy(newGame(), ...LISTINGS.map(listing => listing.id));
+    expect(catalog.purchasedListings).toHaveLength(LISTINGS.length);
   });
 
   it('does not mutate the source save during purchase', () => {

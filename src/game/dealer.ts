@@ -1,6 +1,6 @@
 import { DEFAULT_PAINT, PARTS, UPGRADE_KINDS, getShell, type ShellId } from './catalog';
 import { MEDAL_TIMES, medalFor, type Medal, type Progress } from './progress';
-import { buildIssues, getPart, sellCar, type GameState, type OwnedCar } from './state';
+import { availableFunds, buildIssues, collectionCost, getPart, sellCar, type GameState, type OwnedCar } from './state';
 import { fittedInstances, fittedUpgrades } from './upgrades';
 import { randomFromSeed } from '../world/layout';
 
@@ -137,5 +137,7 @@ export function completeSale(state: GameState, progress: Progress, carId: string
     count: progress.sales.count + 1, takings: progress.sales.takings + appraisal.offer,
     profit: progress.sales.profit + appraisal.profit, best: Math.max(progress.sales.best, appraisal.offer),
   };
-  return { state: next, progress: { ...progress, proof, fitted: fittedLeft, styles, sales, restock }, amount: appraisal.offer, profit: appraisal.profit, restocked };
+  const fundsAfterSale = availableFunds(state, progress.budget) + appraisal.offer;
+  const budget = Math.min(Number.MAX_SAFE_INTEGER, fundsAfterSale + collectionCost(next));
+  return { state: next, progress: { ...progress, budget, proof, fitted: fittedLeft, styles, sales, restock }, amount: appraisal.offer, profit: appraisal.profit, restocked };
 }

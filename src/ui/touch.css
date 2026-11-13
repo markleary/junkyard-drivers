@@ -77,8 +77,10 @@ body[data-screen="drive"] .touch-action-symbol .ui-icon { width: 22px; height: 2
 /* Move instruments above the thumbs, keeping the road ahead and center unobstructed. */
 body[data-input="touch"] #hud { inset: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) auto max(28px, env(safe-area-inset-left)); }
 body[data-input="touch"] #pause-button { min-width: 92px; min-height: 48px; padding: 11px 14px; font-size: 11px; }
-body[data-input="touch"] #pause-button kbd,
-body[data-input="touch"] #recover kbd,
+body[data-input="touch"]:not([data-gamepad]) #pause-key,
+body[data-input="touch"]:not([data-gamepad]) #recover-key,
+body[data-input="touch"]:not([data-gamepad]) #drive-keys,
+body[data-input="touch"][data-gamepad] #pause-button .touch-only,
 body[data-input="touch"] #hint { display: none !important; }
 body[data-input="touch"] #objective { top: max(88px, calc(env(safe-area-inset-top) + 68px)); left: max(28px, env(safe-area-inset-left)); width: 270px; }
 body[data-input="touch"] #objective p { font-size: 13px; }
@@ -233,6 +235,7 @@ body[data-input="touch"][data-screen="drive"] #banner { top: max(214px, calc(env
 body[data-input="touch"] .instrument-bottom, body[data-input="touch"] #speed .instrument-bottom { font-size: 7.5px; }
 /* Second review: the pause sheet's link captions stay on their own line, and the driving glass is less crowded. */
 body[data-input="touch"] .pause-links small.touch-only { display: block; }
+body[data-input="touch"][data-gamepad] :is(.entry-controls, .touch-layout-tip, .controls, .pause-links small).touch-only { display: none; }
 body[data-input="touch"] .instrument-bottom .touch-only { display: none; }
 body[data-input="touch"] #route { left: max(28px, env(safe-area-inset-left)); top: max(88px, calc(env(safe-area-inset-top) + 68px)); bottom: auto; transform: none; }
 @media (max-width: 900px) { body[data-input="touch"] #route { left: max(24px, env(safe-area-inset-left)); } }

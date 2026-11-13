@@ -21,6 +21,17 @@ describe('progress save', () => {
     expect(parseProgress(JSON.stringify(progress), FIND_IDS)).toEqual(progress);
   });
 
+  it('uses the opening budget for older saves and preserves a valid saved budget', () => {
+    for (const budget of [undefined, -1, '2000', 3.5]) {
+      const loaded = parseProgress(JSON.stringify({ version: 1, budget, stash: 12, laps: 2 }), undefined, 1234);
+      expect(loaded).toMatchObject({ budget: 1234, stash: 12, laps: 2 });
+    }
+    for (const budget of [0, 2050]) {
+      const progress = newProgress(budget);
+      expect(parseProgress(JSON.stringify(progress), undefined, 1234)).toEqual(progress);
+    }
+  });
+
   it('repairs damaged fields one at a time instead of discarding the save', () => {
     const repaired = parseProgress(JSON.stringify({
       version: 1, finds: ['pocket', 'pocket', 'bogus', 5, 'tower'], laps: 3.9, hour: 99,

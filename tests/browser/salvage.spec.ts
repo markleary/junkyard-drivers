@@ -5,7 +5,7 @@ import { bootTablet, stopTablet, touchDrivePath, touchInspect, touchWalk } from 
 import { LISTINGS, PARTS, SHELLS } from '../../src/game/catalog';
 import { PROGRESS_KEY, newProgress, recordLap, type Progress } from '../../src/game/progress';
 import { seedPlacing, stashLayout } from '../../src/game/stash';
-import { install, newGame, paintCar, purchase, STORAGE_KEY, type GameState } from '../../src/game/state';
+import { availableFunds, install, newGame, paintCar, purchase, STORAGE_KEY, type GameState } from '../../src/game/state';
 import { fitUpgrade } from '../../src/game/upgrades';
 import { PART_SPOTS, SHELL_SPOTS } from '../../src/world/yard';
 
@@ -236,6 +236,8 @@ test('tuning parts change the drive and its sound, and the dealer buys the car f
   await page.keyboard.press('KeyE');
   expect(await dollars(page, '#dealer-offer')).toBe(offer);
 
+  const beforeSale = await read(page);
+  const fundsBeforeSale = availableFunds(beforeSale.state, beforeSale.progress.budget);
   await page.locator('[data-action="sell"]').click();
   await expect(page.locator('#banner')).toContainText('SOLD');
   await capture(page, 'sold');
@@ -245,6 +247,7 @@ test('tuning parts change the drive and its sound, and the dealer buys the car f
   expect(sold.state.inventory).toEqual([]);
   expect(sold.state.purchasedListings).toEqual(['part-paint-saffron']);
   expect(sold.state.paints).toEqual(save.paints);
+  expect(availableFunds(sold.state, sold.progress.budget)).toBe(fundsBeforeSale + offer);
   expect(sold.progress.sales).toEqual({ count: 1, takings: offer, profit: offer - outlay, best: offer });
   expect(sold.progress.fitted).toEqual({});
   expect(sold.progress.proof).toEqual({});
@@ -274,6 +277,7 @@ test('tuning parts change the drive and its sound, and the dealer buys the car f
   await expect(page.locator('#begin')).toBeEnabled();
   const after = await read(page);
   expect(after.state).toEqual(sold.state);
+  expect(after.progress.budget).toBe(sold.progress.budget);
   expect(after.progress.sales).toEqual(sold.progress.sales);
   expect(after.progress.restock).toEqual(sold.progress.restock);
   expect(after.stash).toEqual(sold.stash);

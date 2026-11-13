@@ -1,5 +1,5 @@
 import { DEFAULT_PAINT, LISTINGS, PARTS, SHELLS, getCatalogPart, getShell } from './catalog';
-import type { Part, PartKind, ShellId } from './catalog';
+import type { Listing, Part, PartKind, ShellId } from './catalog';
 
 export interface OwnedCar {
   id: string;
@@ -25,6 +25,7 @@ export interface GameState {
 
 export const STORAGE_KEY = 'junkyard-drivers-save-v1';
 export const DEFAULT_SEED = 642019;
+export const DEFAULT_STARTING_FUNDS = 150_000;
 export type SaveStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function newGame(seed = DEFAULT_SEED): GameState {
@@ -44,12 +45,30 @@ export function availableInventory(state: GameState, kind?: PartKind): Inventory
   return state.inventory.filter((item) => !assigned.has(item.id) && (!kind || getPart(state, item.id)?.kind === kind));
 }
 
-export function purchase(state: GameState, listingId: string): GameState {
+export function collectionCost(state: GameState): number {
+  return LISTINGS.reduce((cost, listing) => cost + (state.purchasedListings.includes(listing.id) ? listing.price : 0), 0);
+}
+
+export function availableFunds(state: GameState, budget: number): number {
+  return Math.max(0, budget - collectionCost(state));
+}
+
+function getListing(id: string): Listing {
+  const listing = LISTINGS.find(item => item.id === id);
+  if (!listing) throw new Error('This listing does not exist.');
+  return listing;
+}
+
+export function purchase(state: GameState, listingId: string, budget = DEFAULT_STARTING_FUNDS): GameState {
   // The receipt is the transaction's unique key. Holding E or double-clicking is safe.
   if (state.purchasedListings.includes(listingId)) return state;
-  const listing = LISTINGS.find((item) => item.id === listingId);
-  if (!listing) throw new Error('This listing does not exist.');
-  const next: GameState = { ...state, purchasedListings: [...state.purchasedListings, listingId] };
+  const listing = getListing(listingId);
+  if (listing.price > availableFunds(state, budget)) throw new Error('Insufficient funds for this purchase.');
+  return addListing(state, listing);
+}
+
+function addListing(state: GameState, listing: Listing): GameState {
+  const next: GameState = { ...state, purchasedListings: [...state.purchasedListings, listing.id] };
   if (listing.kind === 'shell') {
     const shell = getShell(listing.itemId);
     next.cars = [...state.cars, { id: `car-${shell.id}`, shellId: shell.id, engineId: null, wheelsId: null, paint: DEFAULT_PAINT[shell.id] }];
@@ -153,7 +172,7 @@ export function parseSave(raw: string): GameState | null {
     if (!data.purchasedListings.every((id) => typeof id === 'string') ||
       new Set(data.purchasedListings).size !== data.purchasedListings.length) return null;
     let verified = newGame(data.seed);
-    for (const id of data.purchasedListings) verified = purchase(verified, id as string);
+    for (const id of data.purchasedListings) verified = addListing(verified, getListing(id as string));
     if (!sameStrings(data.paints, verified.paints) || data.cars.length !== verified.cars.length ||
       data.inventory.length !== verified.inventory.length) return null;
     const carIds = new Set<string>();

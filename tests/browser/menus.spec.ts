@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { boot, closePanel, inspect, read, walk } from './helpers';
+import { boot, closePanel, inspect, look, read, walk } from './helpers';
 import { install, newGame, paintCar, purchase, STORAGE_KEY } from '../../src/game/state';
 import { LISTINGS } from '../../src/game/catalog';
+import { PROGRESS_KEY } from '../../src/game/progress';
 
 async function expectNoWalking(page: Page, milliseconds = 400) {
   const before = (await read(page)).position;
@@ -69,6 +70,89 @@ test('inspection pauses movement and focus loss clears held input', async ({ pag
   await page.keyboard.up('KeyS');
 });
 
+test('gamepad prompts follow connection changes and the shown X and B actions work', async ({ page }) => {
+  let save = newGame();
+  for (const id of ['shell-bison', 'part-v8-stock', 'part-street-1']) save = purchase(save, id);
+  save = install(install(save, 'car-bison', 'instance-part-v8-stock'), 'car-bison', 'instance-part-street-1');
+  await page.addInitScript(({ key, save }) => {
+    localStorage.setItem(key, JSON.stringify(save));
+    // Supply a standard controller through the same browser API the game polls.
+    Object.defineProperty(navigator, 'getGamepads', { value: () => {
+      const connected = document.body?.hasAttribute('data-test-pad');
+      const pressed = Number(document.body?.getAttribute('data-test-button') ?? -1);
+      return connected ? [{
+        connected, index: 0, mapping: 'standard', axes: [0, 0, 0, 0],
+        buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === pressed, value: Number(i === pressed) })),
+      }] : [];
+    } });
+  }, { key: STORAGE_KEY, save });
+  await page.goto('./?qa=1');
+  const begin = page.locator('#begin');
+  await expect(begin).toBeEnabled();
+  await page.evaluate(() => document.body.setAttribute('data-test-pad', ''));
+  await expect(page.locator('.entry-controls.gamepad-only')).toBeVisible();
+  await expect(page.locator('.entry-controls.keyboard-only')).toBeHidden();
+  await expect(page.locator('.admission-stamp')).toContainText('$150,000');
+  await begin.click();
+  await expect(page.locator('#pause-key')).toHaveText('START');
+  await walk(page, -18.2, 14.1);
+  const { position } = await read(page);
+  await look(page, Math.atan2(position.x + 15, position.z - 12), -.08);
+  await expect.poll(async () => (await read(page)).activeTarget).toBe('shell-hachiro');
+  const hint = page.locator('#hint kbd');
+  await expect(hint).toBeVisible();
+  await expect(hint).toHaveText('X');
+  await page.evaluate(() => document.body.setAttribute('data-test-button', '2'));
+  await expect(page.locator('#panel')).toContainText('Hachiro Kestrel');
+  await page.evaluate(() => document.body.setAttribute('data-test-button', '1'));
+  await expect(page.locator('#panel')).toBeHidden();
+  await page.evaluate(() => document.body.setAttribute('data-test-button', '9'));
+  await expect(page.locator('.controls.gamepad-only')).toBeVisible();
+  await expect(page.locator('.controls.keyboard-only')).toBeHidden();
+  await page.evaluate(() => document.body.removeAttribute('data-test-pad'));
+  await expect(page.locator('.controls.keyboard-only')).toBeVisible();
+  await expect(page.locator('.controls.gamepad-only')).toBeHidden();
+  await page.locator('[data-action="resume"]').click();
+  await expect(hint).toHaveText('E');
+  await walk(page, -24, -3);
+  await walk(page, -22.6, -13);
+  await inspect(page, -20, -13, 'garage-car');
+  await expect(page.locator('#drive-keys')).toHaveText('W / S · DRIVE');
+  await page.evaluate(() => {
+    document.body.removeAttribute('data-test-button');
+    document.body.setAttribute('data-test-pad', '');
+  });
+  await expect(page.locator('#drive-keys')).toHaveText('RT / LT · DRIVE');
+  await expect(page.locator('#recover-key')).toHaveText('Y');
+  await page.evaluate(() => document.body.removeAttribute('data-test-pad'));
+  await expect(page.locator('#drive-keys')).toHaveText('W / S · DRIVE');
+  await expect(page.locator('#recover-key')).toHaveText('R');
+});
+
+test('a purchase spends the available balance, persists, and disables unaffordable stock', async ({ page }) => {
+  await page.addInitScript(key => {
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ version: 1, budget: 1400 }));
+  }, PROGRESS_KEY);
+  await boot(page);
+  await walk(page, -18.2, 14.1);
+  await inspect(page, -15, 12, 'shell-hachiro');
+  const shell = page.locator('[data-buy="shell-hachiro"]');
+  await expect(page.locator('#panel .price')).toContainText('AVAILABLE FUNDS');
+  await shell.click();
+  await expect(shell).toHaveText('Delivered to your Garage');
+  await expect(page.locator('#panel .price > span b')).toHaveText('$0');
+  await closePanel(page);
+  await walk(page, -19, 2.2);
+  await inspect(page, -15, 1, 'shell-bison');
+  const unaffordable = page.locator('[data-buy="shell-bison"]');
+  await expect(unaffordable).toBeDisabled();
+  await expect(unaffordable).toHaveText('Insufficient funds');
+  await page.reload();
+  await expect(page.locator('#begin')).toBeEnabled();
+  await expect(page.locator('.admission-stamp')).toContainText('$0');
+  expect((await read(page)).state.purchasedListings).toEqual(['shell-hachiro']);
+});
+
 test('New Game cancel preserves a saved build and confirmation clears the collection', async ({ page }) => {
   // This fixture isolates the reset/save UI. game.spec.ts proves all purchases
   // and assembly through the normal world interactions from a fresh save.
@@ -77,24 +161,28 @@ test('New Game cancel preserves a saved build and confirmation clears the collec
   fixture = install(fixture, 'car-hachiro', 'instance-part-i4-stock');
   fixture = install(fixture, 'car-hachiro', 'instance-part-street-1');
   fixture = paintCar(fixture, 'car-hachiro', 'paint-saffron');
-  await page.addInitScript(({ key, save }) => {
+  await page.addInitScript(({ key, save, progressKey }) => {
     if (!sessionStorage.getItem('jd-reset-test-seeded')) {
       localStorage.setItem(key, JSON.stringify(save));
+      localStorage.setItem(progressKey, JSON.stringify({ version: 1, budget: 3000 }));
       sessionStorage.setItem('jd-reset-test-seeded', '1');
     }
-  }, { key: STORAGE_KEY, save: fixture });
+  }, { key: STORAGE_KEY, save: fixture, progressKey: PROGRESS_KEY });
   await boot(page);
+  expect((await read(page)).progress.budget).toBe(3000);
   expect((await read(page)).state).toEqual(fixture);
   await page.keyboard.press('Escape');
   await page.locator('[data-action="new"]').click();
   await expect(page.locator('#menu')).toContainText('Clear this collection?');
   await page.locator('[data-action="cancel-new"]').click();
   expect((await read(page)).state).toEqual(fixture);
+  expect((await read(page)).progress.budget).toBe(3000);
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY)).toEqual(fixture);
   await page.locator('[data-action="new"]').click();
   await page.locator('[data-action="confirm-new"]').click();
   await expect(page.locator('#begin')).toBeEnabled();
   await expect(page.locator('#begin')).toContainText('Enter the yard');
+  expect((await read(page)).progress.budget).toBe(150_000);
   expect((await read(page)).state).toEqual(newGame());
   expect((await read(page)).mode).toBe('foot');
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY)).toEqual(newGame());

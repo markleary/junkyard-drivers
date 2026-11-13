@@ -54,6 +54,7 @@ export interface Listing {
   id: string;
   kind: 'shell' | 'part';
   itemId: string;
+  price: number;
 }
 
 export const SHELLS: Shell[] = [
@@ -164,8 +165,8 @@ export function getCategoryStock(source: PartSource, category: ShopCategory): Pa
 }
 
 export const LISTINGS: Listing[] = [
-  ...SHELLS.map((shell): Listing => ({ id: `shell-${shell.id}`, kind: 'shell', itemId: shell.id })),
-  ...PARTS.map((part): Listing => ({ id: `part-${part.id}`, kind: 'part', itemId: part.id })),
+  ...SHELLS.map((shell): Listing => ({ id: `shell-${shell.id}`, kind: 'shell', itemId: shell.id, price: shell.price })),
+  ...PARTS.map((part): Listing => ({ id: `part-${part.id}`, kind: 'part', itemId: part.id, price: part.price })),
 ];
 
 /** The colour each shell wears as found. None of them matches a paint that can be bought. */

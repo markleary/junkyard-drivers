@@ -1,4 +1,5 @@
 import { UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { DEFAULT_STARTING_FUNDS } from './state';
 
 /**
  * Everything a player earns by driving and exploring. Kept under its own
@@ -30,6 +31,8 @@ export interface Settings {
 }
 export interface Progress {
   version: 1;
+  /** Available cash plus the cost of purchases still held. Purchases only need to save their receipts. */
+  budget: number;
   finds: string[];
   bestLap: Partial<Record<ShellId, number>>;
   /** Metres driven in each car. */
@@ -85,9 +88,9 @@ export const DEFAULT_STYLE: CarStyle = { finish: 'gloss', stripe: 'none' };
 const START_HOUR = 16.6;
 export type ProgressStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
-export function newProgress(): Progress {
+export function newProgress(budget = DEFAULT_STARTING_FUNDS): Progress {
   return {
-    version: 1, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
+    version: 1, budget, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
     fitted: {}, proof: {}, sales: { count: 0, takings: 0, profit: 0, best: 0 }, stash: 0, restock: {},
   };
 }
@@ -171,8 +174,8 @@ const positive = (value: unknown, limit: number) => typeof value === 'number' &&
 const CAR_ID = /^car-[a-z]+$/, INSTANCE_ID = /^instance-part-[a-z0-9-]+$/, LISTING_ID = /^(shell|part)-[a-z0-9-]+$/;
 
 /** Unknown or damaged fields fall back to defaults one at a time, so a bad setting never costs a medal. */
-export function parseProgress(raw: string, knownFinds?: readonly string[]): Progress {
-  const fresh = newProgress();
+export function parseProgress(raw: string, knownFinds?: readonly string[], initialBudget = DEFAULT_STARTING_FUNDS): Progress {
+  const fresh = newProgress(initialBudget);
   let data: unknown;
   try { data = JSON.parse(raw); } catch { return fresh; }
   if (!isRecord(data) || data.version !== 1) return fresh;
@@ -213,7 +216,8 @@ export function parseProgress(raw: string, knownFinds?: readonly string[]): Prog
     if (LISTING_ID.test(listing) && positive(times, 1e6) && Math.floor(times as number) > 0) restock[listing] = Math.floor(times as number);
   }
   return {
-    version: 1, finds, bestLap: perShell(data.bestLap, 36000), odometer: perShell(data.odometer, 1e9), topSpeed: perShell(data.topSpeed, 200),
+    version: 1, budget: typeof data.budget === 'number' && Number.isSafeInteger(data.budget) && data.budget >= 0 ? data.budget : fresh.budget,
+    finds, bestLap: perShell(data.bestLap, 36000), odometer: perShell(data.odometer, 1e9), topSpeed: perShell(data.topSpeed, 200),
     laps: positive(data.laps, 1e7) ? Math.floor(data.laps as number) : 0, styles, settings,
     hour: positive(data.hour, 24) ? data.hour as number : START_HOUR,
     // A record written before the dealer existed has no proof at all. Nothing could be sold then, so every car
@@ -227,11 +231,11 @@ function browserStorage(): ProgressStorage | undefined {
   try { return globalThis.localStorage; } catch { return undefined; }
 }
 
-export function loadProgress(storage: ProgressStorage | undefined = browserStorage(), knownFinds?: readonly string[]): Progress {
+export function loadProgress(storage: ProgressStorage | undefined = browserStorage(), knownFinds?: readonly string[], initialBudget = DEFAULT_STARTING_FUNDS): Progress {
   try {
     const raw = storage?.getItem(PROGRESS_KEY);
-    return raw ? parseProgress(raw, knownFinds) : newProgress();
-  } catch { return newProgress(); }
+    return raw ? parseProgress(raw, knownFinds, initialBudget) : newProgress(initialBudget);
+  } catch { return newProgress(initialBudget); }
 }
 
 export function saveProgress(progress: Progress, storage: ProgressStorage | undefined = browserStorage()): boolean {

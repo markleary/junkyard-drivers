@@ -15,7 +15,7 @@ export const touchMarkup = `<div id="touch-controls" role="group" aria-label="To
   </div>
   <div class="touch-look-note touch-foot-help" aria-hidden="true"><span>LOOK AROUND</span><b>Drag the scene</b></div>
   <button id="touch-interact" type="button" disabled>
-    <span class="touch-action-symbol" aria-hidden="true">${icon('tag')}</span>
+    <span class="touch-action-symbol" aria-hidden="true"><span class="keyboard-only">${icon('tag')}</span><kbd class="gamepad-only">X</kbd></span>
     <span class="touch-action-copy"><b id="touch-action-label">Interact</b><span id="touch-action-detail">Look toward an item</span></span>
   </button>
   <div class="touch-pedals touch-drive-help" role="group" aria-label="Driving pedals">

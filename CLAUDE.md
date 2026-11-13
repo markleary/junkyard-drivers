@@ -17,7 +17,7 @@ npm test                   # Vitest only
 npx vitest run tests/state.test.ts            # one unit file
 npx vitest run tests/state.test.ts -t "name"  # one unit test by name
 npm run build              # typecheck + production build into dist/
-npm run test:browser       # full Playwright suite (19 tests, minutes, real-time driving)
+npm run test:browser       # full Playwright suite (21 tests, minutes, real-time driving)
 npm run test:browser:ci    # only the three tests tagged @deployment
 npx playwright test tests/browser/menus.spec.ts -g "title text"   # one browser test
 ```
@@ -54,7 +54,9 @@ Keyboard, touch and gamepad are merged into the same intents inside `step()` in 
 ### Two saves
 
 - `junkyard-drivers-save-v1` (`game/state.ts`): purchases, inventory, installed parts, paint, town seed. Its format is frozen at what the first release wrote; do not add fields to it. Catalog ids are part of that format: a save is rejected whole if it names a listing the build does not know, so never rename or remove one, and expect an older build to start a new game on a save that holds newer parts.
-- `junkyard-drivers-progress-v1` (`game/progress.ts`): laps, medals, finds, finishes and stripes, settings, hour, and everything the dealer, tuning parts and rare salvage need (`fitted`, `proof`, `sales`, `stash`, `restock`). New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
+- `junkyard-drivers-progress-v1` (`game/progress.ts`): budget, laps, medals, finds, finishes and stripes, settings, hour, and everything the dealer, tuning parts and rare salvage need (`fitted`, `proof`, `sales`, `stash`, `restock`). New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
+
+Available funds equal the budget minus the catalog cost of current receipts. A purchase only writes the collection save. A dealer sale removes its receipts and updates the budget to reflect the full payout. `VITE_STARTING_FUNDS` sets the opening balance for new games.
 
 Both loaders take an injectable storage object, which is how the unit tests exercise them.
 
