@@ -22,6 +22,9 @@ export type PadButton = 'interact' | 'recover' | 'camera' | 'lights' | 'pause' |
 
 const BUTTONS: Record<PadButton, number> = { interact: 2, recover: 3, camera: 5, lights: 12, pause: 9, back: 1, photo: 8, map: 13, confirm: 0 };
 
+/** Accept either button signal, with a threshold that rejects analog noise. */
+const buttonDown = (button: GamepadButton | undefined): boolean => !!button && (button.pressed || button.value >= .5);
+
 /** Dead zone, then a curve that is gentle near the centre and full at the edge. */
 export function stickCurve(value: number, dead = .14): number {
   const magnitude = Math.abs(value);
@@ -57,12 +60,12 @@ export class GamepadInput {
     state.steer = -stickCurve(pad.axes[0] ?? 0, .08);
     state.throttle = pad.buttons[7]?.value ?? 0;
     state.brake = pad.buttons[6]?.value ?? 0;
-    state.handbrake = !!pad.buttons[0]?.pressed;
-    state.lookBack = !!pad.buttons[4]?.pressed;
-    state.horn = !!pad.buttons[10]?.pressed;
-    state.nitro = !!pad.buttons[1]?.pressed;
+    state.handbrake = buttonDown(pad.buttons[0]);
+    state.lookBack = buttonDown(pad.buttons[4]);
+    state.horn = buttonDown(pad.buttons[10]);
+    state.nitro = buttonDown(pad.buttons[1]);
     for (const [name, button] of Object.entries(BUTTONS) as [PadButton, number][]) {
-      const down = !!pad.buttons[button]?.pressed;
+      const down = buttonDown(pad.buttons[button]);
       if (down && !this.held.has(button)) this.pressed.add(name);
       if (down) this.held.add(button); else this.held.delete(button);
     }
