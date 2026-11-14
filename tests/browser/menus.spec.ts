@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
-import { boot, closePanel, inspect, look, read, walk } from './helpers';
+import { boot, closePanel, drivePath, inspect, look, read, stop, walk } from './helpers';
 import { install, newGame, paintCar, purchase, STORAGE_KEY } from '../../src/game/state';
 import { LISTINGS } from '../../src/game/catalog';
 import { PROGRESS_KEY } from '../../src/game/progress';
@@ -70,11 +70,11 @@ test('inspection pauses movement and focus loss clears held input', async ({ pag
   await page.keyboard.up('KeyS');
 });
 
-test('gamepad prompts follow connection changes and the shown X and B actions work', async ({ page }) => {
+for (const buttonSignal of ['pressed', 'value'] as const) test(`gamepad ${buttonSignal} signals inspect, enter and offer a car with X`, async ({ page }) => {
   let save = newGame();
   for (const id of ['shell-bison', 'part-v8-stock', 'part-street-1']) save = purchase(save, id);
   save = install(install(save, 'car-bison', 'instance-part-v8-stock'), 'car-bison', 'instance-part-street-1');
-  await page.addInitScript(({ key, save }) => {
+  await page.addInitScript(({ key, save, buttonSignal }) => {
     localStorage.setItem(key, JSON.stringify(save));
     // Supply a standard controller through the same browser API the game polls.
     Object.defineProperty(navigator, 'getGamepads', { value: () => {
@@ -82,10 +82,20 @@ test('gamepad prompts follow connection changes and the shown X and B actions wo
       const pressed = Number(document.body?.getAttribute('data-test-button') ?? -1);
       return connected ? [{
         connected, index: 0, mapping: 'standard', axes: [0, 0, 0, 0],
-        buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === pressed, value: Number(i === pressed) })),
+        buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: buttonSignal === 'pressed' && i === pressed, value: Number(i === pressed) })),
       }] : [];
     } });
-  }, { key: STORAGE_KEY, save });
+  }, { key: STORAGE_KEY, save, buttonSignal });
+  const press = async (index: number) => {
+    await page.evaluate(async index => {
+      document.body.setAttribute('data-test-button', String(index));
+      // Let the browser deliver both the press and its release to the frame poll,
+      // including slow shader-compilation frames in Edge's test profile.
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+    }, index);
+  };
+  const tap = async (index: number) => { await press(index); await press(-1); };
   await page.goto('./?qa=1');
   const begin = page.locator('#begin');
   await expect(begin).toBeEnabled();
@@ -116,14 +126,37 @@ test('gamepad prompts follow connection changes and the shown X and B actions wo
   await expect(hint).toHaveText('E');
   await walk(page, -24, -3);
   await walk(page, -22.6, -13);
-  await inspect(page, -20, -13, 'garage-car');
-  await expect(page.locator('#drive-keys')).toHaveText('W / S · DRIVE');
+  const garage = await read(page);
+  await look(page, Math.atan2(garage.position.x + 20, garage.position.z + 13), -.08);
+  await expect.poll(async () => (await read(page)).activeTarget).toBe('garage-car');
   await page.evaluate(() => {
     document.body.removeAttribute('data-test-button');
     document.body.setAttribute('data-test-pad', '');
   });
+  await expect(hint).toHaveText('X');
+  await tap(2);
+  await expect.poll(async () => (await read(page)).mode).toBe('drive');
   await expect(page.locator('#drive-keys')).toHaveText('RT / LT · DRIVE');
   await expect(page.locator('#recover-key')).toHaveText('Y');
+  await tap(2);
+  await expect.poll(async () => (await read(page)).mode).toBe('foot');
+  await walk(page, -22.6, -13);
+  const beside = await read(page);
+  await look(page, Math.atan2(beside.position.x + 20, beside.position.z + 13), -.08);
+  await expect.poll(async () => (await read(page)).activeTarget).toBe('garage-car');
+  await tap(2);
+  await expect.poll(async () => (await read(page)).mode).toBe('drive');
+  const site = (await read(page)).dealer;
+  await drivePath(page, [{ x: -20, z: 30 }, { x: -20, z: 60 }, { x: -19.5, z: site.bay.z - 12 }, { x: -15, z: site.bay.z - 3 }, { x: site.bay.x - 6, z: site.bay.z }, { x: site.bay.x - .5, z: site.bay.z }]);
+  await stop(page);
+  await expect(page.locator('#hint')).toContainText('Second Chance Motors');
+  await press(2);
+  await expect(page.locator('#panel')).toContainText('Trade-in offer');
+  await page.waitForTimeout(150);
+  expect((await read(page)).state.cars).toHaveLength(1);
+  await press(-1);
+  await tap(1);
+  await expect(page.locator('#panel')).toBeHidden();
   await page.evaluate(() => document.body.removeAttribute('data-test-pad'));
   await expect(page.locator('#drive-keys')).toHaveText('W / S · DRIVE');
   await expect(page.locator('#recover-key')).toHaveText('R');
@@ -246,6 +279,11 @@ test('800 by 600 workshop keeps a full collection usable through engine, wheel a
   expect((await read(page)).state.cars[0].wheelsId).toBe('instance-part-new-sport-3');
   await page.locator('[data-paint="paint-forest"]').click();
   expect((await read(page)).state.cars[0].paint).toBe('#285b43');
+  const restoration = page.getByRole('button', { name: /Hands-on restoration/ });
+  await expect(restoration).toBeInViewport();
+  await restoration.click();
+  await expect(page.locator('[data-action="restoration-start"]')).toBeVisible();
+  await page.locator('[data-action="restoration-back"]').last().click();
   await expect(page.locator('.build-status')).toContainText('READY FOR THE ROAD');
   await expect(page.locator('[aria-label="Close panel"]')).toBeInViewport();
   mkdirSync('artifacts', { recursive: true });

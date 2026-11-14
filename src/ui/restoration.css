@@ -71,7 +71,7 @@
 .restoration-photo-actions .primary { white-space: nowrap; }
 .restoration-photo-actions .primary .ui-icon { width: 24px; height: 24px; }
 .restoration-photo-actions .restoration-return { width: auto; margin: 0; border: 0; }
-.workshop-restoration-link { margin: 0 0 15px; }
+.workshop-restoration-link { margin: 0 0 6px; }
 body[data-screen="restoration"] #objective, body[data-screen="restoration"] #footer { display: none; }
 body[data-screen="restoration"] #toast { z-index: 9; bottom: 10px; }
 @media (max-width: 950px) {
