@@ -123,14 +123,23 @@ test('controller can preserve Packhorse patina and focus loss stops a held tool'
     await page.waitForTimeout(180); expect((await record(page)).work).toBe(0);
     await page.evaluate(() => document.body.removeAttribute('data-test-button')); await page.waitForTimeout(100);
   };
-  await step('rust'); await page.locator('[data-restoration-route="patina"]').click();
+  await step('rust');
+  await page.locator('[data-restoration-paint="paint-saffron"]').click();
+  expect((await read(page)).state.cars[0].paint).toBe('#e7ad36');
+  await page.locator('[data-restoration-route="patina"]').click();
+  expect((await read(page)).state.cars[0].paint).toBe(DEFAULT_PAINT.packhorse);
   for (const next of ['repair', 'seal', 'complete']) await step(next);
   await page.locator('[data-action="restoration-photos"]').click();
   await expect(page.locator('.status-stamp')).toContainText('PATINA PRESERVED');
   await page.screenshot({ path: `${output}/patina-pair.png` });
   await page.locator('[data-action="restoration-back"]').first().click();
   await expect(page.locator('[data-paint="paint-saffron"]')).toBeDisabled();
-  expect((await record(page)).after.restored).toBe(false);
+  const preserved = await record(page);
+  expect(preserved.after.restored).toBe(false);
+  expect(preserved.after.paint).toBe(preserved.before.paint);
+  await page.reload(); await expect(page.locator('#begin')).toBeEnabled();
+  expect(await record(page)).toEqual(preserved);
+  expect((await read(page)).state.cars[0].paint).toBe(preserved.before.paint);
   expect(watched).toEqual({ errors: [], failed: [], external: [] });
 });
 
@@ -167,12 +176,12 @@ test('tablet Kestrel bodywork cancels cleanly, resumes after reload and fits por
 test('every salvageable shell retains its bodywork and opens its own matching photo pair', async ({ page, baseURL }) => {
   // Only startup fixtures write storage. The collection, bench and photos are
   // then exercised through their normal buttons; no QA hook changes a car.
-  const state = SHELLS.reduce((save, shell) => purchase(save, `shell-${shell.id}`), newGame());
+  let state = SHELLS.reduce((save, shell) => purchase(save, `shell-${shell.id}`), newGame());
   let progress = newProgress();
   for (const [index, car] of state.cars.entries()) {
     progress = startRestoration(state, progress, car.id);
     progress = workRestoration(state, progress, car.id, 1);
-    if (index % 2) progress = chooseRestorationRoute(state, progress, car.id, 'patina');
+    if (index % 2) ({ state, progress } = chooseRestorationRoute(state, progress, car.id, 'patina'));
     while (progress.restorations[car.id].stage !== 'complete') progress = workRestoration(state, progress, car.id, 1);
   }
   const watched = await prepare(page, baseURL!, state, progress);

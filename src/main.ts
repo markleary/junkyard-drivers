@@ -1202,7 +1202,10 @@ app.addEventListener('click', event => {
         return;
       }
       if (action === 'restoration-start') progress = startRestoration(state, progress, car.id);
-      else if (button.dataset.restorationRoute === 'paint' || button.dataset.restorationRoute === 'patina') progress = chooseRestorationRoute(state, progress, car.id, button.dataset.restorationRoute);
+      else if (button.dataset.restorationRoute === 'paint' || button.dataset.restorationRoute === 'patina') {
+        const chosen = chooseRestorationRoute(state, progress, car.id, button.dataset.restorationRoute);
+        progress = chosen.progress; commit(chosen.state);
+      }
       else if (button.dataset.restorationPaint) commit(button.dataset.restorationPaint === 'original'
         ? restoreOriginalPaint(state, car.id) : paintCar(state, car.id, button.dataset.restorationPaint));
       else return;

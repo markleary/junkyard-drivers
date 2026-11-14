@@ -1,4 +1,4 @@
-import { SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { DEFAULT_PAINT, PARTS, SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
 import { styleFor, type FinishId, type Progress, type StripeId } from './progress';
 import { getPart, type GameState, type OwnedCar } from './state';
 import { fittedUpgrades } from './upgrades';
@@ -68,14 +68,22 @@ export function startRestoration(state: GameState, progress: Progress, carId: st
 }
 
 /** Decide once the dirt is off and before the first pass of rust treatment. */
-export function chooseRestorationRoute(state: GameState, progress: Progress, carId: string, route: RestorationRoute): Progress {
-  ownedCar(state, carId);
+export function chooseRestorationRoute(state: GameState, progress: Progress, carId: string, route: RestorationRoute): { state: GameState; progress: Progress } {
+  const car = ownedCar(state, carId);
   if (route !== 'paint' && route !== 'patina') throw new Error('Choose fresh paint or preserved patina.');
   const record = restorationFor(progress, carId);
   if (!record) throw new Error('Start bodywork at the workbench first.');
-  if (record.route === route) return progress;
+  if (record.route === route) return { state, progress };
   if (record.stage !== 'rust' || record.work !== 0) throw new Error('Choose the finish after washing, before treating the rust.');
-  return put(progress, carId, { ...record, route });
+  // A selected tin is only a plan for the final coat. Preserving patina keeps the colour the car started with.
+  // Snapshot colours are repaired separately; only colours accepted by the frozen collection save can enter it.
+  const startingPaint = record.before.paint;
+  const validPaint = startingPaint === DEFAULT_PAINT[car.shellId] || PARTS.some(part =>
+    part.kind === 'paint' && part.color === startingPaint && state.paints.includes(part.id));
+  const preservedPaint = validPaint ? startingPaint : DEFAULT_PAINT[car.shellId];
+  const preserved = route === 'patina' && car.paint !== preservedPaint
+    ? { ...state, cars: state.cars.map(item => item.id === carId ? { ...item, paint: preservedPaint } : item) } : state;
+  return { state: preserved, progress: put(progress, carId, { ...record, route }) };
 }
 
 /** A bounded tool pass cannot spill into the next operation, even when a frame takes a long time. */

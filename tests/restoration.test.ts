@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { SHELLS, getShell, type ShellId } from '../src/game/catalog';
+import { DEFAULT_PAINT, SHELLS, getShell, type ShellId } from '../src/game/catalog';
 import { completeSale } from '../src/game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, jobBuildSignature, reconcileJobs, recordJobLap } from '../src/game/jobs';
 import { newProgress, parseProgress, setStyle } from '../src/game/progress';
 import { chooseRestorationRoute, reconcileRestorations, restorationFor, startRestoration, workRestoration } from '../src/game/restoration';
-import { install, newGame, paintCar, parseSave, purchase, type GameState } from '../src/game/state';
+import { install, newGame, paintCar, parseSave, purchase, restoreOriginalPaint, type GameState } from '../src/game/state';
 
 const carId = 'car-estate';
 function project(shellId: ShellId = 'estate'): GameState {
@@ -45,7 +45,7 @@ describe('hands-on restoration', () => {
         shellId: shell.id, enginePartId: `${shell.mount.toLowerCase()}-stock`, wheels: true, restored: false,
       } });
       progress = workRestoration(state, progress, id, .6);
-      progress = chooseRestorationRoute(state, progress, id, route);
+      progress = chooseRestorationRoute(state, progress, id, route).progress;
       for (const stage of route === 'paint' ? ['repair', 'prime', 'paint', 'complete'] : ['repair', 'seal', 'complete']) {
         progress = parseProgress(JSON.stringify(workRestoration(state, progress, id, 1)));
         expect(restorationFor(progress, id)).toMatchObject({ route, stage, work: 0, before });
@@ -63,6 +63,39 @@ describe('hands-on restoration', () => {
         shellId: shell.id, enginePartId: null, wheels: false,
       } });
     });
+
+    it('discards a planned paint colour when preserving patina, including the saved finished photo', () => {
+      const id = `car-${shell.id}`, painted = project(shell.id);
+      for (const initial of [painted, restoreOriginalPaint(painted, id)]) {
+        let state = purchase(initial, 'part-paint-saffron');
+        let progress = startRestoration(state, newProgress(), id);
+        const before = restorationFor(progress, id)!.before, startingPaint = initial.cars[0].paint;
+        progress = workRestoration(state, progress, id, 1);
+        const planned = paintCar(state, id, 'paint-saffron');
+        const priorProgress = progress;
+        ({ state, progress } = chooseRestorationRoute(planned, progress, id, 'patina'));
+        expect(state.cars[0].paint).toBe(startingPaint);
+        expect(planned.cars[0].paint).toBe('#e7ad36');
+        expect(state.paints).toEqual(planned.paints);
+        expect(state.inventory).toBe(planned.inventory);
+        expect(restorationFor(priorProgress, id)!.route).toBe('paint');
+        expect(restorationFor(progress, id)!.before).toBe(before);
+        expect(chooseRestorationRoute(state, progress, id, 'patina')).toEqual({ state, progress });
+
+        ({ state, progress } = chooseRestorationRoute(state, progress, id, 'paint'));
+        expect(state.cars[0].paint).toBe(startingPaint);
+        ({ state, progress } = chooseRestorationRoute(paintCar(state, id, 'paint-saffron'), progress, id, 'patina'));
+        state = parseSave(JSON.stringify(state))!;
+        progress = parseProgress(JSON.stringify(progress));
+        expect(state.cars[0].paint).toBe(startingPaint);
+        for (const stage of ['repair', 'seal', 'complete']) {
+          progress = workRestoration(state, progress, id, 1);
+          expect(restorationFor(progress, id)!.stage).toBe(stage);
+        }
+        expect(restorationFor(progress, id)!.after).toEqual({ ...before, paint: startingPaint, restored: false });
+        expect(parseProgress(JSON.stringify(progress))).toEqual(progress);
+      }
+    });
   });
 
   it('keeps pre-expansion records when new catalog cars share the same progress save', () => {
@@ -76,6 +109,22 @@ describe('hands-on restoration', () => {
     const restored = parseProgress(JSON.stringify(progress));
     expect(restored.restorations).toEqual(progress.restorations);
     expect(reconcileRestorations(state, restored)).toBe(restored);
+  });
+
+  it('cannot copy an unsupported snapshot colour into the frozen collection save when preserving patina', () => {
+    const state = project();
+    const progress = workRestoration(state, startRestoration(state, newProgress(), carId), carId, 1);
+    for (const paint of ['#123456', '#397d87', '#F0DFAD']) {
+      const damaged = parseProgress(JSON.stringify({ ...progress, restorations: { [carId]: {
+        ...record(progress), before: { ...record(progress).before, paint },
+      } } }));
+      const preserved = chooseRestorationRoute(state, damaged, carId, 'patina');
+      expect(preserved.state.cars[0].paint).toBe(DEFAULT_PAINT.estate);
+      expect(parseSave(JSON.stringify(preserved.state))).toEqual(preserved.state);
+      let finished = preserved.progress;
+      for (let i = 0; i < 3; i++) finished = workRestoration(preserved.state, finished, carId, 1);
+      expect(record(finished).after?.paint).toBe(DEFAULT_PAINT.estate);
+    }
   });
 
   it('makes five short operations, resumes partial work, and never spills work into the next stage', () => {
@@ -101,8 +150,10 @@ describe('hands-on restoration', () => {
     let progress = startRestoration(state, newProgress(), carId);
     expect(() => chooseRestorationRoute(state, progress, carId, 'patina')).toThrow(/after washing/);
     progress = workRestoration(state, progress, carId, 1);
-    progress = chooseRestorationRoute(state, progress, carId, 'patina');
-    expect(chooseRestorationRoute(state, progress, carId, 'patina')).toBe(progress);
+    progress = chooseRestorationRoute(state, progress, carId, 'patina').progress;
+    const unchanged = chooseRestorationRoute(state, progress, carId, 'patina');
+    expect(unchanged.state).toBe(state);
+    expect(unchanged.progress).toBe(progress);
     progress = workRestoration(state, progress, carId, .1);
     expect(() => chooseRestorationRoute(state, progress, carId, 'paint')).toThrow(/before treating/);
     for (const next of ['repair', 'seal', 'complete']) {
