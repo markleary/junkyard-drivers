@@ -1,0 +1,122 @@
+[
+  {
+    "shell": "estate",
+    "engine": "i4-stock",
+    "wheels": "street-1",
+    "pace": "brisk",
+    "lap": 65.83,
+    "topKmh": 45,
+    "logged": 65.83,
+    "note": ""
+  },
+  {
+    "shell": "estate",
+    "engine": "i4-stock",
+    "wheels": "street-1",
+    "pace": "fast",
+    "lap": 54.35,
+    "topKmh": 44,
+    "logged": 54.35,
+    "note": ""
+  },
+  {
+    "shell": "estate",
+    "engine": "crate-i4-performance",
+    "wheels": "new-sport-1",
+    "pace": "brisk",
+    "lap": 62.58,
+    "topKmh": 68,
+    "logged": 62.58,
+    "note": ""
+  },
+  {
+    "shell": "estate",
+    "engine": "crate-i4-performance",
+    "wheels": "new-sport-1",
+    "pace": "fast",
+    "lap": 50.37,
+    "topKmh": 68,
+    "logged": 50.37,
+    "note": ""
+  },
+  {
+    "shell": "sprite",
+    "engine": "i4-stock",
+    "wheels": "street-1",
+    "pace": "brisk",
+    "lap": 64.33,
+    "topKmh": 54,
+    "logged": 64.33,
+    "note": ""
+  },
+  {
+    "shell": "sprite",
+    "engine": "i4-stock",
+    "wheels": "street-1",
+    "pace": "fast",
+    "lap": 52.12,
+    "topKmh": 54,
+    "logged": 52.12,
+    "note": ""
+  },
+  {
+    "shell": "sprite",
+    "engine": "crate-i4-performance",
+    "wheels": "new-sport-1",
+    "pace": "brisk",
+    "lap": 61.5,
+    "topKmh": 79,
+    "logged": 61.5,
+    "note": ""
+  },
+  {
+    "shell": "sprite",
+    "engine": "crate-i4-performance",
+    "wheels": "new-sport-1",
+    "pace": "fast",
+    "lap": 49.47,
+    "topKmh": 80,
+    "logged": 49.47,
+    "note": ""
+  },
+  {
+    "shell": "courier",
+    "engine": "v8-torque",
+    "wheels": "street-1",
+    "pace": "brisk",
+    "lap": 64.67,
+    "topKmh": 51,
+    "logged": 64.67,
+    "note": ""
+  },
+  {
+    "shell": "courier",
+    "engine": "v8-torque",
+    "wheels": "street-1",
+    "pace": "fast",
+    "lap": 52.55,
+    "topKmh": 51,
+    "logged": 52.55,
+    "note": ""
+  },
+  {
+    "shell": "courier",
+    "engine": "crate-v8-performance",
+    "wheels": "new-sport-1",
+    "pace": "brisk",
+    "lap": 62.88,
+    "topKmh": 65,
+    "logged": 62.88,
+    "note": ""
+  },
+  {
+    "shell": "courier",
+    "engine": "crate-v8-performance",
+    "wheels": "new-sport-1",
+    "pace": "fast",
+    "lap": 50.63,
+    "topKmh": 66,
+    "logged": 50.63,
+    "note": ""
+  }
+]

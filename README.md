@@ -1,6 +1,6 @@
 # Junkyard Drivers
 
-A single-player browser game for desktop and tablets about finding a forgotten car, rebuilding it, and taking its first drive through a small town. Built with TypeScript, Vite, vanilla Three.js/WebGL, and Rapier 3D. You start with $150,000, enough to buy every current listing. Once a car runs there is a timed test loop with medals, twelve lost pieces of motoring history to find around the yard and town, earned paint finishes and stripes, a day that turns to night, and a photo mode. A finished car can be tuned with a turbocharger, a louder exhaust and nitrous. Rare parts and two rare cars are hidden around the yard, and a used-car dealer in town will buy what you build.
+A single-player browser game for desktop and tablets about finding a forgotten car, rebuilding it, and taking its first drive through a small town. Built with TypeScript, Vite, vanilla Three.js/WebGL, and Rapier 3D. Choose from eight salvageable cars, take on nine customer restoration commissions, and build your workshop's reputation. The latest additions are a family wagon, an open-top roadster, a panel van, and nine salvage parts for a wider range of builds. You start with $150,000, enough to buy every current listing. Once a car runs there is a timed test loop with medals, twelve lost pieces of motoring history to find, earned paint finishes and stripes, a day that turns to night, and a photo mode. A finished car can be tuned with a turbocharger, a louder exhaust and nitrous. Rare parts and two rare cars are hidden around the yard, and the used-car dealer buys your builds and handles customer collections.
 
 [Play Junkyard Drivers](https://markleary.github.io/junkyard-drivers/) in a browser, including iPad Safari. Touch controls appear automatically on tablets. Saves belong to each browser and device.
 
@@ -34,6 +34,8 @@ Set `VITE_STARTING_FUNDS` to a nonnegative whole-dollar amount before starting V
 | Recover a stuck or overturned car to the Garage apron | R, or **Recover to Garage** |
 | Exit the car | Stop near the Garage and press E |
 | Sell the car | Stop in the trade-in bay at Second Chance Motors and press E |
+| Customer restoration jobs | **Customer jobs** at the Garage workbench or in the pause menu |
+| Deliver a customer car | Stop in the dealer's trade-in bay, press E, then choose **Deliver** on the customer handover |
 | Change camera: chase, wide, bonnet | C |
 | Look back | Hold B |
 | Headlamps: automatic at dusk, on, off | L |
@@ -45,7 +47,7 @@ Set `VITE_STARTING_FUNDS` to a nonnegative whole-dollar amount before starting V
 
 ### Controller
 
-A standard-layout gamepad works alongside the keyboard. Control hints use Xbox-style button names when the browser detects the controller and switch back on disconnect. Press a controller button if the browser has yet to detect it. Left stick walks and steers. Right stick looks around on foot. RT accelerates and LT brakes, then reverses. A is the handbrake, X interacts or exits, Y recovers the car, RB changes camera, and LB looks back. D-pad up cycles the headlamps, D-pad down zooms the map, and pressing the left stick sounds the horn. View opens photo mode and Start pauses or resumes. B closes a panel or leaves photo mode. Hold B while driving to fire nitrous if fitted. Knocks and medals rumble where the browser supports it.
+A standard-layout gamepad works alongside the keyboard. Control hints use Xbox-style button names when the browser detects the controller and switch back on disconnect. Press a controller button if the browser has yet to detect it. Left stick walks and steers. Right stick looks around on foot. RT accelerates and LT brakes, then reverses. A is the handbrake, X interacts or exits, Y recovers the car, RB changes camera, and LB looks back. D-pad up cycles the headlamps, D-pad down zooms the map, and pressing the left stick sounds the horn. View opens photo mode and Start pauses or resumes. In menus, D-pad up/down moves between buttons, A selects, and B closes; focused buttons scroll into view. Hold B while driving to fire nitrous if fitted. Knocks and medals rumble where the browser supports it.
 
 ### iPad and tablet controls
 
@@ -64,6 +66,7 @@ Touch controls appear automatically on touch-capable devices. Landscape is recom
 | Recover | Tap **Recover to Garage** |
 | Exit the car | Stop near the Garage and tap **Exit car** |
 | Sell the car | Stop in the trade-in bay at Second Chance Motors and tap **Sell car** |
+| Customer jobs / delivery | Tap **Customer jobs** in the workbench or pause menu; use **Deliver** at the dealer when the checklist is complete |
 | Camera, headlamps, horn | Tap **View**, **Lamps** or **Horn** beside the thumbstick while driving |
 | Photo mode | **Pause**, then **Photo mode**. Drag to orbit, pinch to zoom |
 | Pause / resume | Tap **Pause**, then **Resume game** |
@@ -86,20 +89,32 @@ On a tablet, use the contextual action button wherever these steps mention E.
 
 The job note in the corner keeps four stamps for the selected car: shell, engine, wheels, and first drive.
 
+## Customer restoration jobs
+
+Open **Customer jobs** at the Garage workbench, in the pause menu, or from the logbook. Three requests are available immediately: a modest cream Kestrel for a first-time driver, a burgundy Roadmaster, and a cream Wayfarer family wagon. Each card shows the customer's brief, accepted shells, engine power, wheel grip, paint, permitted tuning, build budget and fixed payment before you accept. Select one job at a time. **Release job · no penalty** puts it back on the board and leaves your car, parts and money intact.
+
+The **build budget** is the maximum catalog value of the finished car: shell, fitted engine and wheels, fitted tuning parts, and the paint tin if repainted. It is not an advance or a separate spending allowance. Parts already owned still count. Engine-power requirements use the engine's rated horsepower before bolt-on tuning. A checklist compares the selected car with every requirement, and the corner job note follows the next step.
+
+After accepting, finish a complete marked test loop in the qualifying build. Some commissions also specify a lap-time limit. The customer accepts proof only for that exact engine, wheel set, tuning, paint, finish and stripes; changing the build requires another road test. Old personal-best laps and the dealer's ordinary lap proof do not count. Drive the approved car into Second Chance Motors' trade-in bay, stop, interact, and choose **Deliver** on the customer handover. The quoted payment is the full price for the car and its fitted parts, not a bonus on top of a dealer sale. Paint remains reusable, sold listings can be purchased again, and rare items return to new hiding places.
+
+Each commission can be delivered once. Completed jobs stay on the board and in the logbook. The workshop progresses from **New workshop** to **Local favorite** after one delivery, **Trusted restorer** after three, **Restoration specialist** after six, and **Master restorer** after all nine. Further requests open as deliveries accumulate: a weekend Sprite, a working Courier, a turbo sleeper, a club Wren, a nursery Packhorse, and a silver Sirocco. There are no deadlines, real-world timers or recurring fees.
+
 ## After the first drive
 
-- **Test loop.** Passing the yard gate starts a stopwatch. Each car has bronze, silver and gold times: Kestrel 1:12 / 0:58 / 0:52, Roadmaster 1:11 / 0:57 / 0:52, Sirocco 1:09 / 0:55 / 0:50, Wren 1:11 / 0:57 / 0:51, Packhorse 1:12 / 0:58 / 0:52. Bronze is a tidy lap in a stock build; gold wants the best engine and tires, or better lines than most. Pull back into the yard and out through the gate again for another attempt. Best laps, distance driven and top speed are kept for each car.
+- **Test loop.** Passing the yard gate starts a stopwatch. All eight cars have bronze, silver and gold targets, shown in the logbook and route card. Bronze is a tidy lap in a stock build; gold wants the best engine and tires, or better lines than most. Pull back into the yard and out through the gate again for another attempt. Best laps, distance driven and top speed are kept for each car.
 - **Lost & found.** Twelve hubcaps, plates and oil cans are hidden around the yard, behind the parts store and across town: seven within a short walk of the workshop, five further out. Each stands in a column of amber light; walk or drive up to it to collect it. Found pieces hang on the workshop wall, and the logbook gives a hint for each one still missing.
 - **Finishes and stripes.** Three, six and ten finds unlock metallic, matte and pearl paint. Bronze, silver and gold medals unlock ivory, black and gold twin stripes. Apply them in slot 04 of the build sheet; each car remembers its own.
 - **A day that passes.** The yard opens in the late afternoon. The clock runs through dusk, night and morning in about half an hour of play; floodlights, street lamps, shop windows and headlamps come on after dark. The pause menu can hold the time at morning, midday, golden hour, dusk or night instead.
 - **Photo mode.** Freezes play and hides the instruments. Orbit and zoom the camera, step the hour earlier or later, choose a filter (natural, postcard, faded print, black and white), and save a PNG.
-- **Tuning.** Slot 05 of the build sheet takes one turbocharger, one exhaust and one nitrous kit on any car with an engine in it; each lifts off again and can go on another car. A turbocharger adds 22 to 38 percent more power once its boost has built (the bigger the turbine, the longer the wait), whistles as it spools, and dumps the boost through a blow-off valve when you lift. A sport exhaust or straight-through pipes add a few percent and change the engine's voice to a deeper, louder recording; straight-through pipes also spit flame when the throttle snaps shut at high revs. A nitrous kit adds 75 or 150 hp for as long as its control is held, up to about four seconds a bottle, and the bottle refills over 18 seconds. A bar for each rides beside the speedometer. Holloway Auto Parts sells all three under **Tuning**; nitrous is sold nowhere else.
+- **Tuning.** Slot 05 of the build sheet takes one turbocharger, one exhaust and one nitrous kit on any car with an engine in it; each lifts off again and can go on another car. A turbocharger adds 16 to 38 percent more power once its boost has built (the bigger the turbine, the longer the wait), whistles as it spools, and dumps the boost through a blow-off valve when you lift. A sport exhaust or straight-through pipes add a few percent and change the engine's voice to a deeper, louder recording; straight-through pipes also spit flame when the throttle snaps shut at high revs. A nitrous kit adds 75 or 150 hp for as long as its control is held, up to about four seconds a bottle, and the bottle refills over 18 seconds. A bar for each rides beside the speedometer. The yard's **Tuning** tab offers a small salvage turbo and a touring exhaust. Holloway Auto Parts sells all three tuning kinds; nitrous is sold nowhere else.
 - **Rare salvage.** Six parts and two cars are not on any rack or in the display rows: a magnesium racing wheel set, a rally turbocharger, a set of side pipes, a works engine for each mount (each stronger than anything on a rack or a shelf), the Hachiro Wren R rally hatchback (I4) and the Dunmore Packhorse pickup (V8). Every game hides them differently among sixteen places around the yard, behind the racks, heaps, stacks and freight boxes. A part glints when you are close, the prompt names it when you face it, and the logbook carries a hint for each one still out there. They are bought where they lie.
 - **Second Chance Motors.** The used-car lot up the avenue from the yard gate buys any car that runs. Drive into the painted trade-in bay, stop, and press E. The dealer pays up to twice the catalog price of everything in the car (shell, engine, wheels, fitted tuning parts, and the paint tin if it was repainted). Quicker laps raise the offer. The offer stays the same for the session until you change the car or set a quicker lap. Selling takes the car with its engine, wheels and tuning parts. The paint colour stays yours. The full payout goes into your available funds, and the logbook tracks total takings, profit over cost, and the best single sale. Everything that went with the car can be bought again, and a rare piece turns up in a different hiding place. Walking up to the hatch of the sales hut shows what each car in the collection would fetch.
 - **Logbook.** The second page of the pause sheet lists lap records and medals, distance and top speed for each car (a sold car keeps its line), all twelve finds, what has been unlocked, what the dealer has paid, and the rare salvage held or still hidden.
 - **Map and instruments.** A small survey map turns with your heading and marks the next checkpoint and the dealer's lot. The speedometer pod adds a tachometer strip, the current gear, a lamp tell-tale, and boost and nitrous bars for a car that carries the parts.
 
-The Bison Roadmaster uses a V8. Explore behind the scrap row west of the Garage to discover the rare Veloce Sirocco, which uses a V12. Each engine family has stock and performance variants. All wheel sets fit every car; the three street sets and three sport sets on the rack, with Holloway's six, are more than enough for the whole collection.
+The Bison Roadmaster uses a V8. Explore behind the scrap row west of the Garage to discover the rare Veloce Sirocco, which uses a V12. The project row just south of the back-lot crosslane, beside the gantry crane, holds three more shells: the **Hachiro Wayfarer** I4 wagon ($2,100), **Alder Sprite** I4 roadster ($2,800), and **Dunmore Courier** V8 panel van ($3,600). Their different weights make the same engine feel different in each car.
+
+Any salvage rack now lets you switch between **Engines**, **Wheels**, **Paint** and **Tuning**. Nine additional yard parts broaden the choices: the 85 hp K-1300 economy I4, 150 hp K-1800 twin-carb I4, 210 hp Ironblock 383 utility V8, Heritage narrow touring wheels (1.65 grip), Crossroad club rally wheels (2.5 grip), Whistler T18 salvage turbo, Longtail touring exhaust, Buttermilk cream and Oxblood burgundy paint. All wheel sets fit every car. The yard alone carries enough separate compatible engines and wheel sets to complete all eight cars at once; Holloway adds factory-new alternatives.
 
 The salvage yard covers 81 × 83 meters, with open aisles between scrap-metal heaps, stripped donor frames, recycling bins, and bundled pipe. The original shell displays, parts racks, Garage, and rare-car pocket remain accessible.
 
@@ -119,6 +134,8 @@ Lap records, distance and top speed, finds, each car's finish and stripes, setti
 
 The progress record also stores the budget. Available funds are the budget minus the cost of the purchases you still own. Inspection tags, parts shops, and the pause sheet show the current balance. Older collections receive the configured opening balance and keep all their purchases. **New game…** resets the balance to the configured amount.
 
+Customer restoration data also lives in the progress record, under `jobs`: the active request, completed request IDs, an acceptance revision, and proof of a full lap with the exact build. Reloading keeps an accepted or completed job. Damaged job fields are repaired without discarding the collection or other progress, and proof is cleared when its car or matching build no longer exists. Deliveries reuse the dealer's car-removal and rare-restock rules but pay the fixed commission amount; they are recorded separately from ordinary dealer sales. The frozen purchase-save format has no new fields.
+
 ## Checks and production build
 
 ```sh
@@ -131,9 +148,13 @@ npm run preview
 
 `check` runs TypeScript and focused Vitest checks for inventory ownership, compatibility, save validation, vehicle tuning, road connectivity/clearance across multiple seeds, touch-pointer ownership/cancellation, yard and town-lot clearance, the progress record (medals, finishes, stripes, repair of damaged saves), the dealer's offer (above the outlay, at most double, rising with the lap, the same every time it is asked in a session), tuning-part fitment, the hiding places of the rare salvage (dealt without sharing for any seed, and each one walked to from the gate in the built yard with a physics body the player's size), the lap state machine, the gearbox, daylight continuity, find placement, the audio module on a stand-in Web Audio graph, and the baked scenery itself: the whole town is built under Node for five seeds and the check fails if two different-looking surfaces overlap in one plane, which is what makes ground flicker. Browser checks exercise desktop controls, native multi-touch input at tablet sizes, production asset loading, the features added after the first drive (finds, logbook, finishes, cameras, lamps, photo mode, a timed lap, stripes, night and quality settings), and the dealer, rare salvage and tuning parts (found off the racks, fitted, driven on boost and nitrous with the modified recordings playing, sold for a fixed offer, by keyboard and by touch). Test output is the source of truth for the current checkout.
 
-`npm run test:browser:ci` runs the three `@deployment` checks for production startup and pause/input clearing, the readable graphics-error screen, and independent touch gestures/cancellation/orientation handling. GitHub's software-rendered runner uses these focused browser checks alongside all 261 unit/physics checks. The full 21-test suite runs with `npm run test:browser`. Run the real-time restoration and driving playthroughs on a machine with graphics acceleration and against the public URL after deployment. The first full-suite CI attempt reached the job's 20-minute limit, while its startup/menu and touch-lifecycle checks passed. Failed CI browser runs preserve traces and screenshots as workflow artifacts.
+`npm run test:browser:ci` runs the three `@deployment` checks for production startup and pause/input clearing, the readable graphics-error screen, and independent touch gestures/cancellation/orientation handling. GitHub's software-rendered runner uses these focused browser checks alongside all 309 unit/physics checks. The full 24-test browser suite runs with `npm run test:browser`. Run the real-time restoration and driving playthroughs on a machine with graphics acceleration and against the public URL after deployment. The first full-suite CI attempt reached the job's 20-minute limit, while its startup/menu and touch-lifecycle checks passed. Failed CI browser runs preserve traces and screenshots as workflow artifacts.
 
-The production build bundles 432 kB of game JavaScript (154 kB gzip) and 78 kB of CSS (16 kB gzip).
+The production build prints current JavaScript and CSS bundle sizes, including gzip sizes. Dated acceptance sections below preserve measurements from their respective builds.
+
+Customer-job unit checks cover every authored brief, build budgets, exact-build lap proof, unlocks, cancellation, delivery payouts, save repair and rare restocking. Catalog checks ensure enough unique parts to build the full collection, and model checks construct every car as salvage and as a restored build. Project-row clearance and reachability use the same yard footprints and physics flood checks as rare salvage.
+
+`npx playwright test tests/browser/jobs.spec.ts` runs the customer expansion scenarios: desktop acceptance through assembly, a fresh lap and delivery; touch-only job cards, project-shell purchases and wagon assembly; and controller menu navigation with held-button protection.
 
 Run just the tablet acceptance with `npx playwright test tests/browser/touch.spec.ts`. It uses Chromium's native touch event dispatch, including simultaneous steering and pedals. For a separate Safari-engine smoke on macOS, install WebKit with `npx playwright install webkit`, start the local preview, then run `node scripts/tablet-webkit.mjs`. `VISUAL_BASE_URL` selects another preview address; `PLAYWRIGHT_WEBKIT_EXECUTABLE_PATH` can select an installed WebKit executable. WebKit taps are native, while its movement probe uses synthetic PointerEvents; this is not a substitute for testing on a physical iPad.
 
@@ -144,12 +165,14 @@ Evidence scripts sit beside the tests. Each drives a real browser against `npm r
 | `node scripts/visual-review.mjs [--mobile] [--quality low] [--views a,b]` | 39 fixed camera views with frame timing, draw calls, triangles and memory |
 | `node scripts/pixel-metrics.mjs <folder>` | Colour entropy, edge density, contrast and dominant-colour share for a folder of captures |
 | `node scripts/audio-review.mjs` | Loop seams, engine sweeps on each exhaust and how much louder the modified ones are, the turbocharger whistle and nitrous jet, the held horn and footstep slicing, rendered offline; then whether the game decodes and uses the clips |
-| `node scripts/lap-calibration.mjs` | Lap times for each car, stock and upgraded, at two paces; the two rare cars also fully tuned, using the nitrous |
+| `node scripts/lap-calibration.mjs [estate,sprite,courier]` | Lap times for each car, stock and upgraded, at two paces; the two rare cars also fully tuned, using the nitrous. Comma-separated filters narrow the run; `LAP_OUTPUT` optionally saves the result as JSON |
+| `node scripts/project-car-review.mjs` | The three new project shells together in the yard, then each restored at the Garage; renderer measurements and browser/network errors |
+| `node scripts/car-quality-review.mjs` | Matching front/rear views of two established cars and all three project cars, salvage/restored comparisons, close details and all four quality tiers |
 | `node scripts/startup-timing.mjs [url]` | Time to a usable start button and frame rate on the GPU and on software rendering |
 | `node scripts/graphics-fallback.mjs` | The software-rendering smoke check |
 | `node scripts/flicker-check.mjs [url]` | Surfaces fighting for the same pixels: the share of the frame that flips when the camera moves a few millimetres, with a still-camera baseline |
 
-The review camera, clock and quality hooks these use exist only under `?qa=1`. They observe and frame; they never move the player or change a save. The PNGs that `visual-review.mjs` and `flicker-check.mjs` write are ignored by git because of their size; the JSON beside them is tracked.
+The review camera, clock and quality hooks these use exist only under `?qa=1`. They observe and frame; they never move the player or change a save. The PNGs that `visual-review.mjs`, `project-car-review.mjs` and `flicker-check.mjs` write are ignored by git because of their size; the JSON beside them is tracked. `project-car-review.mjs` uses isolated startup-save fixtures for its restored-car views and accepts `VISUAL_OUTPUT_DIR` for a separate evidence folder.
 
 To verify the published game without starting a local server:
 
@@ -194,18 +217,19 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 | `index.html` / `public/social-preview.jpg` | Page metadata and the Open Graph / Twitter sharing image |
 | `src/game/catalog.ts` | Fictional shells, mount families, parts (including tuning parts and rare salvage), prices, and tuning values |
 | `src/game/state.ts` | Purchase and affordability checks, build and sale operations, and versioned save validation |
-| `src/game/progress.ts` | Budget, lap records, medals, finds, finishes and stripes, settings, fitted tuning parts, sales, and rare salvage locations |
+| `src/game/progress.ts` | Budget, lap records, medals, finds, finishes and stripes, settings, fitted tuning parts, sales, rare salvage locations, and customer-job persistence |
+| `src/game/job-catalog.ts` / `src/game/jobs.ts` | Authored customer briefs; acceptance, build checklists, exact-build lap proof, workshop ranks and fixed-payment delivery |
 | `src/game/upgrades.ts` | Which turbocharger, exhaust and nitrous kit is on which car, and what a build is worth in power, boost and sound |
 | `src/game/dealer.ts` | What a car cost to build, what its lap proves, the offer range, the session's offer, and the sale |
 | `src/game/stash.ts` | Deals each rare piece its hiding places for a game, and moves it when it comes back after a sale |
 | `src/game/finds.ts` / `src/game/trial.ts` | Where the twelve finds sit for a given town; the timed-lap state machine |
 | `src/world/layout.ts` | Seeded road graph, road-safe buildings, lots (fuel station, used-car lot, park), trees, and the test-loop route |
-| `src/world/yard.ts` / `src/world/surface.ts` | Yard features with their clear corridors, and the sixteen hiding places; what is underfoot at a point |
+| `src/world/yard.ts` / `src/world/surface.ts` | Yard features with their clear corridors, project-shell display positions, and the sixteen hiding places; what is underfoot at a point |
 | `src/world/dealer.ts` | Where on the used-car lot the trade-in bay and the sales hatch are, and whether a point is on the lot |
 | `src/world/daylight.ts` | Time of day as plain numbers: sun and moon, sky, fog and light colours, the clock |
 | `src/render/world.ts` + `src/render/scene/` | Ground and roads, salvage yard, workshop, parts store, town, landscape, and the shared prop kit |
 | `src/render/builder.ts` | Bakes static scenery into one mesh per material per map cell, instances repeats, and creates colliders |
-| `src/render/cars.ts` / `src/render/wrecks.ts` | The five player cars (finishes, stripes, lamps, opening bonnet, engine bay, fitted turbocharger, pipes and bottle) and six scenery body styles |
+| `src/render/cars.ts` / `src/render/wrecks.ts` | The eight player cars (finishes, stripes, lamps, opening bonnet, engine bay, fitted turbocharger, pipes and bottle) and six scenery body styles |
 | `src/render/parts.ts` / `src/render/stash.ts` | Shared detailed engine, wheel, paint-can, turbocharger, exhaust and nitrous display models; the rare parts on their pallets in the yard |
 | `src/render/lighting.ts` / `src/render/atmosphere.ts` | HDR render pipeline and grading; sky dome, sun and moon light, sun-tinted fog, reflections |
 | `src/render/surfaces.ts` / `src/render/materials.ts` | Procedural albedo, normal and roughness maps; flat, glass, and lamp-glow materials |
@@ -215,9 +239,10 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 | `src/physics/vehicle.ts` / `src/physics/drivetrain.ts` | Dynamic Rapier chassis with four raycast suspension wheels, turbocharger spool and nitrous charge; gears and engine speed for the dash and sound |
 | `src/physics/character.ts` | Grounded walking gravity, curb stepping, and safe position resets |
 | `src/audio/` | Bundled recordings with a synthesized stand-in for every one: engines on standard and modified exhausts, turbocharger and nitrous, tires, ambience, tools, horn, footsteps |
-| `src/input/gamepad.ts` | Standard-layout controller mapped to the same intents as the keyboard |
+| `src/input/gamepad.ts` | Standard-layout controller mapped to driving/walking intents and D-pad/A/B menu navigation |
 | `src/main.ts` | First-person character, driving cameras, interactions, DOM menus, and the game loop |
-| `src/ui/templates.ts` | Salvage tags, parts catalogs, build sheets, the dealer's offer sheet, pause sheet, logbook, banners, and HUD markup |
+| `src/ui/templates.ts` | Salvage tags, parts catalogs, build sheets, customer job board and handover, dealer offer sheet, pause sheet, logbook, banners, and HUD markup |
+| `src/ui/focus.ts` | Overlay focus retention, keyboard Tab containment and controller menu focus |
 | `src/ui/minimap.ts` | The survey map, printed once and turned under a fixed arrow |
 | `src/ui/touch.ts` | Independent pointer ownership, analog thumbstick, drag-look, pedals, and input cancellation |
 | `src/ui/touch-markup.ts` / `src/ui/touch.css` | Tablet controls, safe-area HUD, and touch menu layouts |
@@ -247,6 +272,44 @@ Three.js and Rapier dependency credits and licenses are listed in [THIRD_PARTY_N
 ## Proof-of-concept scope
 
 This is a compact, single-player desktop and tablet game, with no traffic AI, multiplayer, mechanical damage, or account system. Touch layouts target iPad-sized screens; small phones are not the primary target. The fictional cars are inspired by broad automotive eras and carry original names and badges. ElevenLabs was used twice during development to generate the bundled recordings; the game itself never calls it, and no key is needed to run or build.
+
+## Customer jobs and project cars: November 14, 2026
+
+The workshop has nine authored commissions with three available at the start, one active request at a time, visible build requirements, and fixed payments. Delivery requires a fresh full lap in the qualifying build and handover at the dealer. Completion advances the workshop's reputation and unlocks further briefs. Customer payments and completed-job records are separate from ordinary dealer sales; existing purchases and progress are preserved.
+
+Three original procedural cars expand the collection to eight:
+
+| Shell | Type | Engine mount | Mass | Salvage price |
+| --- | --- | --- | --- | --- |
+| Hachiro Wayfarer | 1982 family wagon, long roof and roof rails | I4 | 1,180 kg | $2,100 |
+| Alder Sprite | 1967 roadster, open cockpit and round lamps | I4 | 840 kg | $2,800 |
+| Dunmore Courier | 1976 panel van, enclosed cargo body and rear doors | V8 | 1,760 kg | $3,600 |
+
+Nine yard parts add lower-cost and intermediate choices across engines, wheels, tuning and paint. The complete catalog costs **$149,920**, within the unchanged default starting balance of $150,000. All eight cars can be completed simultaneously using separate yard engines and wheel sets. The project cars and their catalog illustrations are original art, and their engines use the existing I4/V8 audio families.
+
+The job board is available from the Garage, pause menu and logbook. It keeps the normal playfield clear while the compact objective points to the current build, test or delivery step. Yard racks now expose all four stock tabs, including salvage tuning. Menus also support D-pad up/down, A to select and B to close.
+
+**Unit validation.** `npm run check` passes TypeScript and 309 unit/physics checks across 17 test files, including a cargo-wall UV regression that rejects missing or collapsed weathering coordinates. The browser suite contains 24 scenarios, including the three customer-expansion checks described above.
+
+**Browser validation.** All 24 Chromium scenarios passed across the full run and targeted reruns against a production build under `/junkyard-drivers/`. The initial run passed 20; after correcting the project-row clearance, workshop scrolling and two new-test setup issues, all eight affected or adjacent scenarios passed. These cover complete customer acceptance, assembly, a fresh lap, dealer handover, payment and reload; touch-only purchases of all three project shells and family-wagon assembly; controller navigation; desktop and portrait workshop scrolling; and the existing yard-find and touch-driving loops. New scenarios assert no console errors, failed requests or off-origin requests. Tablet checks use Chromium touch emulation; no physical iPad was tested. Captures: [job board](artifacts/jobs/board-800x600.jpg), [portrait brief](artifacts/jobs/family-brief-portrait.jpg), [family wagon built](artifacts/jobs/estate-built-tablet.jpg), [build checklist](artifacts/jobs/family-wagon-checklist.jpg), [customer handover](artifacts/jobs/customer-handover.jpg), and [completed commission](artifacts/jobs/first-customer-delivered.jpg).
+
+**Production build.** `VITE_BASE_PATH=/junkyard-drivers/ npm run build` passes. After chassis refinement, the generated application script is 462.68 kB (164.13 kB gzip), CSS is 85.10 kB (17.40 kB gzip), Three.js is 542.72 kB (140.65 kB gzip), and physics is 2,235.46 kB (835.15 kB gzip). The expansion adds no remote assets, runtime services or third-party dependencies.
+
+**Initial car review.** `scripts/project-car-review.mjs` captured the salvage row and each restored project car at 1440 × 900 on high quality. The run recorded no console errors, failed requests or off-origin requests; [initial renderer measurements](artifacts/overhaul-after/project-car-review.json) accompany the local PNG captures. The closer comparative review below then identified and corrected detail gaps.
+
+**Chassis refinement.** The Wayfarer now has complete rear-door contours that clear the wheel arches, recessed rear handles, closed belt rails and glazing seals. The Sprite has integrated painted headlamp bowls, a true oval grille with a chrome rim, a thin chrome windscreen frame, a lower cockpit floor, stitched seats, instrument bezels and needles, door cards/pulls, belts, a gear lever and a folded soft top. The Courier has proportionate seats, a cargo bulkhead, framed sliding-door details, rain gutters, full-height rear cargo doors and taller lamp clusters. Its cargo wall panels now carry proper UVs instead of sampling a single rust texel. All three new cars have distinct deterministic weathering patterns; the established cars retain their original patterns. Added pieces are baked into the existing rigid assemblies.
+
+**Comparative visual validation.** `scripts/car-quality-review.mjs` recorded 20 matching front/rear views of the Kestrel, Packhorse and three new cars in salvage/restored condition, six close detail views, and nine medium/low/compatible samples. The 35-view final pass had no console errors, failed requests or off-origin requests. Review against the [before measurements](artifacts/car-quality-before/car-quality-review.json) found the new cars at least as detailed as the established cars in the sampled views; [final measurements](artifacts/car-quality-review/car-quality-review.json) include the camera, condition and quality for each image. Whole-scene draw calls increased by 4–6 in the matching high-quality views and triangles by at most 3.24%; details remain batched. Short stationary Photo Mode samples were vsync-limited at a 16.7 ms median frame interval, not a sustained driving benchmark. Captures: [Wayfarer doors](artifacts/car-quality-review/estate-restored-detail-rear-door-side-high.jpg), [Sprite front](artifacts/car-quality-review/sprite-restored-detail-front-high.jpg), [Sprite cockpit](artifacts/car-quality-review/sprite-restored-detail-cockpit-high.jpg), [Courier cargo doors](artifacts/car-quality-review/courier-restored-detail-rear-doors-high.jpg), and [Courier salvage weathering](artifacts/car-quality-review/courier-salvage-rear-high.jpg).
+
+After the final model refinements, `npx playwright test --grep '@deployment|touch-only customer briefs'` passes all four selected scenarios: production startup/pause, graphics-error recovery UI, independent touch input, and touch-only customer acceptance, purchasing all three new shells, wagon assembly and reload. The production build and all 309 unit/physics checks also pass.
+
+**New-car lap calibration.** Twelve real-input runs of `scripts/lap-calibration.mjs` measured the three new cars with a yard engine and touring tires, then a performance crate engine and sport tires. The Courier's yard build uses the new 210 hp utility V8; the two I4 cars use the 110 hp stock engine. [Measured results](artifacts/overhaul-after/project-lap-calibration.json):
+
+| Car | Yard build, tidy / quick | Upgraded, tidy / quick | Bronze / silver / gold target |
+| --- | --- | --- | --- |
+| Wayfarer | 65.83 / 54.35 s | 62.58 / 50.37 s | 73 / 59 / 52 s |
+| Sprite | 64.33 / 52.12 s | 61.50 / 49.47 s | 71 / 57 / 51 s |
+| Courier | 64.67 / 52.55 s | 62.88 / 50.63 s | 72 / 58 / 52 s |
 
 ## Verified acceptance: November 12, 2026 (dealer, rare salvage, tuning parts)
 

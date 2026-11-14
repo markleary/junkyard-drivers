@@ -3,11 +3,13 @@ import { availableInventory, buildIssues, getPart, type GameState, type OwnedCar
 import { fittedUpgrades, looseUpgrades } from '../game/upgrades';
 import type { Appraisal } from '../game/dealer';
 import type { StashItem } from '../game/stash';
+import { JOBS, activeJob, assessJob, jobRank, type RestorationJob } from '../game/jobs';
 import { FINISHES, MEDAL_TIMES, STRIPES, bestMedal, finishUnlocked, formatLap, medalFor, stripeUnlocked, styleFor, type Medal, type Progress } from '../game/progress';
 import type { Find } from '../game/finds';
 import { icon, vehicleStamp } from './icons';
 
 const money = (value: number) => `$${value.toLocaleString()}`;
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 const partIconName = (kind: PartKind) => kind === 'wheels' ? 'wheel' as const : kind;
 const partIcon = (kind: PartKind) => icon(partIconName(kind));
 const RARE_NOUN: Record<PartKind, string> = { engine: 'engine', wheels: 'wheel set', paint: 'paint', turbo: 'turbocharger', exhaust: 'exhaust', nitro: 'nitrous kit' };
@@ -94,7 +96,7 @@ export function pauseMarkup(options: PauseOptions) {
     <span class="eyebrow">DRIVER'S LOGBOOK</span><h2>Shift paused.</h2>
     <p>Your purchases and builds save automatically.</p>
     <button class="primary" data-action="resume">Resume game ${icon('arrow')}</button>
-    <div class="pause-links"><button data-action="logbook">${icon('book')}<span>Logbook<small>${String(options.finds).padStart(2, '0')} / ${options.findTotal} FINDS</small></span></button><button data-action="photo" ${options.canPhoto ? '' : 'disabled'}>${icon('camera')}<span>Photo mode<small class="desktop-only keyboard-only">KEY P</small><small class="gamepad-only">VIEW</small><small class="touch-only">FREE CAMERA</small></span></button></div>
+    <div class="pause-links"><button data-action="logbook">${icon('book')}<span>Logbook<small>${String(options.finds).padStart(2, '0')} / ${options.findTotal} FINDS</small></span></button><button data-action="photo" ${options.canPhoto ? '' : 'disabled'}>${icon('camera')}<span>Photo mode<small class="desktop-only keyboard-only">KEY P</small><small class="gamepad-only">VIEW</small><small class="touch-only">FREE CAMERA</small></span></button><button class="jobs-link" data-action="jobs">${icon('wrench')}<span>Customer jobs<small>BUILD TO A BRIEF · EARN YOUR NAME</small></span>${icon('arrow')}</button></div>
     <div class="controls desktop-only keyboard-only">
       <div><kbd>W A S D</kbd><span>Walk / drive</span></div><div><kbd>MOUSE</kbd><span>Look around</span></div>
       <div><kbd>E</kbd><span>Inspect / use / exit</span></div><div><kbd>SPACE</kbd><span>Handbrake</span></div>
@@ -110,6 +112,7 @@ export function pauseMarkup(options: PauseOptions) {
       <div><kbd>RB / LB</kbd><span>Camera / look back</span></div><div><kbd>Y</kbd><span>Recover to Garage</span></div>
       <div><kbd>D-PAD ↑ / ↓</kbd><span>Headlamps / map zoom</span></div><div><kbd>L3</kbd><span>Horn</span></div>
       <div><kbd>VIEW</kbd><span>Photo mode</span></div><div><kbd>START</kbd><span>Pause / resume</span></div>
+      <div><kbd>D-PAD ↑ / ↓</kbd><span>Choose menu item</span></div><div><kbd>A / B</kbd><span>Select / close menu</span></div>
     </div>
     <div class="controls touch-only">
       <div><b class="touch-control-name">Thumbstick</b><span>Move · push farther to run</span></div><div><b class="touch-control-name">Drag scene</b><span>Look around on foot</span></div>
@@ -124,7 +127,7 @@ export function pauseMarkup(options: PauseOptions) {
 export function resetMarkup() {
   return `<section class="pause-card reset-card"><div class="document-top">${icon('warning')}<span>COLLECTION RESET</span></div>
     <span class="eyebrow">VOID CURRENT LOGBOOK</span><h2>Clear this collection?</h2>
-    <p>This clears your collection, lap times, finds, and unlocked finishes on this device, and resets your balance to the starting amount.</p>
+    <p>This clears your collection, customer jobs, lap times, finds, and unlocked finishes on this device, and resets your balance to the starting amount.</p>
     <button class="primary" data-action="confirm-new">Yes, start a new game</button><button class="secondary" data-action="cancel-new">Keep my collection</button>
   </section>`;
 }
@@ -166,6 +169,8 @@ export function logbookMarkup(state: GameState, progress: Progress, finds: Find[
       <ul class="unlock-list">${finishes}${stripes}</ul>
       <h3 class="logbook-heading">${icon('cash')}<span>Second Chance Motors</span><small>${sales.count} ${sales.count === 1 ? 'CAR' : 'CARS'} SOLD</small></h3>
       <dl class="sales-ledger"><div><dt>TAKINGS</dt><dd>${money(sales.takings)}</dd></div><div><dt>OVER COST</dt><dd>${money(sales.profit)}</dd></div><div><dt>BEST SALE</dt><dd>${sales.best ? money(sales.best) : '<span class="blank">none yet</span>'}</dd></div></dl>
+      <h3 class="logbook-heading">${icon('wrench')}<span>Customer restorations</span><small>${progress.jobs.completed.length} OF ${JOBS.length} DELIVERED</small></h3>
+      <div class="commissions-record"><b>${escapeHtml(jobRank(progress))}</b><p>${activeJob(progress) ? `On the bench: ${escapeHtml(activeJob(progress)!.title)}` : 'Ready for the next commission.'}</p><button data-action="jobs">Open customer jobs ${icon('arrow')}</button></div>
     </div><div>
       <h3 class="logbook-heading">${icon('find')}<span>Lost &amp; found</span><small>${progress.finds.length} OF ${finds.length}</small></h3>
       <ol class="find-list">${found}</ol>
@@ -223,7 +228,8 @@ export function shopMarkup(state: GameState, source: PartSource, kind: ShopCateg
   };
   const items = getCategoryStock(source, kind);
   return `${panelHeader(store ? 'HOLLOWAY AUTO PARTS' : 'WILLOW CREEK SALVAGE', store ? 'Parts counter' : titles[kind], store ? 'NEW STOCK' : 'YARD STOCK')}
-    ${store ? `<p class="shop-intro">Factory-new parts. Collect here, install at the Garage.</p><div class="shop-tabs" role="group" aria-label="Parts categories">${SHOP_CATEGORIES.map((category, index) => `<button data-category="${category}" aria-pressed="${kind === category}"><span>0${index + 1}</span>${labels[category]}</button>`).join('')}</div>` : ''}
+    <p class="shop-intro">${store ? 'Factory-new parts. Collect here, install at the Garage.' : 'Engines, wheels, paint and reclaimed tuning parts. Collect here, fit at the Garage.'}</p>
+    <div class="shop-tabs" role="group" aria-label="Parts categories">${SHOP_CATEGORIES.filter(category => getCategoryStock(source, category).length).map((category, index) => `<button data-category="${category}" aria-pressed="${kind === category}"><span>0${index + 1}</span>${labels[category]}</button>`).join('')}</div>
     <div class="shop-meta"><span>${advice[kind]}</span><span class="shop-credit">FUNDS<b>${money(funds)}</b></span></div>
     <div class="catalog-heading"><span>STOCK / DESCRIPTION</span><span>PRICE</span></div>
     <div class="item-list">${items.map((part, index) => {
@@ -235,6 +241,7 @@ export function shopMarkup(state: GameState, source: PartSource, kind: ShopCateg
 export function garageMarkup(state: GameState, selectedId: string, progress: Progress) {
   const car = state.cars.find(item => item.id === selectedId);
   return `${panelHeader('WILLOW CREEK WORKSHOP', 'Build sheet', 'BAY 01')}
+    <button class="workshop-jobs-link" data-action="jobs">${icon('wrench')}<span>Customer jobs<small>${activeJob(progress) ? escapeHtml(activeJob(progress)!.title) : 'Find a brief for your next build'}</small></span>${icon('arrow')}</button>
     <div class="garage-tabs" role="group" aria-label="Owned cars">${state.cars.map(item => `<button data-select="${item.id}" class="${item.id === selectedId ? 'selected' : ''}" aria-pressed="${item.id === selectedId}">${getShell(item.shellId).name}</button>`).join('') || '<p>No project in this bay.</p>'}</div>
     ${car ? garageContents(state, car, progress) : `<div class="empty-bay">${icon('wrench')}<h3>Bring in a shell.</h3><p>Buy a car in the yard. Then collect its engine, wheels, and paint from the salvage racks or Holloway Auto Parts.</p></div><button class="primary" data-action="close">Back to the yard ${icon('arrow')}</button>`}`;
 }
@@ -283,18 +290,78 @@ function tuningSlot(state: GameState, car: OwnedCar, progress: Progress) {
     return `<div class="tuning-row" data-tuning="${kind}"><div class="tuning-fitted">${partIcon(kind)}<div><span>${UPGRADE_NAME[kind].toUpperCase()}</span><b tabindex="-1">${current?.part.name ?? 'None fitted'}</b>${current ? `<small>${effect(current.part)} · FITTED</small>` : ''}</div>${current ? `<button data-unfit="${kind}" aria-label="Remove ${current.part.name}">Remove</button>` : ''}</div>
       <div class="inventory">${loose.map(instance => {
         const part = getPart(state, instance.id)!;
-        return `<button data-fit="${instance.id}" ${hasEngine ? '' : 'disabled'}><span>${part.name}<small>${hasEngine ? `${effect(part)} · ${part.source === 'store' ? 'NEW' : 'RARE SALVAGE'}` : 'Needs an engine in the car first'}</small></span><b>${hasEngine ? `Fit ${icon('arrow')}` : 'NO ENGINE'}</b></button>`;
+        return `<button data-fit="${instance.id}" ${hasEngine ? '' : 'disabled'}><span>${part.name}<small>${hasEngine ? `${effect(part)} · ${part.source === 'store' ? 'NEW' : part.source === 'hidden' ? 'RARE SALVAGE' : 'SALVAGE'}` : 'Needs an engine in the car first'}</small></span><b>${hasEngine ? `Fit ${icon('arrow')}` : 'NO ENGINE'}</b></button>`;
       }).join('')}</div></div>`;
   }).join('');
   return `<section class="build-slot" data-slot="tuning"><div class="slot-heading"><span class="slot-number">05</span><span>TUNING</span><b>ONE OF EACH</b></div>
     <p class="fitted-note">${rows ? 'Turbocharger, exhaust and nitrous. Each bolts on to a car with an engine in it.' : 'No tuning parts yet. Holloway Auto Parts sells them new; the odd one turns up in the yard.'}</p>${rows}</section>`;
 }
 
+export interface JobsOptions { canSelectCar?: boolean; atWorkbench?: boolean }
+
+function jobChecks(state: GameState, progress: Progress, car: OwnedCar | undefined, job: RestorationJob, preview = false) {
+  const assessment = assessJob(state, progress, car, job);
+  return `<ul class="commission-checks" aria-label="${preview ? 'Customer requirements' : 'Build checklist'}">${assessment.checks.map(check => `<li class="${!preview && check.done ? 'done' : ''}" data-check="${escapeHtml(check.id)}"><span class="check-box" aria-hidden="true">${!preview && check.done ? icon('check') : ''}</span><span>${escapeHtml(check.label)}</span>${preview ? '' : `<span class="check-result">${check.done ? 'Met' : 'Needed'}</span>`}</li>`).join('')}</ul>`;
+}
+
+/** Customer briefs live on the workshop board, leaving the driving view free of extra panels. */
+export function jobsMarkup(state: GameState, progress: Progress, selectedId: string, options: JobsOptions = {}) {
+  const { canSelectCar = true, atWorkbench = true } = options;
+  const current = activeJob(progress), car = state.cars.find(item => item.id === selectedId), completed = progress.jobs.completed.length;
+  const open = JOBS.filter(job => !progress.jobs.completed.includes(job.id) && job.id !== current?.id && job.unlocksAfter <= completed);
+  const locked = JOBS.filter(job => !progress.jobs.completed.includes(job.id) && job.unlocksAfter > completed);
+  const active = current ? (() => {
+    const assessment = assessJob(state, progress, car, current);
+    return `<section class="commission active-commission" aria-labelledby="active-commission-title">
+      <div class="commission-top"><span class="eyebrow">ON THE BENCH · ${escapeHtml(current.customer)}</span><span class="commission-stamp">ACCEPTED</span></div>
+      <h3 id="active-commission-title">${escapeHtml(current.title)}</h3><p class="commission-brief">${escapeHtml(current.brief)}</p>
+      <div class="commission-terms"><span>BUILD BUDGET<b>${money(current.maxInvestment)}</b></span><span>FIXED PAYMENT<b>${money(current.payout)}</b></span></div>
+      <p class="commission-car-label">${car ? 'CHECKING YOUR BUILD' : 'CHOOSE A PROJECT CAR'}</p>
+      ${canSelectCar && state.cars.length ? `<div class="garage-tabs commission-cars" role="group" aria-label="Car for customer job">${state.cars.map(item => `<button data-action="job-car" data-id="${item.id}" aria-pressed="${item.id === selectedId}" class="${item.id === selectedId ? 'selected' : ''}">${getShell(item.shellId).name}</button>`).join('')}</div>` : `<p class="commission-selected-car">${car ? getShell(car.shellId).name : 'Buy a suitable shell from the salvage yard.'}</p>`}
+      ${jobChecks(state, progress, car, current)}
+      <div class="commission-next ${assessment.ready ? 'ready' : ''}" role="status">${icon(assessment.ready ? 'check' : 'route')}<p>${assessment.ready ? 'Ready for handover. Drive this car to the trade-in bay at Second Chance Motors.' : assessment.buildReady ? 'Take this exact build around one complete test loop, then deliver it to Second Chance Motors.' : 'Match the customer’s requirements at the Garage, then complete a fresh test-loop lap.'}</p></div>
+      <div class="commission-actions">${atWorkbench ? `<button class="primary" data-action="job-garage">Open build sheet ${icon('arrow')}</button>` : `<button class="primary" data-action="close">Back to the ${canSelectCar ? 'yard' : 'car'} ${icon('arrow')}</button>`}<button class="secondary" data-action="cancel-job">Release job · no penalty</button></div>
+      <small class="paper-footnote">You keep the car and parts if you release this job. Changing the build requires another road test.</small>
+    </section>`;
+  })() : `<p class="jobs-intro">Choose a customer. Source the parts, build to their brief, and prove it with a fresh lap of the test loop. Deliver the finished car to Second Chance Motors for the quoted payment.</p>`;
+  const cards = open.map(job => `<article class="commission" data-job-card="${job.id}">
+    <span class="eyebrow">${escapeHtml(job.customer)}</span><h3>${escapeHtml(job.title)}</h3><p class="commission-brief">${escapeHtml(job.brief)}</p>
+    <div class="commission-terms"><span>BUILD BUDGET<b>${money(job.maxInvestment)}</b></span><span>FIXED PAYMENT<b>${money(job.payout)}</b></span></div>
+    ${jobChecks(state, progress, undefined, job, true)}
+    <button class="primary" data-action="accept-job" data-job="${job.id}" ${current ? 'disabled' : ''}>${current ? 'Finish or release your active job' : `Accept job ${icon('arrow')}`}</button>
+  </article>`).join('');
+  const completedJobs = JOBS.filter(job => progress.jobs.completed.includes(job.id));
+  return `${panelHeader('WILLOW CREEK WORKSHOP', 'Workshop job board', 'CUSTOMER ORDERS')}
+    <small class="gamepad-only job-pad-hint">D-pad: choose · A: select · B: close</small>
+    <div class="workshop-reputation"><div><span class="eyebrow">WORKSHOP REPUTATION</span><b>${escapeHtml(jobRank(progress))}</b></div><span><strong>${completed}</strong> / ${JOBS.length}<small>DELIVERED</small></span></div>
+    ${active}
+    ${open.length ? `<h3 class="commission-section-title">Available commissions <span>${open.length}</span></h3><div class="commission-grid">${cards}</div>` : ''}
+    ${locked.length ? `<h3 class="commission-section-title">Word gets around</h3><ol class="upcoming-commissions">${locked.map(job => `<li><div><b>${escapeHtml(job.title)}</b><small>${escapeHtml(job.customer)} · ${job.shells.map(id => getShell(id).name).join(' / ')}</small></div><span>${job.unlocksAfter} jobs delivered<small>${job.unlocksAfter - completed} TO GO</small></span></li>`).join('')}</ol>` : ''}
+    ${completedJobs.length ? `<h3 class="commission-section-title">Signed &amp; delivered</h3><ul class="completed-commissions">${completedJobs.map(job => `<li>${icon('check')}<span>${escapeHtml(job.title)}<small>${escapeHtml(job.customer)}</small></span><b>${money(job.payout)}</b></li>`).join('')}</ul>` : ''}
+    <small class="paper-footnote">ONE JOB AT A TIME · NO DEADLINES · PAYMENT INCLUDES THE CAR AND ALL FITTED PARTS.${atWorkbench ? '' : ' VISIT THE GARAGE WORKBENCH TO CHANGE A BUILD.'}</small>`;
+}
+
+export interface DealerJobContext { state: GameState; progress: Progress }
+
+function customerDeliveryMarkup(context: DealerJobContext, car?: OwnedCar) {
+  const job = activeJob(context.progress);
+  if (!job) return '';
+  const assessment = assessJob(context.state, context.progress, car, job);
+  return `<section class="customer-delivery ${assessment.ready ? 'ready' : ''}" aria-labelledby="delivery-title">
+    <span class="eyebrow">CUSTOMER HANDOVER · ${escapeHtml(job.customer)}</span><h3 id="delivery-title">${escapeHtml(job.title)}</h3>
+    <div class="commission-terms"><span>FIXED PAYMENT<b>${money(job.payout)}</b></span><span>STATUS<b>${assessment.ready ? 'Ready to deliver' : 'Work remaining'}</b></span></div>
+    ${assessment.ready ? '<p>This build passed its road test. The customer is ready to collect.</p>' : `<ul class="delivery-blockers">${assessment.unmet.map(reason => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>`}
+    <button class="primary" data-action="deliver-job" ${assessment.ready && car ? '' : 'disabled'}>Deliver for ${money(job.payout)} ${icon('arrow')}</button>
+    <small>The car, engine, wheels and fitted tuning parts go to the customer. Your paint colours stay yours.</small>
+    <button class="commission-review" data-action="jobs">Review customer brief ${icon('arrow')}</button>
+  </section>`;
+}
+
 /**
  * The dealer's offer sheet. Driving a finished car onto the lot shows the offer for that car with a button to
  * take it; walking up to the hatch shows what every car in the collection would fetch.
  */
-export function dealerMarkup(appraisals: Appraisal[], driving: boolean) {
+export function dealerMarkup(appraisals: Appraisal[], driving: boolean, jobs?: DealerJobContext) {
   const lapLine = (sheet: Appraisal) => sheet.lap === undefined
     ? 'No lap on record for this car'
     : `${formatLap(sheet.lap)}${sheet.medal ? ` · ${MEDAL_NAME[sheet.medal]}` : ''}`;
@@ -316,6 +383,7 @@ export function dealerMarkup(appraisals: Appraisal[], driving: boolean) {
     : `A quicker lap raises the offer. Gold is ${formatLap(MEDAL_TIMES[sheet.car.shellId].gold)}.`;
   return `${panelHeader('SECOND CHANCE MOTORS', 'Trade-in offer', 'CASH BUYER')}
     <div class="work-order"><span>YOUR CAR</span><strong>${shell.name}</strong><span>${shell.era}</span></div>
+    ${jobs ? customerDeliveryMarkup(jobs, sheet.car) : ''}
     <div class="outlay-head" aria-hidden="true">WHAT YOU PUT IN</div>
     <div class="dealer-scroll" role="group" aria-label="What you put in" tabindex="0"><table class="offer-table"><tbody>${sheet.investment.lines.map(line => `<tr><th scope="row">${line.label}</th><td>${line.item}</td><td>${money(line.amount)}</td></tr>`).join('')}</tbody></table></div>
     <div class="outlay"><span>TOTAL OUTLAY</span><b id="dealer-invested">${money(invested)}</b></div>

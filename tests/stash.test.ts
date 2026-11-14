@@ -7,7 +7,7 @@ import { RARE_PARTS, RARE_SHELLS, seedPlacing, stashLayout } from '../src/game/s
 import { install, newGame, parseSave, purchase } from '../src/game/state';
 import { qualitySettings } from '../src/render/quality';
 import { YARD_BOUNDS, YARD_SPAWN, generateTown } from '../src/world/layout';
-import { KEEP_CLEAR, PART_SOLID, PART_SPOTS, SHELL_SOLID, SHELL_SPOTS, footprintBounds, insideYard, overlaps, yardObstacles, type Bounds } from '../src/world/yard';
+import { KEEP_CLEAR, PART_SOLID, PART_SPOTS, PROJECT_SHELLS, SHELL_SOLID, SHELL_SPOTS, footprintBounds, insideYard, overlaps, yardObstacles, type Bounds } from '../src/world/yard';
 import { installCanvasStandIn } from './support/canvas';
 
 const around = (x: number, z: number, r: number): Bounds => ({ minX: x - r, maxX: x + r, minZ: z - r, maxZ: z + r });
@@ -180,7 +180,7 @@ describe('the hiding places themselves', () => {
         const hit = world.intersectionWithShape({ x: spot.x, y: .62, z: spot.z }, turn(spot.yaw), new RAPIER.Cuboid(PART_SOLID.w / 2 + .1, .42, PART_SOLID.d / 2 + .1));
         expect(hit, `part place ${index} at ${spot.x}, ${spot.z} is inside something solid`).toBeNull();
       }
-      for (const [index, spot] of SHELL_SPOTS.entries()) {
+      for (const [index, spot] of [...SHELL_SPOTS, ...Object.values(PROJECT_SHELLS)].entries()) {
         const hit = world.intersectionWithShape({ x: spot.x, y: .92, z: spot.z }, turn(spot.yaw), new RAPIER.Cuboid(SHELL_SOLID.w / 2 + .05, SHELL_SOLID.h / 2 - .1, SHELL_SOLID.d / 2 + .05));
         expect(hit, `shell place ${index} at ${spot.x}, ${spot.z} is inside something solid`).toBeNull();
       }
@@ -188,7 +188,7 @@ describe('the hiding places themselves', () => {
 
     it('can all be walked to from the gate, even with every place occupied at once', () => {
       // The worst case: a shell in every shell place and a pallet in every part place.
-      for (const spot of SHELL_SPOTS) world.createCollider(RAPIER.ColliderDesc.cuboid(SHELL_SOLID.w / 2, SHELL_SOLID.h / 2, SHELL_SOLID.d / 2).setTranslation(spot.x, .92, spot.z).setRotation(turn(spot.yaw)));
+      for (const spot of [...SHELL_SPOTS, ...Object.values(PROJECT_SHELLS)]) world.createCollider(RAPIER.ColliderDesc.cuboid(SHELL_SOLID.w / 2, SHELL_SOLID.h / 2, SHELL_SOLID.d / 2).setTranslation(spot.x, .92, spot.z).setRotation(turn(spot.yaw)));
       for (const spot of PART_SPOTS) world.createCollider(RAPIER.ColliderDesc.cuboid(PART_SOLID.w / 2, PART_SOLID.h / 2, PART_SOLID.d / 2).setTranslation(spot.x, PART_SOLID.h / 2 + .06, spot.z).setRotation(turn(spot.yaw)));
       world.step();
       // Flood the yard from the spawn point with a body the walker's size, a little fatter for safety.
@@ -228,6 +228,7 @@ describe('the hiding places themselves', () => {
       };
       for (const [index, spot] of PART_SPOTS.entries()) expect(within(spot.x, spot.z), `part place ${index} at ${spot.x}, ${spot.z} cannot be reached on foot`).toBe(true);
       for (const [index, spot] of SHELL_SPOTS.entries()) expect(within(spot.x, spot.z), `shell place ${index} at ${spot.x}, ${spot.z} cannot be reached on foot`).toBe(true);
+      for (const [id, spot] of Object.entries(PROJECT_SHELLS)) expect(within(spot.x, spot.z), `${id} project shell cannot be reached on foot`).toBe(true);
       // The same flood proves the old fixtures are still reachable: the three display shells and the racks.
       for (const [x, z] of [[-15, 12], [-15, 1], [-38, -23], [-35.8, 2], [-35.8, 8], [-35.8, 14], [-26.4, -15]]) expect(within(x, z), `fixture at ${x}, ${z}`).toBe(true);
       void around;

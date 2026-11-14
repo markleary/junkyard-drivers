@@ -1,0 +1,93 @@
+{
+  "baseURL": "http://127.0.0.1:4187/junkyard-drivers/",
+  "capturedAt": "2026-11-14T18:14:52.308Z",
+  "captures": [
+    {
+      "name": "project-salvage-row",
+      "position": [
+        -52,
+        4.4,
+        -5.5
+      ],
+      "target": [
+        -57.5,
+        1.1,
+        4
+      ],
+      "drawCalls": 952,
+      "triangles": 733326,
+      "memory": {
+        "geometries": 766,
+        "textures": 127
+      },
+      "quality": "high",
+      "mainThreadMs": 4.452393257646273
+    },
+    {
+      "name": "project-estate-restored",
+      "position": [
+        -24.4,
+        2.6,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.15,
+        -13
+      ],
+      "drawCalls": 893,
+      "triangles": 756026,
+      "memory": {
+        "geometries": 691,
+        "textures": 121
+      },
+      "quality": "high",
+      "mainThreadMs": 3.9499024788991726
+    },
+    {
+      "name": "project-sprite-restored",
+      "position": [
+        -24.4,
+        2.9,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.15,
+        -13
+      ],
+      "drawCalls": 874,
+      "triangles": 741366,
+      "memory": {
+        "geometries": 691,
+        "textures": 118
+      },
+      "quality": "high",
+      "mainThreadMs": 3.2428757998132234
+    },
+    {
+      "name": "project-courier-restored",
+      "position": [
+        -24.4,
+        2.6,
+        -6.8
+      ],
+      "target": [
+        -20,
+        1.15,
+        -13
+      ],
+      "drawCalls": 895,
+      "triangles": 754434,
+      "memory": {
+        "geometries": 691,
+        "textures": 118
+      },
+      "quality": "high",
+      "mainThreadMs": 4.38901537489191
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "externalRequests": []
+}

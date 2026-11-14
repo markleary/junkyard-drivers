@@ -1,4 +1,5 @@
-import { UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { getJob } from './job-catalog';
 import { DEFAULT_STARTING_FUNDS } from './state';
 
 /**
@@ -20,6 +21,15 @@ export interface CarStyle { finish: FinishId; stripe: StripeId }
 export type UpgradeFit = Partial<Record<UpgradeKind, string>>;
 /** What the used-car dealer has paid out so far, in dollars. */
 export interface Sales { count: number; takings: number; profit: number; best: number }
+/** Acceptance proof belongs to a complete, unchanged build and one active commission. */
+export interface JobProof { jobId: string; carId: string; signature: string; seconds: number }
+export interface JobProgress {
+  active: string | null;
+  completed: string[];
+  proof: JobProof | null;
+  /** Changes whenever a commission is accepted or cancelled, including reaccepting the same brief. */
+  revision: number;
+}
 export interface Settings {
   quality: QualityPreference;
   time: TimePreference;
@@ -54,9 +64,10 @@ export interface Progress {
   stash: number;
   /** How many times each rare listing has come back after being sold with a car. Each return moves it. */
   restock: Record<string, number>;
+  jobs: JobProgress;
 }
 
-export const SHELL_IDS: ShellId[] = ['hachiro', 'bison', 'veloce', 'wren', 'packhorse'];
+export const SHELL_IDS: ShellId[] = SHELLS.map(shell => shell.id);
 export const FINISHES: { id: FinishId; name: string; finds: number; note: string }[] = [
   { id: 'gloss', name: 'Gloss', finds: 0, note: 'Workshop standard' },
   { id: 'metallic', name: 'Metallic', finds: 3, note: 'Fine flake under clear coat' },
@@ -81,6 +92,9 @@ export const MEDAL_TIMES: Record<ShellId, Record<Medal, number>> = {
   veloce: { bronze: 69, silver: 55, gold: 50 },
   wren: { bronze: 71, silver: 57, gold: 51 },
   packhorse: { bronze: 72, silver: 58, gold: 52 },
+  estate: { bronze: 73, silver: 59, gold: 52 },
+  sprite: { bronze: 71, silver: 57, gold: 51 },
+  courier: { bronze: 72, silver: 58, gold: 52 },
 };
 const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
 export const DEFAULT_SETTINGS: Settings = { quality: 'auto', time: 'auto', camera: 'chase', lights: 'auto', motion: true, map: true };
@@ -92,6 +106,7 @@ export function newProgress(budget = DEFAULT_STARTING_FUNDS): Progress {
   return {
     version: 1, budget, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
     fitted: {}, proof: {}, sales: { count: 0, takings: 0, profit: 0, best: 0 }, stash: 0, restock: {},
+    jobs: { active: null, completed: [], proof: null, revision: 0 },
   };
 }
 
@@ -215,6 +230,17 @@ export function parseProgress(raw: string, knownFinds?: readonly string[], initi
   if (isRecord(data.restock)) for (const [listing, times] of Object.entries(data.restock)) {
     if (LISTING_ID.test(listing) && positive(times, 1e6) && Math.floor(times as number) > 0) restock[listing] = Math.floor(times as number);
   }
+  const savedJobs = isRecord(data.jobs) ? data.jobs : {};
+  const completed = Array.isArray(savedJobs.completed) ? [...new Set(savedJobs.completed.filter((id): id is string => typeof id === 'string' && !!getJob(id)))] : [];
+  const requestedJob = typeof savedJobs.active === 'string' ? getJob(savedJobs.active) : undefined;
+  const active = requestedJob && !completed.includes(requestedJob.id) && completed.length >= requestedJob.unlocksAfter ? requestedJob.id : null;
+  const savedProof = isRecord(savedJobs.proof) ? savedJobs.proof : {};
+  const jobProof: JobProof | null = active && savedProof.jobId === active && typeof savedProof.carId === 'string' &&
+    SHELL_IDS.some(id => savedProof.carId === `car-${id}`) && typeof savedProof.signature === 'string' && savedProof.signature.length > 0 && savedProof.signature.length <= 2048 &&
+    positive(savedProof.seconds, 36000) && (savedProof.seconds as number) > 0
+    ? { jobId: active, carId: savedProof.carId, signature: savedProof.signature, seconds: savedProof.seconds as number } : null;
+  const jobs: JobProgress = { active, completed, proof: jobProof,
+    revision: typeof savedJobs.revision === 'number' && Number.isSafeInteger(savedJobs.revision) && savedJobs.revision >= 0 ? savedJobs.revision : 0 };
   return {
     version: 1, budget: typeof data.budget === 'number' && Number.isSafeInteger(data.budget) && data.budget >= 0 ? data.budget : fresh.budget,
     finds, bestLap: perShell(data.bestLap, 36000), odometer: perShell(data.odometer, 1e9), topSpeed: perShell(data.topSpeed, 200),
@@ -224,6 +250,7 @@ export function parseProgress(raw: string, knownFinds?: readonly string[], initi
     // that set a lap in it is still in the collection and that lap is its proof.
     fitted, proof: perShell(data.proof === undefined ? data.bestLap : data.proof, 36000), sales, restock,
     stash: positive(data.stash, 0xffffffff) && Number.isInteger(data.stash) ? data.stash as number : 0,
+    jobs,
   };
 }
 

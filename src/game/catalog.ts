@@ -1,4 +1,4 @@
-export type ShellId = 'hachiro' | 'bison' | 'veloce' | 'wren' | 'packhorse';
+export type ShellId = 'hachiro' | 'bison' | 'veloce' | 'wren' | 'packhorse' | 'estate' | 'sprite' | 'courier';
 export type MountFamily = 'I4' | 'V8' | 'V12';
 export type PartKind = 'engine' | 'wheels' | 'paint' | 'turbo' | 'exhaust' | 'nitro';
 /** Tuning parts bolt on to a car that already has its engine. A car carries at most one of each. */
@@ -68,13 +68,22 @@ export const SHELLS: Shell[] = [
     description: 'A short, upright hot hatch built to qualify for the rally stages, with spot lamps and a roof spoiler. Hardly any were made. Needs an I4 engine and any wheel set.' },
   { id: 'packhorse', name: 'Dunmore Packhorse', era: '1964 · American half-ton pickup', mount: 'V8', mass: 1640, price: 5400, rare: true, hidden: true,
     description: 'A farm truck with a tall cab, a chrome grille and a long bed under canvas. Heavy, and worth the trouble. Needs a V8 engine and any wheel set.' },
+  { id: 'estate', name: 'Hachiro Wayfarer', era: '1982 · Japanese family wagon', mount: 'I4', mass: 1180, price: 2100,
+    description: 'A square-backed family wagon with roof rails and room for the whole weekend. Restore a dependable daily driver or build a discreet turbo sleeper. Needs an I4 engine and any wheel set.' },
+  { id: 'sprite', name: 'Alder Sprite', era: '1967 · British open-top roadster', mount: 'I4', mass: 840, price: 2800,
+    description: 'A tiny two-seat roadster with an open cockpit, round lamps and very little weight to carry. Modest power goes a long way. Needs an I4 engine and any wheel set.' },
+  { id: 'courier', name: 'Dunmore Courier', era: '1976 · American panel van', mount: 'V8', mass: 1760, price: 3600,
+    description: 'A tall working van with solid cargo panels and twin rear doors. A useful old workhorse that rewards a torquey V8. Needs a V8 engine and any wheel set.' },
 ];
 
 // Existing salvage IDs remain stable so saved purchases and installed parts keep working.
 const YARD_PARTS: Omit<Part, 'source'>[] = [
+  { id: 'i4-economy', name: 'K-1300 economy I4', kind: 'engine', mount: 'I4', power: 85, price: 420, description: 'I4 mount · a simple 85 hp carbureted engine from a retired commuter · a frugal choice for a light restoration.' },
   { id: 'i4-stock', name: 'K-1600 stock I4', kind: 'engine', mount: 'I4', power: 110, price: 650, description: 'I4 mount · dependable naturally aspirated starter engine · 110 hp.' },
+  { id: 'i4-twin', name: 'K-1800 twin-carb I4', kind: 'engine', mount: 'I4', power: 150, price: 1400, description: 'I4 mount · a 150 hp naturally aspirated club engine with twin carburetors · a lively middle ground for a roadster.' },
   { id: 'i4-performance', name: 'K-2000 turbo I4', kind: 'engine', mount: 'I4', power: 195, price: 2200, description: 'I4 mount · turbo upgrade · 195 hp, 77% more power than the stock I4.' },
   { id: 'v8-stock', name: 'Ironblock 350 V8', kind: 'engine', mount: 'V8', power: 170, price: 950, description: 'V8 mount · broad, easy torque · 170 hp.' },
+  { id: 'v8-torque', name: 'Ironblock 383 utility V8', kind: 'engine', mount: 'V8', power: 210, price: 1350, description: 'V8 mount · a 210 hp utility engine pulled from a service truck · affordable pulling power for a working build.' },
   { id: 'v8-performance', name: 'Ironblock 427 V8', kind: 'engine', mount: 'V8', power: 290, price: 3400, description: 'V8 mount · high-output upgrade · 290 hp, 71% more power than the stock V8.' },
   { id: 'v12-stock', name: 'Sirocco 3.5 V12', kind: 'engine', mount: 'V12', power: 260, price: 4200, description: 'V12 mount · original mid-engine powerplant · 260 hp.' },
   { id: 'v12-performance', name: 'Sirocco Corsa V12', kind: 'engine', mount: 'V12', power: 420, price: 7800, description: 'V12 mount · race-tuned upgrade · 420 hp, 62% more power than the stock V12.' },
@@ -87,9 +96,15 @@ const YARD_PARTS: Omit<Part, 'source'>[] = [
     description: 'Universal fit · four alloy wheels and sport tires · 67% more lateral grip (3.0).',
   })),
   { id: 'paint-saffron', name: 'Saffron yellow', kind: 'paint', color: '#e7ad36', price: 120, description: 'Reusable satin-metallic paint. Bright warm yellow, mixed in the workshop.' },
+  { id: 'wheels-classic', name: 'Heritage narrow touring set', kind: 'wheels', grip: 1.65, price: 320, description: 'Universal fit · narrow touring tires on salvaged classic rims · gentle grip (1.65) and the lowest rebuild cost.' },
+  { id: 'wheels-rally', name: 'Crossroad club rally set', kind: 'wheels', grip: 2.5, price: 900, description: 'Universal fit · a recovered club-rally wheel set · balanced road grip (2.5) between touring and racing tires.' },
+  { id: 'turbo-yard', name: 'Whistler T18 salvage turbo', kind: 'turbo', boost: .16, lag: .25, price: 1100, description: 'Salvage bolt-on kit · fits any engine · 16% more power with a small turbine that wakes up quickly.' },
+  { id: 'exhaust-touring', name: 'Longtail touring exhaust', kind: 'exhaust', flow: .02, note: 'sport', price: 420, description: 'Salvage free-flowing system · fits any car · 2% more power and a sport exhaust note at a workshop-friendly price.' },
   { id: 'paint-oxide', name: 'Signal red', kind: 'paint', color: '#bd4432', price: 120, description: 'Reusable satin-metallic paint. A deep, warm red.' },
   { id: 'paint-teal', name: 'Petrol blue', kind: 'paint', color: '#397d87', price: 120, description: 'Reusable satin-metallic paint. Cool blue-green with a polished finish.' },
   { id: 'paint-ivory', name: 'Workshop ivory', kind: 'paint', color: '#e4dfcb', price: 120, description: 'Reusable satin-metallic paint. Warm off-white with a polished finish.' },
+  { id: 'paint-cream', name: 'Buttermilk cream', kind: 'paint', color: '#f0dfad', price: 100, description: 'Reusable vintage colour. Warm cream for family wagons, old pickups and faithful restorations.' },
+  { id: 'paint-burgundy', name: 'Oxblood burgundy', kind: 'paint', color: '#6f303c', price: 100, description: 'Reusable vintage colour. A deep wine red for chrome-trimmed classics and weekend roadsters.' },
 ];
 
 const STORE_PARTS: Omit<Part, 'source'>[] = [
@@ -172,6 +187,7 @@ export const LISTINGS: Listing[] = [
 /** The colour each shell wears as found. None of them matches a paint that can be bought. */
 export const DEFAULT_PAINT: Record<ShellId, string> = {
   hachiro: '#83908a', bison: '#8a5c42', veloce: '#8d715d', wren: '#8f8a6e', packhorse: '#6f8478',
+  estate: '#82917c', sprite: '#8c6b69', courier: '#9b937b',
 };
 
 export function getShell(id: string): Shell {
