@@ -133,11 +133,12 @@ export function completeSale(state: GameState, progress: Progress, carId: string
   const { [car.shellId]: _lap, ...proof } = progress.proof;
   const { [carId]: _fit, ...fittedLeft } = progress.fitted;
   const { [carId]: _style, ...styles } = progress.styles;
+  const { [carId]: _restoration, ...restorations } = progress.restorations;
   const sales = {
     count: progress.sales.count + 1, takings: progress.sales.takings + appraisal.offer,
     profit: progress.sales.profit + appraisal.profit, best: Math.max(progress.sales.best, appraisal.offer),
   };
   const fundsAfterSale = availableFunds(state, progress.budget) + appraisal.offer;
   const budget = Math.min(Number.MAX_SAFE_INTEGER, fundsAfterSale + collectionCost(next));
-  return { state: next, progress: { ...progress, budget, proof, fitted: fittedLeft, styles, sales, restock }, amount: appraisal.offer, profit: appraisal.profit, restocked };
+  return { state: next, progress: { ...progress, budget, proof, fitted: fittedLeft, styles, restorations, sales, restock }, amount: appraisal.offer, profit: appraisal.profit, restocked };
 }

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { SHELLS } from '../src/game/catalog';
 import { createCar } from '../src/render/cars';
@@ -9,6 +9,67 @@ beforeAll(() => { restoreCanvas = installCanvasStandIn(); });
 afterAll(() => restoreCanvas());
 
 describe('complete catalog car models', () => {
+  const bodyMaterial = (car: ReturnType<typeof createCar>) => {
+    let result: THREE.MeshPhysicalMaterial | undefined;
+    car.group.traverse(object => {
+      if (object instanceof THREE.Mesh && object.material instanceof THREE.MeshPhysicalMaterial && object.material.name === 'restoration-body') result = object.material;
+    });
+    expect(result, 'painted panels must stay identifiable for workshop picking').toBeDefined();
+    return result!;
+  };
+
+  it.each(SHELLS)('restores $name with one owned skin while preserving trim, then releases the skin after painting', shell => {
+    const car = createCar(shell.id, { restored: true, paint: '#c56b34', restoration: { stage: 'wash', route: 'paint', work: 0 } });
+    const paint = bodyMaterial(car), texture = paint.map!;
+    const trim = new Map<THREE.MeshStandardMaterial, { color: string; map: THREE.Texture | null }>();
+    car.group.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (const material of [object.material].flat()) {
+        // Washing clears the glass; only the painted body receives a working skin.
+        if (material instanceof THREE.MeshStandardMaterial && material !== paint && !material.transparent)
+          trim.set(material, { color: material.color.getHexString(), map: material.map });
+      }
+    });
+    const release = vi.spyOn(texture, 'dispose');
+    expect(texture).toBeInstanceOf(THREE.CanvasTexture);
+    const version = texture.version;
+    car.setAppearance({ restoration: { stage: 'wash', route: 'paint', work: .001 } });
+    expect(texture.version).toBe(version);
+    for (const stage of ['wash', 'rust', 'repair', 'prime', 'paint'] as const) {
+      car.setAppearance({ restoration: { stage, route: 'paint', work: .5 } });
+      expect(paint.map).toBe(texture);
+      expect(Number.isFinite(paint.roughness)).toBe(true);
+    }
+    expect(texture.version).toBeGreaterThan(version);
+    car.setAppearance({ restoration: { stage: 'complete', route: 'paint', work: 0 } });
+    expect(paint.map).toBeNull();
+    expect(paint.color.getHexString()).toBe('c56b34');
+    expect(paint.clearcoat).toBeGreaterThan(.8);
+    for (const [material, before] of trim) {
+      expect(material.color.getHexString(), `${shell.name} trim colour`).toBe(before.color);
+      expect(material.map, `${shell.name} trim texture`).toBe(before.map);
+    }
+    expect(release).not.toHaveBeenCalled();
+    car.dispose(); car.dispose();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(SHELLS)('keeps $name weathering under sealed patina and can switch to the painted comparison photo', shell => {
+    const car = createCar(shell.id, { paint: '#b83d30', restored: true, restoration: { stage: 'complete', route: 'patina', work: 0 } });
+    try {
+      const paint = bodyMaterial(car), texture = paint.map;
+      expect(texture).not.toBeNull();
+      expect(paint.color.getHexString()).toBe('ffffff');
+      expect(paint.clearcoat).toBeGreaterThan(0);
+      expect(paint.clearcoat).toBeLessThan(.6);
+      car.setAppearance({ restoration: undefined });
+      expect(paint.map).toBeNull();
+      expect(paint.color.getHexString()).toBe('b83d30');
+      car.setAppearance({ restoration: { stage: 'complete', route: 'patina', work: 0 } });
+      expect(paint.map).toBe(texture);
+    } finally { car.dispose(); }
+  });
+
   it('maps weathering across the Courier cargo walls instead of sampling one texture pixel', () => {
     const car = createCar('courier', { restored: false, wheels: false });
     try {

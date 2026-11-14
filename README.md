@@ -1,6 +1,6 @@
 # Junkyard Drivers
 
-A single-player browser game for desktop and tablets about finding a forgotten car, rebuilding it, and taking its first drive through a small town. Built with TypeScript, Vite, vanilla Three.js/WebGL, and Rapier 3D. Choose from eight salvageable cars, take on nine customer restoration commissions, and build your workshop's reputation. The latest additions are a family wagon, an open-top roadster, a panel van, and nine salvage parts for a wider range of builds. You start with $150,000, enough to buy every current listing. Once a car runs there is a timed test loop with medals, twelve lost pieces of motoring history to find, earned paint finishes and stripes, a day that turns to night, and a photo mode. A finished car can be tuned with a turbocharger, a louder exhaust and nitrous. Rare parts and two rare cars are hidden around the yard, and the used-car dealer buys your builds and handles customer collections.
+A single-player browser game for desktop and tablets about finding a forgotten car, rebuilding it, and taking its first drive through a small town. Built with TypeScript, Vite, vanilla Three.js/WebGL, and Rapier 3D. Choose from eight salvageable cars, take on nine customer restoration commissions, and build your workshop's reputation. All eight cars offer optional hands-on bodywork, preserved patina and matching before-and-after photographs. You start with $150,000, enough to buy every current listing. Once a car runs there is a timed test loop with medals, twelve lost pieces of motoring history to find, earned paint finishes and stripes, a day that turns to night, and a photo mode. A finished car can be tuned with a turbocharger, a louder exhaust and nitrous. Rare parts and two rare cars are hidden around the yard, and the used-car dealer buys your builds and handles customer collections.
 
 [Play Junkyard Drivers](https://markleary.github.io/junkyard-drivers/) in a browser, including iPad Safari. Touch controls appear automatically on tablets. Saves belong to each browser and device.
 
@@ -34,6 +34,7 @@ Set `VITE_STARTING_FUNDS` to a nonnegative whole-dollar amount before starting V
 | Recover a stuck or overturned car to the Garage apron | R, or **Recover to Garage** |
 | Exit the car | Stop near the Garage and press E |
 | Sell the car | Stop in the trade-in bay at Second Chance Motors and press E |
+| Hands-on bodywork | **Hands-on bodywork** on any owned car’s build sheet; drag across the car, or hold the tool button / Space / Enter |
 | Customer restoration jobs | **Customer jobs** at the Garage workbench or in the pause menu |
 | Deliver a customer car | Stop in the dealer's trade-in bay, press E, then choose **Deliver** on the customer handover |
 | Change camera: chase, wide, bonnet | C |
@@ -88,6 +89,18 @@ On a tablet, use the contextual action button wherever these steps mention E.
 6. Return to the Garage, brake to a stop, and press E to exit. Use the workbench again to change the build.
 
 The job note in the corner keeps four stamps for the selected car: shell, engine, wheels, and first drive.
+
+## Hands-on restoration stages
+
+A **project car** is a car being restored, repaired or modified over time; it can already run. In this game that describes any salvage car you choose to work on, rather than a separate eligibility class. The internal `PROJECT_SHELLS` constant only identifies the yard display positions of the Wayfarer, Sprite and Courier row. It does not limit which cars support bodywork, patina or photos.
+
+Select any owned car at the Garage workbench and open **Hands-on bodywork**. All eight salvageable types qualify: Hachiro Kestrel, Bison Roadmaster, Veloce Sirocco, Hachiro Wren R, Dunmore Packhorse, Hachiro Wayfarer, Alder Sprite and Dunmore Courier. **Begin bodywork** opts that car into an as-found finish while keeping its fitted parts. Existing collections keep their original appearance until you start. Bodywork is optional, workshop supplies are included, and a running car can still be driven between operations.
+
+Wash away grime, remove rust, repair rough panels, prime, then paint. Each operation takes about three seconds of tool contact. Drag across the visible body with a mouse or finger, or hold the tool button; keyboard users can focus it and hold Space or Enter, and controller users can focus it with the D-pad and hold A. Release between steps. Progress stops on release, cancellation or focus loss and resumes from the saved point.
+
+After washing, choose **Fresh paint** or **Preserve patina** before starting the rust treatment. Patina stabilizes corrosion, repairs the rough patches and finishes with a satin sealer, retaining faded paint and recognizable weathering instead of using primer and a colour coat. The choice locks when rust work begins. Patina keeps its original finish, so ordinary paint, finish and stripe controls are disabled for that project. Fresh-paint projects use the original body colour or an owned paint tin; earned finishes and stripes carry through to the final coat.
+
+Completed projects unlock **Before & after**: matching garage photographs of the starting and finished build, with a **Save photo pair** PNG download. Small catalog-based snapshots persist in the progress save, so later parts or paint changes do not rewrite the photos. Selling or delivering the car clears its bodywork record; download a keepsake first. New shells start fresh. Customer jobs requesting a particular paint require the visible, completed colour coat, and changing bodywork invalidates that car's previous customer road-test proof.
 
 ## Customer restoration jobs
 
@@ -148,13 +161,15 @@ npm run preview
 
 `check` runs TypeScript and focused Vitest checks for inventory ownership, compatibility, save validation, vehicle tuning, road connectivity/clearance across multiple seeds, touch-pointer ownership/cancellation, yard and town-lot clearance, the progress record (medals, finishes, stripes, repair of damaged saves), the dealer's offer (above the outlay, at most double, rising with the lap, the same every time it is asked in a session), tuning-part fitment, the hiding places of the rare salvage (dealt without sharing for any seed, and each one walked to from the gate in the built yard with a physics body the player's size), the lap state machine, the gearbox, daylight continuity, find placement, the audio module on a stand-in Web Audio graph, and the baked scenery itself: the whole town is built under Node for five seeds and the check fails if two different-looking surfaces overlap in one plane, which is what makes ground flicker. Browser checks exercise desktop controls, native multi-touch input at tablet sizes, production asset loading, the features added after the first drive (finds, logbook, finishes, cameras, lamps, photo mode, a timed lap, stripes, night and quality settings), and the dealer, rare salvage and tuning parts (found off the racks, fitted, driven on boost and nitrous with the modified recordings playing, sold for a fixed offer, by keyboard and by touch). Test output is the source of truth for the current checkout.
 
-`npm run test:browser:ci` runs the three `@deployment` checks for production startup and pause/input clearing, the readable graphics-error screen, and independent touch gestures/cancellation/orientation handling. GitHub's software-rendered runner uses these focused browser checks alongside all 309 unit/physics checks. The full 24-test browser suite runs with `npm run test:browser`. Run the real-time restoration and driving playthroughs on a machine with graphics acceleration and against the public URL after deployment. The first full-suite CI attempt reached the job's 20-minute limit, while its startup/menu and touch-lifecycle checks passed. Failed CI browser runs preserve traces and screenshots as workflow artifacts.
+`npm run test:browser:ci` runs the three `@deployment` checks for production startup and pause/input clearing, the readable graphics-error screen, and independent touch gestures/cancellation/orientation handling. GitHub's software-rendered runner uses these focused browser checks alongside all 379 unit/physics checks. The full 28-test browser suite runs with `npm run test:browser`. Run the real-time restoration and driving playthroughs on a machine with graphics acceleration and against the public URL after deployment. The first full-suite CI attempt reached the job's 20-minute limit, while its startup/menu and touch-lifecycle checks passed. Failed CI browser runs preserve traces and screenshots as workflow artifacts.
 
 The production build prints current JavaScript and CSS bundle sizes, including gzip sizes. Dated acceptance sections below preserve measurements from their respective builds.
 
 Customer-job unit checks cover every authored brief, build budgets, exact-build lap proof, unlocks, cancellation, delivery payouts, save repair and rare restocking. Catalog checks ensure enough unique parts to build the full collection, and model checks construct every car as salvage and as a restored build. Project-row clearance and reachability use the same yard footprints and physics flood checks as rare salvage.
 
 `npx playwright test tests/browser/jobs.spec.ts` runs the customer expansion scenarios: desktop acceptance through assembly, a fresh lap and delivery; touch-only job cards, project-shell purchases and wagon assembly; and controller menu navigation with held-button protection.
+
+`npx playwright test tests/browser/restoration.spec.ts` checks visible bodywork through real pointer/keyboard input, controller patina and focus loss, touch cancellation and reload, downloadable before-and-after photos, and car switching with saved photo pairs across all eight shells. These real-time tests are separate from the deployment subset.
 
 Run just the tablet acceptance with `npx playwright test tests/browser/touch.spec.ts`. It uses Chromium's native touch event dispatch, including simultaneous steering and pedals. For a separate Safari-engine smoke on macOS, install WebKit with `npx playwright install webkit`, start the local preview, then run `node scripts/tablet-webkit.mjs`. `VISUAL_BASE_URL` selects another preview address; `PLAYWRIGHT_WEBKIT_EXECUTABLE_PATH` can select an installed WebKit executable. WebKit taps are native, while its movement probe uses synthetic PointerEvents; this is not a substitute for testing on a physical iPad.
 
@@ -167,6 +182,7 @@ Evidence scripts sit beside the tests. Each drives a real browser against `npm r
 | `node scripts/audio-review.mjs` | Loop seams, engine sweeps on each exhaust and how much louder the modified ones are, the turbocharger whistle and nitrous jet, the held horn and footstep slicing, rendered offline; then whether the game decodes and uses the clips |
 | `node scripts/lap-calibration.mjs [estate,sprite,courier]` | Lap times for each car, stock and upgraded, at two paces; the two rare cars also fully tuned, using the nitrous. Comma-separated filters narrow the run; `LAP_OUTPUT` optionally saves the result as JSON |
 | `node scripts/project-car-review.mjs` | The three new project shells together in the yard, then each restored at the Garage; renderer measurements and browser/network errors |
+| `node scripts/restoration-review.mjs` | 39 matching garage views covering the five stages, all eight cars with fresh paint and patina, compatible graphics for every car, and medium/low checks; writes `artifacts/restoration`. `RESTORATION_REVIEW_FULL=1` expands to every stage/model at all four quality tiers; `VISUAL_OUTPUT_DIR` selects another folder |
 | `node scripts/car-quality-review.mjs` | Matching front/rear views of two established cars and all three project cars, salvage/restored comparisons, close details and all four quality tiers |
 | `node scripts/startup-timing.mjs [url]` | Time to a usable start button and frame rate on the GPU and on software rendering |
 | `node scripts/graphics-fallback.mjs` | The software-rendering smoke check |
@@ -217,8 +233,9 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 | `index.html` / `public/social-preview.jpg` | Page metadata and the Open Graph / Twitter sharing image |
 | `src/game/catalog.ts` | Fictional shells, mount families, parts (including tuning parts and rare salvage), prices, and tuning values |
 | `src/game/state.ts` | Purchase and affordability checks, build and sale operations, and versioned save validation |
-| `src/game/progress.ts` | Budget, lap records, medals, finds, finishes and stripes, settings, fitted tuning parts, sales, rare salvage locations, and customer-job persistence |
+| `src/game/progress.ts` | Budget, lap records, medals, finds, finishes and stripes, settings, fitted tuning parts, sales, rare salvage locations, customer jobs, and hands-on bodywork persistence |
 | `src/game/job-catalog.ts` / `src/game/jobs.ts` | Authored customer briefs; acceptance, build checklists, exact-build lap proof, workshop ranks and fixed-payment delivery |
+| `src/game/restoration.ts` / `src/game/restoration-save.ts` | Optional bodywork stages, patina choices, historical photo snapshots, independent save repair and stale-record cleanup |
 | `src/game/upgrades.ts` | Which turbocharger, exhaust and nitrous kit is on which car, and what a build is worth in power, boost and sound |
 | `src/game/dealer.ts` | What a car cost to build, what its lap proves, the offer range, the session's offer, and the sale |
 | `src/game/stash.ts` | Deals each rare piece its hiding places for a game, and moves it when it comes back after a sale |
@@ -229,6 +246,7 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 | `src/world/daylight.ts` | Time of day as plain numbers: sun and moon, sky, fog and light colours, the clock |
 | `src/render/world.ts` + `src/render/scene/` | Ground and roads, salvage yard, workshop, parts store, town, landscape, and the shared prop kit |
 | `src/render/builder.ts` | Bakes static scenery into one mesh per material per map cell, instances repeats, and creates colliders |
+| `src/render/restoration-surface.ts` | Deterministic grime, corrosion, repairs, primer and paint passes on one owned car texture |
 | `src/render/cars.ts` / `src/render/wrecks.ts` | The eight player cars (finishes, stripes, lamps, opening bonnet, engine bay, fitted turbocharger, pipes and bottle) and six scenery body styles |
 | `src/render/parts.ts` / `src/render/stash.ts` | Shared detailed engine, wheel, paint-can, turbocharger, exhaust and nitrous display models; the rare parts on their pallets in the yard |
 | `src/render/lighting.ts` / `src/render/atmosphere.ts` | HDR render pipeline and grading; sky dome, sun and moon light, sun-tinted fog, reflections |
@@ -242,6 +260,8 @@ The workflow follows [GitHub's custom Pages workflow documentation](https://docs
 | `src/input/gamepad.ts` | Standard-layout controller mapped to driving/walking intents and D-pad/A/B menu navigation |
 | `src/main.ts` | First-person character, driving cameras, interactions, DOM menus, and the game loop |
 | `src/ui/templates.ts` | Salvage tags, parts catalogs, build sheets, customer job board and handover, dealer offer sheet, pause sheet, logbook, banners, and HUD markup |
+| `src/ui/restoration.ts` / `src/ui/restoration.css` | Responsive bodywork sheet, live preview, route and colour choices, and photo pair gallery |
+| `src/ui/restoration-input.ts` / `src/ui/restoration-photos.ts` | Interruptible pointer/touch/keyboard/controller tool input and downloadable workshop prints |
 | `src/ui/focus.ts` | Overlay focus retention, keyboard Tab containment and controller menu focus |
 | `src/ui/minimap.ts` | The survey map, printed once and turned under a fixed arrow |
 | `src/ui/touch.ts` | Independent pointer ownership, analog thumbstick, drag-look, pedals, and input cancellation |
@@ -272,6 +292,14 @@ Three.js and Rapier dependency credits and licenses are listed in [THIRD_PARTY_N
 ## Proof-of-concept scope
 
 This is a compact, single-player desktop and tablet game, with no traffic AI, multiplayer, mechanical damage, or account system. Touch layouts target iPad-sized screens; small phones are not the primary target. The fictional cars are inspired by broad automotive eras and carry original names and badges. ElevenLabs was used twice during development to generate the bundled recordings; the game itself never calls it, and no key is needed to run or build.
+
+## Hands-on bodywork: November 14, 2026
+
+Optional workbench restoration for all eight salvageable cars adds visible washing, corrosion treatment, localized panel repairs, matte primer and a fresh colour coat, or a satin-sealed patina route. Each car keeps its established weathering pattern and body details. Fresh paint can use an owned tin or return to the shell’s original colour at any time before completion. One owned 512×512 texture supplies progressive surface passes; the existing car geometry, garage lighting and quality pipeline remain in use. The photo sheet recreates saved before/after builds at the same camera and hour and exports a paired 1680×800 workshop print.
+
+Validation: **379 unit/physics checks** and the production build pass. **Nine production browser checks** pass under `/junkyard-drivers/`: the three deployment checks, existing small-window garage and keyboard-menu regressions, and four restoration scenarios covering Sirocco pointer/keyboard completion and photo downloads, Packhorse controller patina and focus loss, Kestrel tablet cancellation/reload in both orientations, and saved photo galleries and car switching across all eight shells. Five viewport sizes were inspected, from 390×844 to 1440×900; this is browser emulation, not a physical-tablet test. The [material review](artifacts/restoration/measurements.json) records 39 matching stage/model views across all eight cars, including compatible graphics for every car and medium/low checks, with no console errors, failed requests or external requests.
+
+The build output reports current application JavaScript and CSS sizes. The Three.js and embedded Rapier bundles are unchanged. This local validation does not publish the site.
 
 ## Customer jobs and project cars: November 14, 2026
 

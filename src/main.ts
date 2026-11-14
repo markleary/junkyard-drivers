@@ -3,11 +3,12 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { createLighting, type GradeName, type Lighting } from './render/lighting';
 import { QUALITY_LABEL } from './render/quality';
 import { DEFAULT_PAINT, LISTINGS, PARTS, SHELLS, SHOP_CATEGORIES, getShell, type PartSource, type ShellId, type ShopCategory, type UpgradeKind } from './game/catalog';
-import { loadGame, saveGame, newGame, purchase, install, paintCar, getPart, buildIssues, availableFunds, collectionCost, DEFAULT_STARTING_FUNDS, type GameState, type OwnedCar } from './game/state';
+import { loadGame, saveGame, newGame, purchase, install, paintCar, restoreOriginalPaint, getPart, buildIssues, availableFunds, collectionCost, DEFAULT_STARTING_FUNDS, type GameState, type OwnedCar } from './game/state';
 import { buildTuning, fitUpgrade, fittedUpgrades, reconcileFitted, removeUpgrade, type BuildTuning } from './game/upgrades';
 import { appraise, completeSale } from './game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, cancelJob, completeJob, jobRank, reconcileJobs, recordJobLap, type JobLapStart } from './game/jobs';
 import { stashLayout, type StashItem } from './game/stash';
+import { startRestoration, chooseRestorationRoute, workRestoration, reconcileRestorations, restorationFor, type RestorationSnapshot } from './game/restoration';
 import { FINISHES, MEDAL_TIMES, PROGRESS_KEY, STRIPES, finishUnlocked, formatLap, loadProgress, newProgress, recordDriving, recordFind, recordLap, saveProgress, setStyle, stripeUnlocked, styleFor,
   type CameraMode, type FinishId, type LightMode, type Medal, type Progress, type QualityPreference, type StripeId, type TimePreference } from './game/progress';
 import { FIND_IDS, findSpots, type Find } from './game/finds';
@@ -32,9 +33,13 @@ import { renderOverlay, containTab } from './ui/focus';
 import { TouchControls } from './ui/touch';
 import { touchMarkup } from './ui/touch-markup';
 import { Minimap } from './ui/minimap';
+import { restorationMarkup, restorationPhotosMarkup } from './ui/restoration';
+import { RestorationInput } from './ui/restoration-input';
+import { downloadRestorationPhotos } from './ui/restoration-photos';
 import './ui/fonts.css';
 import './style.css';
 import './ui/touch.css';
+import './ui/restoration.css';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 document.body.dataset.screen = 'intro';
@@ -63,6 +68,7 @@ const randomSeed = () => {
 };
 // Tuning parts are recorded against cars in the progress save; anything the collection no longer backs is dropped here.
 progress = reconcileFitted(state, progress);
+progress = reconcileRestorations(state, progress);
 progress = reconcileJobs(state, progress);
 // The first visit decides where this game hides its rare salvage. After that the save remembers.
 if (!progress.stash) progress = { ...progress, stash: randomSeed() };
@@ -75,7 +81,9 @@ let selectedId = state.cars.find(car => car.id === progress.jobs.proof?.carId)?.
   ?? state.cars.find(car => activeJob(progress)?.shells.includes(car.shellId))?.id
   ?? state.cars[0]?.id ?? '';
 let mode: 'foot' | 'drive' = 'foot';
-let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' | 'dealer' | 'jobs' = 'none', started = false, dragMode = false;
+let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' | 'dealer' | 'jobs' | 'restoration' = 'none', started = false, dragMode = false;
+let restorationGallery = false, restorationDirty = false, restorationSound = 0;
+let restorationPhotos: { before: string; after: string } | undefined;
 let jobsFromGarage = false;
 let resetting = false;
 let yaw = 0, pitch = 0, dragging = false;
@@ -140,6 +148,18 @@ const touch = new TouchControls({
 });
 touch.setContext({ enabled: touchEnabled, paused, mode });
 
+const restorationRay = new THREE.Raycaster();
+const restorationInput = new RestorationInput(panel, () => panelKind === 'restoration' && !restorationGallery && !document.hidden && document.hasFocus(),
+  (x, y) => {
+    const preview = document.getElementById('restoration-preview');
+    if (!preview || !parked) return false;
+    const rect = preview.getBoundingClientRect();
+    restorationRay.setFromCamera(new THREE.Vector2((x - rect.left) / rect.width * 2 - 1, 1 - (y - rect.top) / rect.height * 2), camera);
+    const hit = restorationRay.intersectObject(parked.group, true)[0];
+    if (!hit || !(hit.object instanceof THREE.Mesh)) return false;
+    return [hit.object.material].flat().some(material => material.name === 'restoration-body');
+  }, saveRestorationWork);
+
 interface Target { id: string; kind: 'workbench' | 'listing' | 'rack' | 'store' | 'dealer' | 'car'; position: THREE.Vector3; label: string; listingId?: string }
 const dollars = (value: number) => `$${value.toLocaleString()}`;
 const interactKey = () => pad.state.connected ? 'X' : 'E';
@@ -156,6 +176,7 @@ function announce(options: BannerOptions, sound?: 'medal' | 'find' | 'unlock' | 
   if (sound) audio.play(sound);
 }
 function clearInputs() {
+  restorationInput.clear();
   keys.clear(); setDragging(false); lookBack = false; touch.reset();
   if (hornHeld) { hornHeld = false; audio.horn(false); }
 }
@@ -187,7 +208,7 @@ function persist() {
 }
 function commit(next: GameState) {
   state = next;
-  const checked = reconcileJobs(state, progress);
+  const checked = reconcileJobs(state, reconcileRestorations(state, progress));
   if (checked !== progress) { progress = checked; persist(); }
   const saved = saveGame(state);
   $('save-status').textContent = saved ? 'LOGBOOK SAVED' : 'SAVE UNAVAILABLE · KEEP THIS TAB OPEN';
@@ -222,13 +243,14 @@ function updateObjective() {
   ]);
 }
 
-/** How a saved car should look: fresh paint once painted or finished, its fitted engine, and any earned extras. */
+/** Saved bodywork overrides automatic finishing; older builds retain their original appearance. */
 function appearanceOf(car: OwnedCar): CarAppearance {
   const complete = buildIssues(state, car).length === 0, style = styleFor(progress, car.id);
   const engine = getPart(state, car.engineId), fitted = fittedUpgrades(state, progress, car.id);
   return {
     paint: car.paint, restored: complete || car.paint.toLowerCase() !== DEFAULT_PAINT[car.shellId], wheels: !!car.wheelsId,
     finish: style.finish, stripe: STRIPES.find(item => item.id === style.stripe)?.color ?? null,
+    restoration: restorationFor(progress, car.id),
     // Anything that did not come new from the counter shows its age; the uprated and rare engines carry the red covers.
     engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
     tuning: { exhaust: !!fitted.exhaust, turbo: !!fitted.turbo, nitro: !!fitted.nitro },
@@ -281,6 +303,7 @@ function pause() {
   if (!started) return;
   if (photo) leavePhoto(false);
   paused = true; clearInputs();
+  restoreWorkshopCamera();
   document.exitPointerLock?.();
   panel.hidden = true; panelKind = 'none'; menu.hidden = false;
   syncUiScreen();
@@ -288,6 +311,7 @@ function pause() {
   renderOverlay(menu, pauseMarkup(pauseOptions()), '[data-action="resume"]');
 }
 function resume() {
+  saveRestorationWork(); restoreWorkshopCamera();
   started = true; paused = false;
   menu.hidden = true; panel.hidden = true; panelKind = 'none';
   clearInputs(); syncUiScreen();
@@ -311,6 +335,7 @@ function lookByDragging() {
   if (!pad.state.connected) notify('Mouse capture unavailable. Click to try again, or hold the left mouse button to look.');
 }
 function openPanel(kind: typeof panelKind) {
+  if (panelKind === 'restoration') restoreWorkshopCamera();
   paused = true; clearInputs(); panelKind = kind;
   document.exitPointerLock?.();
   menu.hidden = true; panel.innerHTML = ''; panel.scrollTop = 0; panel.hidden = false;
@@ -321,6 +346,100 @@ function closePanel() { audio.play('close'); void resume(); }
 function renderInspect(listingId: string) { inspectListing = listingId; panel.className = 'inspect-panel'; delete panel.dataset.source; renderOverlay(panel, inspectionMarkup(state, listingId, availableFunds(state, progress.budget))); }
 function renderRack() { panel.className = 'shop-panel'; panel.dataset.source = rackSource; renderOverlay(panel, shopMarkup(state, rackSource, rackKind, availableFunds(state, progress.budget))); }
 function renderGarage() { panel.className = 'garage-panel'; delete panel.dataset.source; renderOverlay(panel, garageMarkup(state, selectedId, progress)); }
+
+function saveRestorationWork() {
+  if (!restorationDirty) return;
+  restorationDirty = false; progress = reconcileJobs(state, progress); persist(); updateObjective();
+}
+function restoreWorkshopCamera() {
+  if (panelKind !== 'restoration') return;
+  saveRestorationWork(); restorationPhotos = undefined;
+  const car = selectedCar(); if (car) parked?.setAppearance(appearanceOf(car));
+  camera.aspect = (app.clientWidth || innerWidth) / (app.clientHeight || innerHeight);
+  camera.updateProjectionMatrix(); lighting.atmosphere.setHour(hour);
+}
+function renderRestoration() {
+  const car = selectedCar(); if (!car) return;
+  restorationGallery = false; restorationPhotos = undefined;
+  panel.className = 'restoration-panel'; delete panel.dataset.source;
+  renderOverlay(panel, restorationMarkup(state, car, progress));
+  // The invitation previews the as-found finish before committing to bodywork.
+  parked?.setAppearance({ ...appearanceOf(car), restoration: restorationFor(progress, car.id) ?? { stage: 'wash', route: 'paint', work: 0 } });
+  bonnet = 0; parked?.setBonnet(0);
+}
+function snapshotAppearance(snapshot: RestorationSnapshot, after: boolean): CarAppearance {
+  const engine = PARTS.find(part => part.id === snapshot.enginePartId);
+  return {
+    paint: snapshot.paint, wheels: snapshot.wheels, restored: snapshot.restored, finish: snapshot.finish,
+    stripe: STRIPES.find(stripe => stripe.id === snapshot.stripe)?.color ?? null,
+    engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
+    tuning: { exhaust: snapshot.tuning.includes('exhaust'), turbo: snapshot.tuning.includes('turbo'), nitro: snapshot.tuning.includes('nitro') },
+    restoration: after ? { stage: 'complete', route: restorationFor(progress, selectedId)!.route, work: 0 } : { stage: 'wash', route: 'paint', work: 0 },
+  };
+}
+function showRestorationPhotos() {
+  const car = selectedCar(), record = restorationFor(progress, selectedId);
+  if (!car || !parked || !record?.after || record.stage !== 'complete') return;
+  restorationInput.clear(); saveRestorationWork(); restorationGallery = true;
+  panel.className = 'restoration-panel restoration-gallery';
+  renderOverlay(panel, restorationPhotosMarkup(car, progress));
+  // Recreate both historical builds with identical framing and light, using the game's existing renderer.
+  updateCamera(1); lighting.atmosphere.setHour(17);
+  const capture = (snapshot: RestorationSnapshot, after: boolean) => {
+    parked!.setAppearance(snapshotAppearance(snapshot, after)); parked!.setBonnet(0);
+    lighting.render(0, false);
+    const print = document.createElement('canvas'); print.width = 800; print.height = 600;
+    print.getContext('2d')!.drawImage(canvas, 0, 0, 800, 600);
+    return print.toDataURL('image/jpeg', .9);
+  };
+  try {
+    restorationPhotos = { before: capture(record.before, false), after: capture(record.after, true) };
+    $<HTMLImageElement>('restoration-before').src = restorationPhotos.before;
+    $<HTMLImageElement>('restoration-after').src = restorationPhotos.after;
+    audio.play('shutter');
+  } finally { parked.setAppearance(appearanceOf(car)); }
+}
+function updateRestoration(dt: number) {
+  if (panelKind !== 'restoration' || restorationGallery) return;
+  const car = selectedCar(), record = restorationFor(progress, selectedId);
+  const focused = document.activeElement?.id === 'restoration-work';
+  const working = restorationInput.working(focused && pad.state.handbrake);
+  panel.classList.toggle('restoration-working', working && !!record && record.stage !== 'complete');
+  if (!working || !car || !record || record.stage === 'complete') return;
+  const next = workRestoration(state, progress, car.id, Math.min(dt, .05) / 3);
+  if (next === progress) return;
+  progress = next; restorationDirty = true;
+  const current = restorationFor(progress, car.id)!;
+  parked?.setAppearance(appearanceOf(car));
+  restorationSound -= dt;
+  if (restorationSound <= 0) {
+    restorationSound = .65;
+    audio.play(record.stage === 'repair' ? 'ratchet' : record.stage === 'rust' ? 'scrape' : 'paint', { volume: .28 });
+  }
+  if (current.stage !== record.stage) {
+    restorationInput.finishStage(); saveRestorationWork(); audio.play('install', { volume: .55 }); pad.rumble(90, .25);
+    renderRestoration();
+    if (current.stage === 'complete') notify(current.route === 'patina' ? 'Patina sealed. Your before-and-after photos are ready.' : 'Fresh paint, finished by you. Your before-and-after photos are ready.');
+  } else {
+    if (current.stage === 'rust' && current.work > 0) panel.querySelectorAll<HTMLButtonElement>('[data-restoration-route]').forEach(button => { button.disabled = true; });
+    const meter = $<HTMLProgressElement>('restoration-meter');
+    if (meter) meter.value = current.work;
+    const percent = $('restoration-percent'); if (percent) percent.textContent = `${Math.round(current.work * 100)}%`;
+  }
+}
+function drawRestorationPreview() {
+  if (panelKind !== 'restoration' || restorationGallery) return;
+  const preview = $<HTMLCanvasElement>('restoration-preview'), context = preview?.getContext('2d');
+  if (!context) return;
+  if (preview.width !== 960 || preview.height !== 720) { preview.width = 960; preview.height = 720; }
+  context.drawImage(canvas, 0, 0, preview.width, preview.height);
+  const point = restorationInput.point;
+  if (point && panel.classList.contains('restoration-working')) {
+    const rect = preview.getBoundingClientRect();
+    context.strokeStyle = '#f5e4b9'; context.lineWidth = 2; context.beginPath();
+    context.arc((point.x - rect.left) / rect.width * 960, (point.y - rect.top) / rect.height * 720, 24, 0, Math.PI * 2); context.stroke();
+  }
+}
 function renderJobs() {
   panel.className = 'jobs-panel'; delete panel.dataset.source;
   renderOverlay(panel, jobsMarkup(state, progress, selectedId, { canSelectCar: mode === 'foot', atWorkbench: jobsFromGarage }));
@@ -829,7 +948,12 @@ function updateWalking(dt: number) {
 function updateCamera(dt: number) {
   const base = 64;
   let fov = base;
-  if (qaCamera) {
+  if (panelKind === 'restoration') {
+    // A consistent three-quarter view keeps bodywork and matching photographs legible.
+    camera.position.set(BAY.x - 4.4, 2.9, BAY.z + 6.2);
+    camera.lookAt(BAY.x, 1.15, BAY.z);
+    camera.aspect = 4 / 3; camera.fov = fov = 46; camera.updateProjectionMatrix();
+  } else if (qaCamera) {
     camera.position.set(...qaCamera.position); camera.lookAt(...qaCamera.target);
   } else if (photo) {
     const reach = photo.distance * Math.cos(photo.pitch);
@@ -883,7 +1007,7 @@ function updateCamera(dt: number) {
   }
   if (trauma > 0) {
     trauma = Math.max(0, trauma - dt * 1.5);
-    if (progress.settings.motion && !photo && !qaCamera) {
+    if (progress.settings.motion && !photo && !qaCamera && panelKind !== 'restoration') {
       const shake = trauma * trauma, t = seconds * 34;
       const noise = (seed: number) => { const x = Math.sin(t * 12.9898 + seed * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
       camera.position.x += .16 * shake * noise(1); camera.position.y += .16 * shake * noise(2);
@@ -932,7 +1056,8 @@ function savePhoto() {
 }
 
 function updateClock(dt: number) {
-  if (!qaCamera) {
+  if (panelKind === 'restoration') lighting.atmosphere.setHour(17);
+  else if (!qaCamera) {
     if (progress.settings.time !== 'auto' && !photo) hour = TIME_PRESETS[progress.settings.time];
     else if (!paused) hour = advanceHour(hour, dt);
     lighting.atmosphere.setHour(hour);
@@ -982,6 +1107,7 @@ function frame(time: number) {
   const dt = Math.min((time - lastTime) / 1000, .25) || .016;
   lastTime = time; seconds += dt;
   handlePad();
+  updateRestoration(dt);
   if (!paused) {
     accumulator += dt;
     while (accumulator >= FIXED_DT) { step(); accumulator -= FIXED_DT; }
@@ -1026,6 +1152,7 @@ function frame(time: number) {
   effects.update(paused ? 0 : dt, particleLight);
   worldView.update(dt, seconds, sample.night, camera.position);
   lighting.render(dt, !paused);
+  drawRestorationPreview();
   if (photo?.capture) { photo.capture = false; savePhoto(); }
   // Main-thread cost of a frame (simulation, scene updates and draw submission), smoothed, for the review reports.
   frameCost += (performance.now() - began - frameCost) * .05;
@@ -1059,6 +1186,31 @@ app.addEventListener('click', event => {
       return;
     }
     if (action === 'close') { closePanel(); return; }
+    if (action === 'restoration' && panelKind === 'garage' && mode === 'foot') {
+      openPanel('restoration'); renderRestoration(); return;
+    }
+    if (action?.startsWith('restoration-') || button.dataset.restorationRoute || button.dataset.restorationPaint) {
+      if (panelKind !== 'restoration' || mode !== 'foot') return;
+      const car = selectedCar(); if (!car) return;
+      if (action === 'restoration-back') { openPanel('garage'); renderGarage(); return; }
+      if (action === 'restoration-photos') { showRestorationPhotos(); return; }
+      if (action === 'restoration-bench') { renderRestoration(); return; }
+      if (action === 'restoration-download' && restorationPhotos) {
+        const record = restorationFor(progress, car.id)!;
+        void downloadRestorationPhotos(restorationPhotos.before, restorationPhotos.after, getShell(car.shellId).name, record.route === 'patina')
+          .then(saved => { if (!saved) notify('The picture could not be saved.'); }).catch(() => notify('The picture could not be saved.'));
+        return;
+      }
+      if (action === 'restoration-start') progress = startRestoration(state, progress, car.id);
+      else if (button.dataset.restorationRoute === 'paint' || button.dataset.restorationRoute === 'patina') {
+        const chosen = chooseRestorationRoute(state, progress, car.id, button.dataset.restorationRoute);
+        progress = chosen.progress; commit(chosen.state);
+      }
+      else if (button.dataset.restorationPaint) commit(button.dataset.restorationPaint === 'original'
+        ? restoreOriginalPaint(state, car.id) : paintCar(state, car.id, button.dataset.restorationPaint));
+      else return;
+      progress = reconcileJobs(state, progress); persist(); updateObjective(); renderRestoration(); audio.click(); return;
+    }
     if (action === 'sound') { audio.muted = !audio.muted; pause(); return; }
     if (action === 'route') { const route = $('route'); if (route.dataset.disabled) delete route.dataset.disabled; else route.dataset.disabled = '1'; pause(); return; }
     if (action === 'touch-controls') {
@@ -1142,6 +1294,7 @@ app.addEventListener('click', event => {
       notify('Part installed. The previous part is back in your inventory.');
     }
     if (button.dataset.paint) {
+      if (restorationFor(progress, selectedId)?.route === 'patina') return;
       commit(paintCar(state, selectedId, button.dataset.paint));
       renderGarage();
       audio.play('paint');
@@ -1162,6 +1315,7 @@ app.addEventListener('click', event => {
       notify(fitting ? 'Fitted. Anything it replaced is back in your inventory.' : 'Removed. It is back in your inventory.');
     }
     if (button.dataset.finish || button.dataset.stripe) {
+      if (restorationFor(progress, selectedId)?.route === 'patina') return;
       progress = setStyle(progress, selectedId, button.dataset.finish ? { finish: button.dataset.finish as FinishId } : { stripe: button.dataset.stripe as StripeId });
       progress = reconcileJobs(state, progress);
       persist(); syncCars(); updateObjective(); renderGarage();

@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createEngineModel, createNitroModel, createTurboModel, type EngineFamily } from './parts';
 import type { ShellId } from '../game/catalog';
+import { bodyWeatheringSeed, createRestorationSurface, type RestorationAppearance } from './restoration-surface';
 
 type BodyStyle = 'notchback' | 'muscle' | 'wedge' | 'hatch' | 'pickup' | 'wagon' | 'roadster' | 'van';
 export type PaintFinish = 'gloss' | 'metallic' | 'matte' | 'pearl';
@@ -71,6 +72,8 @@ export interface CarAppearance {
   /** Shown in the bay when the bonnet is raised. */
   engine?: FittedEngine | null;
   tuning?: FittedTuning | null;
+  /** Optional hands-on bodywork. Without this, older cars keep their existing finish. */
+  restoration?: RestorationAppearance;
 }
 export interface CarLamps { head: number; brake: number; reverse: number }
 export interface CarVisual {
@@ -371,11 +374,8 @@ function weathering(shellId: ShellId) {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const context = canvas.getContext('2d')!;
   const base = BODIES[shellId].patina;
-  // Keep established patina on the original cars while giving each new model its
-  // own chips and scratches, including names that happen to have equal lengths.
-  let seed = ['estate', 'sprite', 'courier'].includes(shellId)
-    ? [...shellId].reduce((hash, letter) => Math.imul(hash ^ letter.charCodeAt(0), 16777619) >>> 0, 2166136261)
-    : shellId.length * 7193;
+  // The yard finish and the working restoration skin must share their chip locations.
+  let seed = bodyWeatheringSeed(shellId);
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   // Fine oxidized paint grain remains dominant. Rust gathers in irregular chips,
   // rather than obscuring the original finish with a repeated camouflage pattern.
@@ -541,11 +541,13 @@ const FINISHES: Record<PaintFinish, { metalness: number; roughness: number; clea
 export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVisual {
   const group = new THREE.Group(); group.name = `car-${shellId}`;
   const spec = BODIES[shellId];
-  const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe' | 'tuning'>> & { engine: FittedEngine | null; stripe: string | null; tuning: FittedTuning | null } = {
+  const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe' | 'tuning' | 'restoration'>> & { engine: FittedEngine | null; stripe: string | null; tuning: FittedTuning | null; restoration?: RestorationAppearance } = {
     paint: options.paint ?? spec.paint, restored: options.restored ?? false, wheels: options.wheels ?? false,
-    finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null, tuning: options.tuning ?? null,
+    finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null, tuning: options.tuning ?? null, restoration: options.restoration,
   };
   const paint = new THREE.MeshPhysicalMaterial({ color: appearance.paint, metalness: .19, roughness: .28, clearcoat: .88, clearcoatRoughness: .1, bumpMap: fineFinish(), bumpScale: .0007, side: THREE.DoubleSide, envMapIntensity: 1.25 });
+  paint.name = 'restoration-body';
+  let restorationSurface: ReturnType<typeof createRestorationSurface> | undefined;
   const stripePaint = new THREE.MeshPhysicalMaterial({ color: '#f1ece0', metalness: .1, roughness: .3, clearcoat: .9, clearcoatRoughness: .1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   if (!lamp.map) {
     lamp.map = lensFinish(); lamp.needsUpdate = true;
@@ -1076,26 +1078,45 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   const setAppearance = (next: CarAppearance) => {
     Object.assign(appearance,next);
     const finish = FINISHES[appearance.finish];
-    paint.color.set(appearance.restored ? appearance.paint : '#ffffff');
-    paint.map = appearance.restored ? null : weathering(shellId);
-    paint.roughness = appearance.restored ? finish.roughness : .88;
-    paint.metalness = appearance.restored ? finish.metalness : .08;
-    paint.clearcoat = appearance.restored ? finish.clearcoat : .04;
-    paint.clearcoatRoughness = appearance.restored ? finish.clearcoatRoughness : .7;
-    paint.iridescence = appearance.restored ? finish.iridescence : 0;
-    paint.envMapIntensity = appearance.restored ? finish.reflection : .8;
+    const restoration = appearance.restoration;
+    const restored = restoration ? restoration.stage === 'complete' && restoration.route === 'paint' : appearance.restored;
+    paint.color.set(restored ? appearance.paint : '#ffffff');
+    paint.map = restored ? null : weathering(shellId);
+    paint.roughness = restored ? finish.roughness : .88;
+    paint.metalness = restored ? finish.metalness : .08;
+    paint.clearcoat = restored ? finish.clearcoat : .04;
+    paint.clearcoatRoughness = restored ? finish.clearcoatRoughness : .7;
+    paint.iridescence = restored ? finish.iridescence : 0;
+    paint.envMapIntensity = restored ? finish.reflection : .8;
     paint.iridescenceIOR = 1.6;
-    paint.bumpScale = appearance.restored ? finish.flake : .008;
+    paint.bumpScale = restored ? finish.flake : .008;
+    if (restoration && !restored) {
+      restorationSurface ??= createRestorationSurface(shellId, spec.patina);
+      restorationSurface.update(restoration, appearance.paint);
+      paint.map = restorationSurface.texture;
+      const work = THREE.MathUtils.clamp(restoration.work, 0, 1);
+      const patina = restoration.route === 'patina';
+      const sealed = restoration.stage === 'complete' ? 1 : restoration.stage === 'seal' ? work : 0;
+      const painted = restoration.stage === 'paint' ? work : 0;
+      const primer = restoration.stage === 'prime' || restoration.stage === 'paint';
+      paint.roughness = patina ? THREE.MathUtils.lerp(.84, .48, sealed) : primer ? THREE.MathUtils.lerp(.89, finish.roughness, painted) : .82;
+      paint.metalness = patina ? .09 : primer ? THREE.MathUtils.lerp(.03, finish.metalness, painted) : .16;
+      paint.clearcoat = patina ? sealed * .38 : painted * finish.clearcoat;
+      paint.clearcoatRoughness = patina ? .32 : THREE.MathUtils.lerp(.7, finish.clearcoatRoughness, painted);
+      paint.envMapIntensity = patina ? .8 + sealed * .45 : THREE.MathUtils.lerp(.8, finish.reflection, painted);
+      paint.bumpScale = patina ? .0035 : THREE.MathUtils.lerp(.002, finish.flake, painted);
+    }
     paint.needsUpdate = true;
-    const striped = appearance.restored && !!appearance.stripe;
+    const striped = restored && !!appearance.stripe;
     stripeGroup.visible = bonnetStripes.visible = striped;
     if (appearance.stripe) stripePaint.color.set(appearance.stripe);
     wheelMeshes.forEach(wheel => { wheel.visible = appearance.wheels; });
     hubs.visible = !appearance.wheels;
     supports.visible = !appearance.wheels;
-    windowMaterial.roughness = appearance.restored ? .065 : .28;
-    windowMaterial.opacity = appearance.restored ? .42 : .88;
-    windowMaterial.color.set(appearance.restored ? '#788f93' : '#626e65');
+    const washed = restoration ? restoration.stage === 'wash' ? THREE.MathUtils.clamp(restoration.work, 0, 1) : 1 : restored ? 1 : 0;
+    windowMaterial.roughness = THREE.MathUtils.lerp(.28, .065, washed);
+    windowMaterial.opacity = THREE.MathUtils.lerp(.88, .42, washed);
+    windowMaterial.color.set('#626e65').lerp(new THREE.Color('#788f93'), washed);
     const key = appearance.engine ? `${appearance.engine.family}-${appearance.engine.salvage}-${appearance.engine.performance}` : '';
     if (key !== engineKey) {
       if (engineModel) engineSlot.remove(engineModel);
@@ -1181,6 +1202,9 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
       const materials = new Set<THREE.Material>();
       const textures = new Set<THREE.Texture>();
       const sharedTextures = new Set<THREE.Texture>([...rustTextures.values(), ...surfaceTextures.values()]);
+      // It may no longer be bound after the final coat or a photo comparison.
+      // Dispose this owned skin exactly once, including its temporary canvases.
+      if (restorationSurface) { sharedTextures.add(restorationSurface.texture); restorationSurface.dispose(); }
       group.traverse(object => {
         // The fitted engine borrows the parts factory's cached geometry and materials.
         if (!(object instanceof THREE.Mesh) || object.userData.sharedPart) return;

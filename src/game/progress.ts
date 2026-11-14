@@ -1,6 +1,8 @@
 import { SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
 import { getJob } from './job-catalog';
 import { DEFAULT_STARTING_FUNDS } from './state';
+import { parseRestorations } from './restoration-save';
+import type { RestorationRecord } from './restoration';
 
 /**
  * Everything a player earns by driving and exploring. Kept under its own
@@ -65,6 +67,8 @@ export interface Progress {
   /** How many times each rare listing has come back after being sold with a car. Each return moves it. */
   restock: Record<string, number>;
   jobs: JobProgress;
+  /** Optional bodywork and its two catalog-based photo snapshots, keyed by owned car. */
+  restorations: Record<string, RestorationRecord>;
 }
 
 export const SHELL_IDS: ShellId[] = SHELLS.map(shell => shell.id);
@@ -106,7 +110,7 @@ export function newProgress(budget = DEFAULT_STARTING_FUNDS): Progress {
   return {
     version: 1, budget, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
     fitted: {}, proof: {}, sales: { count: 0, takings: 0, profit: 0, best: 0 }, stash: 0, restock: {},
-    jobs: { active: null, completed: [], proof: null, revision: 0 },
+    jobs: { active: null, completed: [], proof: null, revision: 0 }, restorations: {},
   };
 }
 
@@ -250,7 +254,7 @@ export function parseProgress(raw: string, knownFinds?: readonly string[], initi
     // that set a lap in it is still in the collection and that lap is its proof.
     fitted, proof: perShell(data.proof === undefined ? data.bestLap : data.proof, 36000), sales, restock,
     stash: positive(data.stash, 0xffffffff) && Number.isInteger(data.stash) ? data.stash as number : 0,
-    jobs,
+    jobs, restorations: parseRestorations(data.restorations),
   };
 }
 

@@ -1,0 +1,843 @@
+{
+  "baseURL": "http://127.0.0.1:4191/junkyard-drivers/",
+  "capturedAt": "2026-11-14T19:46:41.812Z",
+  "viewport": {
+    "width": 1200,
+    "height": 800
+  },
+  "position": [
+    -23.5,
+    2.65,
+    -8.5
+  ],
+  "target": [
+    -20,
+    1.12,
+    -13
+  ],
+  "setup": "Catalog-valid startup saves, unchanged camera and midday light. The car uses production geometry and restoration materials. Only read-only QA view controls are used after startup.",
+  "captures": [
+    {
+      "name": "hachiro-01-as-found-high",
+      "file": "hachiro-01-as-found-high.png",
+      "car": "hachiro",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 757,
+      "triangles": 701297,
+      "memory": {
+        "geometries": 686,
+        "textures": 121
+      },
+      "frameMs": 2.330763949624507,
+      "programs": 48
+    },
+    {
+      "name": "hachiro-07-fresh-paint-high",
+      "file": "hachiro-07-fresh-paint-high.png",
+      "car": "hachiro",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 757,
+      "triangles": 701297,
+      "memory": {
+        "geometries": 684,
+        "textures": 118
+      },
+      "frameMs": 2.479083797439604,
+      "programs": 48
+    },
+    {
+      "name": "hachiro-07-fresh-paint-compatible",
+      "file": "hachiro-07-fresh-paint-compatible.png",
+      "car": "hachiro",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 314,
+      "triangles": 167304,
+      "memory": {
+        "geometries": 683,
+        "textures": 98
+      },
+      "frameMs": 2.1606335078749104,
+      "programs": 64
+    },
+    {
+      "name": "hachiro-08-preserved-patina-high",
+      "file": "hachiro-08-preserved-patina-high.png",
+      "car": "hachiro",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 757,
+      "triangles": 701297,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 2.6523335798323044,
+      "programs": 47
+    },
+    {
+      "name": "bison-01-as-found-high",
+      "file": "bison-01-as-found-high.png",
+      "car": "bison",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 759,
+      "triangles": 701861,
+      "memory": {
+        "geometries": 684,
+        "textures": 119
+      },
+      "frameMs": 2.9037083649263584,
+      "programs": 48
+    },
+    {
+      "name": "bison-07-fresh-paint-high",
+      "file": "bison-07-fresh-paint-high.png",
+      "car": "bison",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 759,
+      "triangles": 701861,
+      "memory": {
+        "geometries": 685,
+        "textures": 119
+      },
+      "frameMs": 2.9240360407383754,
+      "programs": 48
+    },
+    {
+      "name": "bison-07-fresh-paint-compatible",
+      "file": "bison-07-fresh-paint-compatible.png",
+      "car": "bison",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 316,
+      "triangles": 168396,
+      "memory": {
+        "geometries": 684,
+        "textures": 99
+      },
+      "frameMs": 2.749311655904695,
+      "programs": 64
+    },
+    {
+      "name": "bison-08-preserved-patina-high",
+      "file": "bison-08-preserved-patina-high.png",
+      "car": "bison",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 759,
+      "triangles": 701861,
+      "memory": {
+        "geometries": 686,
+        "textures": 121
+      },
+      "frameMs": 3.2142929816439563,
+      "programs": 47
+    },
+    {
+      "name": "veloce-01-as-found-high",
+      "file": "veloce-01-as-found-high.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 700829,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.2546706043656464,
+      "programs": 48
+    },
+    {
+      "name": "veloce-07-fresh-paint-high",
+      "file": "veloce-07-fresh-paint-high.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 700829,
+      "memory": {
+        "geometries": 685,
+        "textures": 119
+      },
+      "frameMs": 3.248556033609177,
+      "programs": 48
+    },
+    {
+      "name": "veloce-07-fresh-paint-medium",
+      "file": "veloce-07-fresh-paint-medium.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "medium",
+      "graphicsQuality": "medium",
+      "drawCalls": 710,
+      "triangles": 686934,
+      "memory": {
+        "geometries": 684,
+        "textures": 115
+      },
+      "frameMs": 3.9270529308039057,
+      "programs": 64
+    },
+    {
+      "name": "veloce-07-fresh-paint-low",
+      "file": "veloce-07-fresh-paint-low.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "low",
+      "graphicsQuality": "low",
+      "drawCalls": 607,
+      "triangles": 611225,
+      "memory": {
+        "geometries": 684,
+        "textures": 103
+      },
+      "frameMs": 2.772626026880457,
+      "programs": 59
+    },
+    {
+      "name": "veloce-07-fresh-paint-compatible",
+      "file": "veloce-07-fresh-paint-compatible.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 315,
+      "triangles": 167364,
+      "memory": {
+        "geometries": 684,
+        "textures": 99
+      },
+      "frameMs": 2.7708579142729013,
+      "programs": 83
+    },
+    {
+      "name": "veloce-08-preserved-patina-high",
+      "file": "veloce-08-preserved-patina-high.png",
+      "car": "veloce",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 700829,
+      "memory": {
+        "geometries": 684,
+        "textures": 119
+      },
+      "frameMs": 3.0200169615988997,
+      "programs": 47
+    },
+    {
+      "name": "wren-01-as-found-high",
+      "file": "wren-01-as-found-high.png",
+      "car": "wren",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 702069,
+      "memory": {
+        "geometries": 684,
+        "textures": 122
+      },
+      "frameMs": 3.276918282786805,
+      "programs": 48
+    },
+    {
+      "name": "wren-07-fresh-paint-high",
+      "file": "wren-07-fresh-paint-high.png",
+      "car": "wren",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 702069,
+      "memory": {
+        "geometries": 685,
+        "textures": 122
+      },
+      "frameMs": 3.54610495712944,
+      "programs": 48
+    },
+    {
+      "name": "wren-07-fresh-paint-compatible",
+      "file": "wren-07-fresh-paint-compatible.png",
+      "car": "wren",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 315,
+      "triangles": 168076,
+      "memory": {
+        "geometries": 684,
+        "textures": 102
+      },
+      "frameMs": 2.936545785284418,
+      "programs": 64
+    },
+    {
+      "name": "wren-08-preserved-patina-high",
+      "file": "wren-08-preserved-patina-high.png",
+      "car": "wren",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 702069,
+      "memory": {
+        "geometries": 685,
+        "textures": 123
+      },
+      "frameMs": 3.210876938824562,
+      "programs": 47
+    },
+    {
+      "name": "packhorse-01-as-found-high",
+      "file": "packhorse-01-as-found-high.png",
+      "car": "packhorse",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 780,
+      "triangles": 717075,
+      "memory": {
+        "geometries": 687,
+        "textures": 121
+      },
+      "frameMs": 3.6916915948034394,
+      "programs": 48
+    },
+    {
+      "name": "packhorse-07-fresh-paint-high",
+      "file": "packhorse-07-fresh-paint-high.png",
+      "car": "packhorse",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 780,
+      "triangles": 717075,
+      "memory": {
+        "geometries": 685,
+        "textures": 119
+      },
+      "frameMs": 3.8187643816033896,
+      "programs": 48
+    },
+    {
+      "name": "packhorse-07-fresh-paint-compatible",
+      "file": "packhorse-07-fresh-paint-compatible.png",
+      "car": "packhorse",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 315,
+      "triangles": 167700,
+      "memory": {
+        "geometries": 684,
+        "textures": 99
+      },
+      "frameMs": 3.016266777067661,
+      "programs": 64
+    },
+    {
+      "name": "packhorse-08-preserved-patina-high",
+      "file": "packhorse-08-preserved-patina-high.png",
+      "car": "packhorse",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 780,
+      "triangles": 717075,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.77164631572074,
+      "programs": 47
+    },
+    {
+      "name": "estate-01-as-found-high",
+      "file": "estate-01-as-found-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.5102110194338434,
+      "programs": 48
+    },
+    {
+      "name": "estate-02-washed-high",
+      "file": "estate-02-washed-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "02-washed",
+        "stage": "rust",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.8902765413892677,
+      "programs": 48
+    },
+    {
+      "name": "estate-03-rust-removed-high",
+      "file": "estate-03-rust-removed-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "03-rust-removed",
+        "stage": "repair",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.958330077906333,
+      "programs": 48
+    },
+    {
+      "name": "estate-04-panel-repair-high",
+      "file": "estate-04-panel-repair-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "04-panel-repair",
+        "stage": "prime",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 686,
+        "textures": 120
+      },
+      "frameMs": 3.492161384245972,
+      "programs": 48
+    },
+    {
+      "name": "estate-05-primed-high",
+      "file": "estate-05-primed-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "05-primed",
+        "stage": "paint",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.0564989579948287,
+      "programs": 48
+    },
+    {
+      "name": "estate-06-paint-pass-high",
+      "file": "estate-06-paint-pass-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "06-paint-pass",
+        "stage": "paint",
+        "route": "paint",
+        "work": 0.5
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.3562877961660673,
+      "programs": 47
+    },
+    {
+      "name": "estate-07-fresh-paint-high",
+      "file": "estate-07-fresh-paint-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 119
+      },
+      "frameMs": 3.3055012321413253,
+      "programs": 48
+    },
+    {
+      "name": "estate-07-fresh-paint-compatible",
+      "file": "estate-07-fresh-paint-compatible.png",
+      "car": "estate",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 315,
+      "triangles": 170748,
+      "memory": {
+        "geometries": 684,
+        "textures": 99
+      },
+      "frameMs": 2.612178501727078,
+      "programs": 64
+    },
+    {
+      "name": "estate-08-preserved-patina-high",
+      "file": "estate-08-preserved-patina-high.png",
+      "car": "estate",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 704389,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 2.951784443271732,
+      "programs": 47
+    },
+    {
+      "name": "sprite-01-as-found-high",
+      "file": "sprite-01-as-found-high.png",
+      "car": "sprite",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 760,
+      "triangles": 714925,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.266040111621861,
+      "programs": 48
+    },
+    {
+      "name": "sprite-07-fresh-paint-high",
+      "file": "sprite-07-fresh-paint-high.png",
+      "car": "sprite",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 760,
+      "triangles": 714925,
+      "memory": {
+        "geometries": 684,
+        "textures": 118
+      },
+      "frameMs": 3.862221727265388,
+      "programs": 48
+    },
+    {
+      "name": "sprite-07-fresh-paint-compatible",
+      "file": "sprite-07-fresh-paint-compatible.png",
+      "car": "sprite",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 317,
+      "triangles": 180228,
+      "memory": {
+        "geometries": 683,
+        "textures": 98
+      },
+      "frameMs": 3.3476564596070575,
+      "programs": 64
+    },
+    {
+      "name": "sprite-08-preserved-patina-high",
+      "file": "sprite-08-preserved-patina-high.png",
+      "car": "sprite",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 760,
+      "triangles": 714925,
+      "memory": {
+        "geometries": 685,
+        "textures": 120
+      },
+      "frameMs": 3.4546574171725575,
+      "programs": 47
+    },
+    {
+      "name": "courier-01-as-found-high",
+      "file": "courier-01-as-found-high.png",
+      "car": "courier",
+      "restoration": {
+        "name": "01-as-found",
+        "stage": "wash",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 705551,
+      "memory": {
+        "geometries": 684,
+        "textures": 119
+      },
+      "frameMs": 2.401118969329618,
+      "programs": 48
+    },
+    {
+      "name": "courier-07-fresh-paint-high",
+      "file": "courier-07-fresh-paint-high.png",
+      "car": "courier",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 705551,
+      "memory": {
+        "geometries": 684,
+        "textures": 118
+      },
+      "frameMs": 2.3164677966519385,
+      "programs": 48
+    },
+    {
+      "name": "courier-07-fresh-paint-compatible",
+      "file": "courier-07-fresh-paint-compatible.png",
+      "car": "courier",
+      "restoration": {
+        "name": "07-fresh-paint",
+        "stage": "complete",
+        "route": "paint",
+        "work": 0
+      },
+      "requestedQuality": "compatible",
+      "graphicsQuality": "compatible",
+      "drawCalls": 315,
+      "triangles": 171910,
+      "memory": {
+        "geometries": 683,
+        "textures": 98
+      },
+      "frameMs": 2.5322151453387267,
+      "programs": 64
+    },
+    {
+      "name": "courier-08-preserved-patina-high",
+      "file": "courier-08-preserved-patina-high.png",
+      "car": "courier",
+      "restoration": {
+        "name": "08-preserved-patina",
+        "stage": "complete",
+        "route": "patina",
+        "work": 0
+      },
+      "requestedQuality": "high",
+      "graphicsQuality": "high",
+      "drawCalls": 758,
+      "triangles": 705551,
+      "memory": {
+        "geometries": 684,
+        "textures": 119
+      },
+      "frameMs": 2.6679156974327274,
+      "programs": 47
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "externalRequests": []
+}
