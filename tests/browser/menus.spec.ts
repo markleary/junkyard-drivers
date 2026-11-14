@@ -122,7 +122,8 @@ for (const { buttonSignal, swapXY } of [
     await begin.click();
     await tap(9);
     await expect(swap).toHaveAttribute('aria-pressed', 'true');
-    await page.screenshot({ path: 'artifacts/controller-swap-settings.png' });
+    mkdirSync('artifacts/restoration', { recursive: true });
+    await page.screenshot({ path: 'artifacts/restoration/controller-swap-settings.png' });
     await page.locator('[data-action="resume"]').click();
   }
   await walk(page, -18.2, 14.1);
