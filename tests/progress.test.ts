@@ -17,7 +17,7 @@ describe('progress save', () => {
     progress = recordFind(progress, 'crane');
     progress = recordLap(progress, 'hachiro', 52.337).progress;
     progress = recordDriving(progress, 'hachiro', 1840.5, 31.2);
-    progress = { ...progress, settings: { ...progress.settings, camera: 'bonnet', time: 'night', map: false }, hour: 21.25 };
+    progress = { ...progress, settings: { ...progress.settings, camera: 'bonnet', time: 'night', map: false, controllerSwapXY: true }, hour: 21.25 };
     expect(parseProgress(JSON.stringify(progress), FIND_IDS)).toEqual(progress);
   });
 
@@ -29,6 +29,17 @@ describe('progress save', () => {
     for (const budget of [0, 2050]) {
       const progress = newProgress(budget);
       expect(parseProgress(JSON.stringify(progress), undefined, 1234)).toEqual(progress);
+    }
+  });
+
+  it('keeps the standard controller layout for old or damaged preferences and preserves an explicit swap', () => {
+    for (const controllerSwapXY of [undefined, null, 1, 'true', [], {}]) {
+      const loaded = parseProgress(JSON.stringify({ version: 1, settings: { controllerSwapXY, camera: 'far' } }));
+      expect(loaded.settings).toEqual({ ...newProgress().settings, camera: 'far', controllerSwapXY: false });
+    }
+    for (const controllerSwapXY of [false, true]) {
+      const loaded = parseProgress(JSON.stringify({ version: 1, settings: { controllerSwapXY } }));
+      expect(loaded.settings.controllerSwapXY).toBe(controllerSwapXY);
     }
   });
 

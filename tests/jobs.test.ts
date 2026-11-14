@@ -7,6 +7,7 @@ import {
 import { newProgress, parseProgress, recordLap, setStyle, type Progress } from '../src/game/progress';
 import { availableFunds, install, newGame, paintCar, parseSave, purchase, type GameState } from '../src/game/state';
 import { fitUpgrade } from '../src/game/upgrades';
+import { chooseRestorationRoute, refinishRestoration, startRestoration, workRestoration } from '../src/game/restoration';
 
 const buy = (state: GameState, ...ids: string[]) => ids.reduce((next, id) => purchase(next, id), state);
 const initial = (completed: string[] = []): Progress => ({ ...newProgress(), jobs: { ...newProgress().jobs, completed } });
@@ -92,6 +93,62 @@ describe('customer briefs and workshop reputation', () => {
     const sleeper = assessJob(plain.state, plain.progress, plain.state.cars[0], getJob('quiet-surprise')!);
     expect(sleeper.checks.find(check => check.id === 'grip')?.done).toBe(false);
     expect(sleeper.checks.find(check => check.id === 'with-turbo')?.done).toBe(false);
+  });
+
+  it('explains why matching burgundy patina fails the clean-coat job and allows a fresh refinish to qualify', () => {
+    const { state, carId } = build(...recipe['sunday-v8']), job = getJob('sunday-v8')!;
+    let progress = acceptJob(newProgress(), job.id);
+    const oldLap = beginJobLap(state, progress, carId);
+    progress = recordJobLap(state, progress, carId, 70, oldLap);
+    expect(assessJob(state, progress, state.cars[0], job).ready).toBe(true);
+    progress = startRestoration(state, progress, carId);
+    progress = workRestoration(state, progress, carId, 1);
+    progress = chooseRestorationRoute(state, progress, carId, 'patina').progress;
+    for (let i = 0; i < 3; i++) progress = workRestoration(state, progress, carId, 1);
+    const preserved = progress.restorations[carId], collection = JSON.stringify(state);
+    const paintCheck = () => assessJob(state, progress, state.cars[0], job).checks.find(check => check.id === 'paint')!;
+    expect(preserved.after?.paint).toBe(state.cars[0].paint);
+    expect(paintCheck()).toMatchObject({ done: false, label: expect.stringContaining('Fresh paint required: refinish the patina at the workbench') });
+
+    progress = refinishRestoration(state, progress, carId);
+    expect(progress.restorations[carId].before).toBe(preserved.before);
+    expect(progress.restorations[carId].after).toBeNull();
+    progress = workRestoration(state, progress, carId, 1);
+    progress = workRestoration(state, progress, carId, .5);
+    expect(paintCheck()).toMatchObject({ done: false, label: expect.stringContaining('Finish the bodywork colour coat') });
+    progress = workRestoration(state, progress, carId, .5);
+    expect(paintCheck()).toMatchObject({ done: true, label: 'Paint: Oxblood burgundy' });
+    expect(progress.restorations[carId].after).toMatchObject({ paint: state.cars[0].paint, restored: true });
+    expect(preserved.after?.restored).toBe(false);
+    expect(parseProgress(JSON.stringify(progress))).toEqual(progress);
+    expect(JSON.stringify(state)).toBe(collection);
+    expect(assessJob(state, progress, state.cars[0], job).ready).toBe(false);
+    expect(recordJobLap(state, progress, carId, 70, oldLap).jobs.proof).toBeNull();
+    progress = recordJobLap(state, progress, carId, 70, beginJobLap(state, progress, carId));
+    expect(assessJob(state, progress, state.cars[0], job).ready).toBe(true);
+  });
+
+  it('can repaint a preserved car when choosing patina discarded the planned customer colour', () => {
+    const built = build('bison', 'v8-stock', 'wheels-classic', 'paint-cream'), { carId } = built;
+    let state = buy(built.state, 'part-paint-burgundy');
+    const startingPaint = state.cars[0].paint, job = getJob('sunday-v8')!;
+    let progress = startRestoration(state, acceptJob(newProgress(), job.id), carId);
+    progress = workRestoration(state, progress, carId, 1);
+    state = paintCar(state, carId, 'paint-burgundy');
+    const plannedPaint = state.cars[0].paint;
+    ({ state, progress } = chooseRestorationRoute(state, progress, carId, 'patina'));
+    expect(state.cars[0].paint).toBe(startingPaint);
+    for (let i = 0; i < 3; i++) progress = workRestoration(state, progress, carId, 1);
+    expect(assessJob(state, progress, state.cars[0], job).checks.find(check => check.id === 'paint')?.done).toBe(false);
+
+    progress = refinishRestoration(state, progress, carId);
+    state = paintCar(state, carId, 'paint-burgundy');
+    for (let i = 0; i < 2; i++) progress = workRestoration(state, progress, carId, 1);
+    expect(assessJob(state, progress, state.cars[0], job).checks.find(check => check.id === 'paint')?.done).toBe(true);
+    expect(progress.restorations[carId].before.paint).toBe(startingPaint);
+    expect(progress.restorations[carId].after).toMatchObject({ paint: plannedPaint, restored: true });
+    expect(parseSave(JSON.stringify(state))).toEqual(state);
+    expect(parseProgress(JSON.stringify(progress))).toEqual(progress);
   });
 });
 

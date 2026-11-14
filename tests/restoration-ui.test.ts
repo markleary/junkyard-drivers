@@ -71,6 +71,8 @@ describe('hands-on bodywork paperwork', () => {
     progress = chooseRestorationRoute(state, progress, car.id, 'patina').progress;
     const patina = garageMarkup(state, car.id, progress);
     expect(patina).toContain('Patina preserves the old paint and finish.');
+    expect(patina).toContain('data-action="restoration-refinish"');
+    expect(restorationMarkup(state, car, progress)).toContain('data-action="restoration-refinish"');
     const cosmeticButtons = patina.match(/<button data-(?:paint|finish|stripe)="[^>]+>/g)!;
     expect(cosmeticButtons.length).toBeGreaterThan(0);
     expect(cosmeticButtons.every(button => button.includes('disabled'))).toBe(true);
