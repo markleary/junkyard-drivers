@@ -33,17 +33,18 @@ describe('hands-on bodywork paperwork', () => {
     expect(restorationMarkup(state, car, progress)).not.toContain('data-restoration-route');
   });
 
-  it('allows workshop bodywork without bought paint and offers only owned colours', () => {
+  it('always offers the original body colour alongside only owned paint tins', () => {
     const state = project(), car = state.cars[0];
     let progress = startRestoration(state, newProgress(), car.id);
     for (let i = 0; i < 4; i++) progress = workRestoration(state, progress, car.id, 1);
     const unpainted = restorationMarkup(state, car, progress);
     expect(unpainted).toContain('original body colour is ready to spray');
     expect(unpainted).toContain('id="restoration-work"');
-    expect(unpainted).not.toContain('data-restoration-paint');
+    expect(unpainted.match(/data-restoration-paint=/g)).toHaveLength(1);
+    expect(unpainted).toContain('data-restoration-paint="original"');
     const stocked = purchase(state, 'part-paint-cream');
     const html = restorationMarkup(stocked, car, progress);
-    expect(html.match(/data-restoration-paint=/g)).toHaveLength(1);
+    expect(html.match(/data-restoration-paint=/g)).toHaveLength(2);
     expect(html).toContain('data-restoration-paint="paint-cream"');
   });
 

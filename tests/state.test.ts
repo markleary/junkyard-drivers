@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LISTINGS, SHELLS, getPartsForSale } from '../src/game/catalog';
+import { DEFAULT_PAINT, LISTINGS, SHELLS, getPartsForSale } from '../src/game/catalog';
 import {
   DEFAULT_SEED, STORAGE_KEY, availableFunds, availableInventory, buildIssues, getPart, install,
-  loadGame, newGame, paintCar, parseSave, purchase, saveGame,
+  loadGame, newGame, paintCar, parseSave, purchase, restoreOriginalPaint, saveGame,
 } from '../src/game/state';
 import type { GameState, SaveStorage } from '../src/game/state';
 
@@ -146,6 +146,21 @@ describe('build rules and paint', () => {
     expect(state.cars.map((car) => car.paint)).toEqual(['#e7ad36', '#e7ad36']);
     expect(state.paints).toEqual(['paint-saffron']);
     expect(() => paintCar(state, 'car-veloce', 'paint-teal')).toThrow('Purchase');
+  });
+
+  it('restores each shell original colour without changing other cars or paint ownership', () => {
+    const storage = memoryStorage();
+    for (const shell of SHELLS) {
+      const state = paintCar(purchase(starter(), `shell-${shell.id}`), `car-${shell.id}`, 'paint-saffron');
+      const restored = restoreOriginalPaint(state, `car-${shell.id}`);
+      expect(restored.cars.find(car => car.shellId === shell.id)?.paint).toBe(DEFAULT_PAINT[shell.id]);
+      expect(restored.cars.filter(car => car.shellId !== shell.id)).toEqual(state.cars.filter(car => car.shellId !== shell.id));
+      expect(restored.paints).toEqual(state.paints);
+      expect(state.cars.find(car => car.shellId === shell.id)?.paint).toBe('#e7ad36');
+      saveGame(restored, storage);
+      expect(loadGame(storage)).toEqual(restored);
+    }
+    expect(() => restoreOriginalPaint(newGame(), 'car-hachiro')).toThrow('Choose a car');
   });
 });
 

@@ -104,6 +104,13 @@ export function paintCar(state: GameState, carId: string, paintId: string): Game
   return { ...state, cars: state.cars.map((car) => car.id === carId ? { ...car, paint: paint.color! } : car) };
 }
 
+/** Workshop supplies always include the shell's original colour. */
+export function restoreOriginalPaint(state: GameState, carId: string): GameState {
+  const car = state.cars.find(item => item.id === carId);
+  if (!car) throw new Error('Choose a car in the Garage first.');
+  return { ...state, cars: state.cars.map(item => item.id === carId ? { ...item, paint: DEFAULT_PAINT[car.shellId] } : item) };
+}
+
 /**
  * The car leaves the collection with its engine, its wheels and any tuning parts named in `fitted`. Their
  * receipts go too, so the save reads exactly as if they had never been bought: the same shell and parts can be

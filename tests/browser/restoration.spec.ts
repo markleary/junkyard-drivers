@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { boot, inspect, read, walk } from './helpers';
 import { bootTablet, touchInspect, touchWalk } from './touch-helpers';
 import { newProgress, PROGRESS_KEY, type Progress } from '../../src/game/progress';
-import { SHELLS, getShell, type ShellId } from '../../src/game/catalog';
+import { DEFAULT_PAINT, SHELLS, getShell, type ShellId } from '../../src/game/catalog';
 import { chooseRestorationRoute, startRestoration, workRestoration } from '../../src/game/restoration';
 import { install, newGame, purchase, STORAGE_KEY, type GameState } from '../../src/game/state';
 
@@ -64,6 +64,11 @@ test('hands-on bodywork restores the Sirocco, saves stages and exports frozen be
   expect((await record(page)).work).toBeGreaterThan(0);
   await keyboardStep(page, 'rust');
   await page.locator('[data-restoration-paint="paint-saffron"]').click();
+  await expect(page.locator('[data-restoration-paint="original"]')).toHaveAttribute('aria-pressed', 'false');
+  expect((await read(page)).state.cars[0].paint).toBe('#e7ad36');
+  await page.locator('[data-restoration-paint="original"]').click();
+  await expect(page.locator('[data-restoration-paint="original"]')).toHaveAttribute('aria-pressed', 'true');
+  expect((await read(page)).state.cars[0].paint).toBe(DEFAULT_PAINT.veloce);
   await page.locator('#restoration-work').focus(); await page.keyboard.down('Space');
   await expect.poll(async () => (await record(page)).work).toBeGreaterThan(.05);
   await page.keyboard.up('Space');
@@ -76,7 +81,7 @@ test('hands-on bodywork restores the Sirocco, saves stages and exports frozen be
   await expect(page.locator('#restoration-before')).toHaveJSProperty('naturalWidth', 800);
   await expect(page.locator('#restoration-after')).toHaveJSProperty('naturalWidth', 800);
   const photos = await record(page);
-  expect(photos.after.paint).toBe('#e7ad36');
+  expect(photos.after.paint).toBe(DEFAULT_PAINT.veloce);
   expect(await page.locator('#restoration-before').getAttribute('src')).not.toBe(await page.locator('#restoration-after').getAttribute('src'));
   await page.screenshot({ path: `${output}/photo-pair.png` });
   const download = page.waitForEvent('download'); await page.locator('[data-action="restoration-download"]').click();

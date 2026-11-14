@@ -1,4 +1,4 @@
-import { getShell, PARTS } from '../game/catalog';
+import { DEFAULT_PAINT, getShell, PARTS } from '../game/catalog';
 import type { GameState, OwnedCar } from '../game/state';
 import type { Progress } from '../game/progress';
 import { restorationFor, type RestorationStage } from '../game/restoration';
@@ -31,7 +31,8 @@ export function restorationMarkup(state: GameState, car: OwnedCar, progress: Pro
   const current = done ? stages.length : stages.indexOf(stage), percent = Math.round((record?.work ?? 0) * 100);
   const chooseRoute = stage === 'rust' && record?.work === 0;
   const paints = PARTS.filter(part => part.kind === 'paint' && state.paints.includes(part.id));
-  const paintChoice = record && !patina && !done && paints.length > 0 ? `<fieldset class="restoration-paints"><legend>YOUR COLOUR</legend><div class="swatches">${paints.map(paint => `<button data-restoration-paint="${paint.id}" class="${car.paint === paint.color ? 'active' : ''}" style="--swatch:${paint.color}" aria-label="Choose ${escapeHtml(paint.name)}" title="${escapeHtml(paint.name)}" aria-pressed="${car.paint === paint.color}"><span class="paint-chip">${car.paint === paint.color ? icon('check') : ''}</span><b>${escapeHtml(paint.name)}</b></button>`).join('')}</div></fieldset>` : '';
+  const colours = [{ id: 'original', name: 'Original colour', color: DEFAULT_PAINT[car.shellId] }, ...paints];
+  const paintChoice = record && !patina && !done ? `<fieldset class="restoration-paints"><legend>YOUR COLOUR</legend><div class="swatches">${colours.map(paint => `<button data-restoration-paint="${paint.id}" class="${car.paint === paint.color ? 'active' : ''}" style="--swatch:${paint.color}" aria-label="Choose ${escapeHtml(paint.name)}" title="${escapeHtml(paint.name)}" aria-pressed="${car.paint === paint.color}"><span class="paint-chip">${car.paint === paint.color ? icon('check') : ''}</span><b>${escapeHtml(paint.name)}</b></button>`).join('')}</div></fieldset>` : '';
   const workTitle = stage === 'rust' && patina ? 'Save the old finish' : copy.title;
   const workDetail = stage === 'rust' && patina ? 'Stabilize the corrosion while keeping the faded colour and weathered edges.' : copy.detail;
   return `${header(car)}<div class="restoration-layout">

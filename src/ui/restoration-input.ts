@@ -18,6 +18,8 @@ export class RestorationInput {
       if (!button && target.id !== 'restoration-preview') return;
       if (button?.disabled) return;
       event.preventDefault();
+      // A deliberate press rearms even if its preceding release fell between frames.
+      this.blocked = false;
       this.pointer = event.pointerId; this.buttonHeld = !!button;
       this.lastPoint = { x: event.clientX, y: event.clientY };
       this.point = button ? null : this.lastPoint;
@@ -38,7 +40,7 @@ export class RestorationInput {
     root.addEventListener('keydown', event => {
       if (!active() || !['Space', 'Enter'].includes(event.code) || (event.target as HTMLElement).id !== 'restoration-work') return;
       event.preventDefault();
-      if (!event.repeat) this.keyHeld = true;
+      if (!event.repeat) { this.blocked = false; this.keyHeld = true; }
     });
     window.addEventListener('keyup', event => {
       if (['Space', 'Enter'].includes(event.code) && this.keyHeld) { event.preventDefault(); this.clear(); }

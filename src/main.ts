@@ -3,7 +3,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { createLighting, type GradeName, type Lighting } from './render/lighting';
 import { QUALITY_LABEL } from './render/quality';
 import { DEFAULT_PAINT, LISTINGS, PARTS, SHELLS, SHOP_CATEGORIES, getShell, type PartSource, type ShellId, type ShopCategory, type UpgradeKind } from './game/catalog';
-import { loadGame, saveGame, newGame, purchase, install, paintCar, getPart, buildIssues, availableFunds, collectionCost, DEFAULT_STARTING_FUNDS, type GameState, type OwnedCar } from './game/state';
+import { loadGame, saveGame, newGame, purchase, install, paintCar, restoreOriginalPaint, getPart, buildIssues, availableFunds, collectionCost, DEFAULT_STARTING_FUNDS, type GameState, type OwnedCar } from './game/state';
 import { buildTuning, fitUpgrade, fittedUpgrades, reconcileFitted, removeUpgrade, type BuildTuning } from './game/upgrades';
 import { appraise, completeSale } from './game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, cancelJob, completeJob, jobRank, reconcileJobs, recordJobLap, type JobLapStart } from './game/jobs';
@@ -1203,7 +1203,8 @@ app.addEventListener('click', event => {
       }
       if (action === 'restoration-start') progress = startRestoration(state, progress, car.id);
       else if (button.dataset.restorationRoute === 'paint' || button.dataset.restorationRoute === 'patina') progress = chooseRestorationRoute(state, progress, car.id, button.dataset.restorationRoute);
-      else if (button.dataset.restorationPaint) commit(paintCar(state, car.id, button.dataset.restorationPaint));
+      else if (button.dataset.restorationPaint) commit(button.dataset.restorationPaint === 'original'
+        ? restoreOriginalPaint(state, car.id) : paintCar(state, car.id, button.dataset.restorationPaint));
       else return;
       progress = reconcileJobs(state, progress); persist(); updateObjective(); renderRestoration(); audio.click(); return;
     }
