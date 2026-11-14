@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import type { ShellId } from '../game/catalog';
+import { DEFAULT_PAINT, type ShellId } from '../game/catalog';
 
 /** A rendering description, independent of the saved workshop record. */
 export interface RestorationAppearance {
   stage: 'wash' | 'rust' | 'repair' | 'prime' | 'paint' | 'seal' | 'complete';
   route: 'paint' | 'patina';
   work: number;
+  /** The colour captured before bodywork; choosing a final coat must not recolour the aged skin. */
+  startingPaint?: string;
 }
 
 type Surface = 'dirty' | 'washed' | 'metal' | 'stabilized' | 'repaired' | 'preserved' | 'primer' | 'paint' | 'sealed';
@@ -35,12 +37,15 @@ export function createRestorationSurface(shellId: ShellId, base: readonly number
   texture.anisotropy = 8;
   let endpoints = '', lastWork = -1;
 
-  function draw(target: HTMLCanvasElement, phase: Surface, paint: string) {
+  function draw(target: HTMLCanvasElement, phase: Surface, paint: string, startingPaint: string) {
     const ctx = target.getContext('2d')!;
     let seed = bodyWeatheringSeed(shellId);
     const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-    const rgb = phase === 'primer' ? [166, 165, 150] : phase === 'paint'
-      ? [parseInt(paint.slice(1, 3), 16), parseInt(paint.slice(3, 5), 16), parseInt(paint.slice(5, 7), 16)] : base;
+    const colour = (hex: string) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
+    // Untouched shells keep their authored oxidised colour. A previously painted
+    // car ages its captured colour instead of reverting to that factory patina.
+    const aged = startingPaint === DEFAULT_PAINT[shellId] ? base : colour(startingPaint);
+    const rgb = phase === 'primer' ? [166, 165, 150] : phase === 'paint' ? colour(paint) : aged;
     const pixels = ctx.createImageData(SIZE, SIZE);
     const sealed = phase === 'sealed', plain = phase === 'primer' || phase === 'paint';
     for (let i = 0; i < pixels.data.length; i += 4) {
@@ -112,11 +117,12 @@ export function createRestorationSurface(shellId: ShellId, base: readonly number
         complete: [patina ? 'sealed' : 'paint', patina ? 'sealed' : 'paint'],
       };
       const [from, to] = phases[appearance.stage];
-      const key = `${from}/${to}/${paint}`;
+      const startingPaint = (appearance.startingPaint ?? paint).toLowerCase();
+      const key = `${from}/${to}/${paint}/${startingPaint}`;
       // 24 small passes give visible travel without uploading on every frame.
       const work = Math.round(THREE.MathUtils.clamp(appearance.work, 0, 1) * 24) / 24;
       if (endpoints === key && lastWork === work) return;
-      if (endpoints !== key) { draw(source, from, paint); draw(destination, to, paint); endpoints = key; }
+      if (endpoints !== key) { draw(source, from, paint, startingPaint); draw(destination, to, paint, startingPaint); endpoints = key; }
       lastWork = work;
       context.clearRect(0, 0, SIZE, SIZE);
       context.drawImage(source, 0, 0);

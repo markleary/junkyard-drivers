@@ -1,6 +1,6 @@
 {
-  "baseURL": "http://127.0.0.1:4191/junkyard-drivers/",
-  "capturedAt": "2026-11-14T19:46:41.812Z",
+  "baseURL": "http://127.0.0.1:4192/junkyard-drivers/",
+  "capturedAt": "2026-11-14T20:59:27.495Z",
   "viewport": {
     "width": 1200,
     "height": 800
@@ -35,7 +35,7 @@
         "geometries": 686,
         "textures": 121
       },
-      "frameMs": 2.330763949624507,
+      "frameMs": 2.9633873376930393,
       "programs": 48
     },
     {
@@ -53,10 +53,10 @@
       "drawCalls": 757,
       "triangles": 701297,
       "memory": {
-        "geometries": 684,
-        "textures": 118
+        "geometries": 685,
+        "textures": 119
       },
-      "frameMs": 2.479083797439604,
+      "frameMs": 2.898903462550921,
       "programs": 48
     },
     {
@@ -74,10 +74,10 @@
       "drawCalls": 314,
       "triangles": 167304,
       "memory": {
-        "geometries": 683,
-        "textures": 98
+        "geometries": 684,
+        "textures": 99
       },
-      "frameMs": 2.1606335078749104,
+      "frameMs": 3.02684238200818,
       "programs": 64
     },
     {
@@ -98,7 +98,7 @@
         "geometries": 685,
         "textures": 120
       },
-      "frameMs": 2.6523335798323044,
+      "frameMs": 2.912794512958247,
       "programs": 47
     },
     {
@@ -119,7 +119,7 @@
         "geometries": 684,
         "textures": 119
       },
-      "frameMs": 2.9037083649263584,
+      "frameMs": 3.0021460811478473,
       "programs": 48
     },
     {
@@ -137,10 +137,10 @@
       "drawCalls": 759,
       "triangles": 701861,
       "memory": {
-        "geometries": 685,
-        "textures": 119
+        "geometries": 684,
+        "textures": 118
       },
-      "frameMs": 2.9240360407383754,
+      "frameMs": 3.06166463100943,
       "programs": 48
     },
     {
@@ -158,10 +158,10 @@
       "drawCalls": 316,
       "triangles": 168396,
       "memory": {
-        "geometries": 684,
-        "textures": 99
+        "geometries": 683,
+        "textures": 98
       },
-      "frameMs": 2.749311655904695,
+      "frameMs": 3.0086941415716266,
       "programs": 64
     },
     {
@@ -179,10 +179,10 @@
       "drawCalls": 759,
       "triangles": 701861,
       "memory": {
-        "geometries": 686,
-        "textures": 121
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.2142929816439563,
+      "frameMs": 3.133954323905225,
       "programs": 47
     },
     {
@@ -203,7 +203,7 @@
         "geometries": 685,
         "textures": 120
       },
-      "frameMs": 3.2546706043656464,
+      "frameMs": 3.4199028998685166,
       "programs": 48
     },
     {
@@ -224,7 +224,7 @@
         "geometries": 685,
         "textures": 119
       },
-      "frameMs": 3.248556033609177,
+      "frameMs": 2.9057394481028047,
       "programs": 48
     },
     {
@@ -245,7 +245,7 @@
         "geometries": 684,
         "textures": 115
       },
-      "frameMs": 3.9270529308039057,
+      "frameMs": 3.5058301818705826,
       "programs": 64
     },
     {
@@ -266,7 +266,7 @@
         "geometries": 684,
         "textures": 103
       },
-      "frameMs": 2.772626026880457,
+      "frameMs": 2.8130961529344387,
       "programs": 59
     },
     {
@@ -287,7 +287,7 @@
         "geometries": 684,
         "textures": 99
       },
-      "frameMs": 2.7708579142729013,
+      "frameMs": 2.70698088272963,
       "programs": 83
     },
     {
@@ -308,7 +308,7 @@
         "geometries": 684,
         "textures": 119
       },
-      "frameMs": 3.0200169615988997,
+      "frameMs": 2.949619200127752,
       "programs": 47
     },
     {
@@ -329,7 +329,7 @@
         "geometries": 684,
         "textures": 122
       },
-      "frameMs": 3.276918282786805,
+      "frameMs": 2.957543013580698,
       "programs": 48
     },
     {
@@ -350,7 +350,7 @@
         "geometries": 685,
         "textures": 122
       },
-      "frameMs": 3.54610495712944,
+      "frameMs": 3.0755804380063547,
       "programs": 48
     },
     {
@@ -371,7 +371,7 @@
         "geometries": 684,
         "textures": 102
       },
-      "frameMs": 2.936545785284418,
+      "frameMs": 2.821325623755289,
       "programs": 64
     },
     {
@@ -389,10 +389,10 @@
       "drawCalls": 758,
       "triangles": 702069,
       "memory": {
-        "geometries": 685,
-        "textures": 123
+        "geometries": 684,
+        "textures": 122
       },
-      "frameMs": 3.210876938824562,
+      "frameMs": 2.7273597770245424,
       "programs": 47
     },
     {
@@ -410,10 +410,10 @@
       "drawCalls": 780,
       "triangles": 717075,
       "memory": {
-        "geometries": 687,
-        "textures": 121
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.6916915948034394,
+      "frameMs": 2.8913469782899184,
       "programs": 48
     },
     {
@@ -431,10 +431,10 @@
       "drawCalls": 780,
       "triangles": 717075,
       "memory": {
-        "geometries": 685,
-        "textures": 119
+        "geometries": 684,
+        "textures": 118
       },
-      "frameMs": 3.8187643816033896,
+      "frameMs": 2.913263363517244,
       "programs": 48
     },
     {
@@ -452,10 +452,10 @@
       "drawCalls": 315,
       "triangles": 167700,
       "memory": {
-        "geometries": 684,
-        "textures": 99
+        "geometries": 683,
+        "textures": 98
       },
-      "frameMs": 3.016266777067661,
+      "frameMs": 3.248274975365729,
       "programs": 64
     },
     {
@@ -473,10 +473,10 @@
       "drawCalls": 780,
       "triangles": 717075,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.77164631572074,
+      "frameMs": 2.953823563270855,
       "programs": 47
     },
     {
@@ -494,10 +494,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.5102110194338434,
+      "frameMs": 2.9528650571639323,
       "programs": 48
     },
     {
@@ -515,10 +515,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.8902765413892677,
+      "frameMs": 2.92275058363914,
       "programs": 48
     },
     {
@@ -536,10 +536,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.958330077906333,
+      "frameMs": 2.971077988918079,
       "programs": 48
     },
     {
@@ -557,10 +557,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 686,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.492161384245972,
+      "frameMs": 2.9207825360518,
       "programs": 48
     },
     {
@@ -578,10 +578,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.0564989579948287,
+      "frameMs": 3.061976538779072,
       "programs": 48
     },
     {
@@ -602,7 +602,7 @@
         "geometries": 685,
         "textures": 120
       },
-      "frameMs": 3.3562877961660673,
+      "frameMs": 2.8779920649888355,
       "programs": 47
     },
     {
@@ -620,10 +620,10 @@
       "drawCalls": 758,
       "triangles": 704389,
       "memory": {
-        "geometries": 685,
-        "textures": 119
+        "geometries": 684,
+        "textures": 118
       },
-      "frameMs": 3.3055012321413253,
+      "frameMs": 2.9992048978851056,
       "programs": 48
     },
     {
@@ -641,10 +641,10 @@
       "drawCalls": 315,
       "triangles": 170748,
       "memory": {
-        "geometries": 684,
-        "textures": 99
+        "geometries": 683,
+        "textures": 98
       },
-      "frameMs": 2.612178501727078,
+      "frameMs": 2.6338596735492117,
       "programs": 64
     },
     {
@@ -665,7 +665,7 @@
         "geometries": 685,
         "textures": 120
       },
-      "frameMs": 2.951784443271732,
+      "frameMs": 3.3473601549150387,
       "programs": 47
     },
     {
@@ -686,7 +686,7 @@
         "geometries": 685,
         "textures": 120
       },
-      "frameMs": 3.266040111621861,
+      "frameMs": 3.0080822044048405,
       "programs": 48
     },
     {
@@ -707,7 +707,7 @@
         "geometries": 684,
         "textures": 118
       },
-      "frameMs": 3.862221727265388,
+      "frameMs": 2.8942860256031033,
       "programs": 48
     },
     {
@@ -728,7 +728,7 @@
         "geometries": 683,
         "textures": 98
       },
-      "frameMs": 3.3476564596070575,
+      "frameMs": 2.611287778399924,
       "programs": 64
     },
     {
@@ -746,10 +746,10 @@
       "drawCalls": 760,
       "triangles": 714925,
       "memory": {
-        "geometries": 685,
-        "textures": 120
+        "geometries": 684,
+        "textures": 119
       },
-      "frameMs": 3.4546574171725575,
+      "frameMs": 2.855600614009589,
       "programs": 47
     },
     {
@@ -770,7 +770,7 @@
         "geometries": 684,
         "textures": 119
       },
-      "frameMs": 2.401118969329618,
+      "frameMs": 2.858387553498289,
       "programs": 48
     },
     {
@@ -788,10 +788,10 @@
       "drawCalls": 758,
       "triangles": 705551,
       "memory": {
-        "geometries": 684,
-        "textures": 118
+        "geometries": 685,
+        "textures": 119
       },
-      "frameMs": 2.3164677966519385,
+      "frameMs": 2.786818901623332,
       "programs": 48
     },
     {
@@ -809,10 +809,10 @@
       "drawCalls": 315,
       "triangles": 171910,
       "memory": {
-        "geometries": 683,
-        "textures": 98
+        "geometries": 684,
+        "textures": 99
       },
-      "frameMs": 2.5322151453387267,
+      "frameMs": 3.1075073885344024,
       "programs": 64
     },
     {
@@ -833,7 +833,7 @@
         "geometries": 684,
         "textures": 119
       },
-      "frameMs": 2.6679156974327274,
+      "frameMs": 2.876503224156941,
       "programs": 47
     }
   ],

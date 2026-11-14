@@ -5,7 +5,7 @@ import { bootTablet, touchInspect, touchWalk } from './touch-helpers';
 import { newProgress, PROGRESS_KEY, type Progress } from '../../src/game/progress';
 import { DEFAULT_PAINT, SHELLS, getShell, type ShellId } from '../../src/game/catalog';
 import { chooseRestorationRoute, startRestoration, workRestoration } from '../../src/game/restoration';
-import { install, newGame, purchase, STORAGE_KEY, type GameState } from '../../src/game/state';
+import { install, newGame, paintCar, purchase, STORAGE_KEY, type GameState } from '../../src/game/state';
 
 const output = 'artifacts/restoration';
 function runningCar(shellId: ShellId): GameState {
@@ -96,7 +96,9 @@ test('hands-on bodywork restores the Sirocco, saves stages and exports frozen be
 });
 
 test('controller can preserve Packhorse patina and focus loss stops a held tool', async ({ page, baseURL }) => {
-  const watched = await prepare(page, baseURL!, runningCar('packhorse'));
+  const initial = paintCar(purchase(runningCar('packhorse'), 'part-paint-cream'), 'car-packhorse', 'paint-cream');
+  const startingPaint = initial.cars[0].paint;
+  const watched = await prepare(page, baseURL!, initial);
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'getGamepads', { value: () => document.body?.hasAttribute('data-test-pad') ? [{
       connected: true, index: 0, mapping: 'standard', axes: [0, 0, 0, 0],
@@ -127,7 +129,7 @@ test('controller can preserve Packhorse patina and focus loss stops a held tool'
   await page.locator('[data-restoration-paint="paint-saffron"]').click();
   expect((await read(page)).state.cars[0].paint).toBe('#e7ad36');
   await page.locator('[data-restoration-route="patina"]').click();
-  expect((await read(page)).state.cars[0].paint).toBe(DEFAULT_PAINT.packhorse);
+  expect((await read(page)).state.cars[0].paint).toBe(startingPaint);
   for (const next of ['repair', 'seal', 'complete']) await step(next);
   await page.locator('[data-action="restoration-photos"]').click();
   await expect(page.locator('.status-stamp')).toContainText('PATINA PRESERVED');

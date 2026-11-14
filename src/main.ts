@@ -247,10 +247,11 @@ function updateObjective() {
 function appearanceOf(car: OwnedCar): CarAppearance {
   const complete = buildIssues(state, car).length === 0, style = styleFor(progress, car.id);
   const engine = getPart(state, car.engineId), fitted = fittedUpgrades(state, progress, car.id);
+  const restoration = restorationFor(progress, car.id);
   return {
     paint: car.paint, restored: complete || car.paint.toLowerCase() !== DEFAULT_PAINT[car.shellId], wheels: !!car.wheelsId,
     finish: style.finish, stripe: STRIPES.find(item => item.id === style.stripe)?.color ?? null,
-    restoration: restorationFor(progress, car.id),
+    restoration: restoration && { stage: restoration.stage, route: restoration.route, work: restoration.work, startingPaint: restoration.before.paint },
     // Anything that did not come new from the counter shows its age; the uprated and rare engines carry the red covers.
     engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
     tuning: { exhaust: !!fitted.exhaust, turbo: !!fitted.turbo, nitro: !!fitted.nitro },
@@ -364,7 +365,8 @@ function renderRestoration() {
   panel.className = 'restoration-panel'; delete panel.dataset.source;
   renderOverlay(panel, restorationMarkup(state, car, progress));
   // The invitation previews the as-found finish before committing to bodywork.
-  parked?.setAppearance({ ...appearanceOf(car), restoration: restorationFor(progress, car.id) ?? { stage: 'wash', route: 'paint', work: 0 } });
+  const appearance = appearanceOf(car);
+  parked?.setAppearance({ ...appearance, restoration: appearance.restoration ?? { stage: 'wash', route: 'paint', work: 0, startingPaint: car.paint } });
   bonnet = 0; parked?.setBonnet(0);
 }
 function snapshotAppearance(snapshot: RestorationSnapshot, after: boolean): CarAppearance {
@@ -374,7 +376,8 @@ function snapshotAppearance(snapshot: RestorationSnapshot, after: boolean): CarA
     stripe: STRIPES.find(stripe => stripe.id === snapshot.stripe)?.color ?? null,
     engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
     tuning: { exhaust: snapshot.tuning.includes('exhaust'), turbo: snapshot.tuning.includes('turbo'), nitro: snapshot.tuning.includes('nitro') },
-    restoration: after ? { stage: 'complete', route: restorationFor(progress, selectedId)!.route, work: 0 } : { stage: 'wash', route: 'paint', work: 0 },
+    restoration: after ? { stage: 'complete', route: restorationFor(progress, selectedId)!.route, work: 0, startingPaint: snapshot.paint }
+      : { stage: 'wash', route: 'paint', work: 0, startingPaint: snapshot.paint },
   };
 }
 function showRestorationPhotos() {
