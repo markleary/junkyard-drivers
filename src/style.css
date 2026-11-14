@@ -703,9 +703,9 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
   .logbook-columns .logbook-heading { margin-top: 10px; }
 }
 
-/* --- Second review: sheets settle on a row, not through one; the fade is longer. --- */
-.garage-panel > .build-scroll { scroll-snap-type: y proximity; scroll-padding-top: 12px; padding-bottom: 40px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); }
-.build-scroll > .build-slot, .build-scroll .inventory > button { scroll-snap-align: start; }
+/* Variable-height slots need free scrolling: snapping a section to its heading can leave an install button
+ * below the clipped edge, even after keyboard focus or a browser scroll-into-view request targets it. */
+.garage-panel > .build-scroll { scroll-padding-top: 12px; padding-bottom: 40px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 16px, #000 calc(100% - 44px), transparent 100%); }
 
 /* --- Dealer, rare salvage and tuning parts. --- */
 /* Boost and nitrous: two slim gauges in the empty top corners of the speed dial, so the pod never changes size. */
@@ -815,4 +815,104 @@ body[data-screen="photo"] #toast, body[data-screen="photo"] #crosshair, body[dat
   #panel.dealer-panel > small { margin-top: 6px; }
   .dealer-panel .price strong { font-size: 38px; }
   .tuning-fitted b { font-size: 18px; }
+}
+
+/* Customer orders: clipped workshop briefs, checked in pencil and stamped on delivery. */
+.pause-links .jobs-link { grid-column: 1 / -1; }
+.pause-links .jobs-link > span { flex: 1; }
+.workshop-jobs-link { display: flex; flex: 0 0 auto; align-items: center; gap: 9px; width: 100%; padding: 8px 10px; margin: -4px 0 12px; background: #f8f0dd80; color: var(--ink); border: 1px solid #8c948477; text-align: left; }
+.workshop-jobs-link > span { flex: 1; font: 700 18px/1 var(--display); text-transform: uppercase; }
+.workshop-jobs-link small { margin-top: 3px; font-size: 9px; text-transform: none; }
+.workshop-jobs-link > .ui-icon { width: 20px; height: 20px; color: var(--rust); }
+.workshop-jobs-link:hover { border-color: var(--rust); background: #f8edd2; }
+.garage-tabs { flex-wrap: nowrap; overflow-x: auto; padding: 3px 3px 7px; margin-left: -3px; margin-right: -3px; }
+.garage-tabs > button { flex: 0 0 auto; white-space: nowrap; }
+#panel.jobs-panel { width: min(800px, calc(100vw - 48px)); top: 25px; bottom: 25px; }
+.jobs-panel > .job-pad-hint { margin: -7px 0 13px; color: var(--ink); font-size: 10px; }
+.workshop-reputation { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--ink); margin-bottom: 18px; }
+.workshop-reputation > div > b { display: block; margin-top: 3px; font: 700 28px/1 var(--display); text-transform: uppercase; }
+.workshop-reputation > span { font: 500 12px/1.2 var(--mono); color: var(--muted); text-align: right; }
+.workshop-reputation strong { font: 700 35px/1 var(--display); color: var(--ink); }
+.workshop-reputation small { margin-top: 2px; font-size: 8px; letter-spacing: 1px; }
+.jobs-intro { margin: 0 0 18px; max-width: 640px; font-size: 13px; line-height: 1.6; }
+.commission-section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 23px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--ink); font: 700 23px/1.1 var(--display); text-transform: uppercase; }
+.commission-section-title > span { color: var(--muted); font: 500 11px/1 var(--mono); }
+.commission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.commission { position: relative; padding: 17px; background: var(--paper-light); border: 1px solid #b3a78e; border-top: 3px solid var(--rust); box-shadow: 2px 3px 0 #252c2412; }
+.commission h3, .customer-delivery h3 { margin: 5px 0 9px; font: 700 28px/1 var(--display); text-transform: uppercase; }
+.commission > .eyebrow, .commission-top > .eyebrow { font-size: 9px; letter-spacing: .5px; }
+.commission-brief { margin: 0 0 14px; font-size: 12px; line-height: 1.55; color: #515a50; }
+.commission-terms { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.commission-terms > span { color: var(--muted); font: 500 9px/1.4 var(--mono); letter-spacing: .3px; }
+.commission-terms > span:last-child { text-align: right; }
+.commission-terms b { display: block; margin-top: 3px; color: var(--ink); font: 700 25px/1 var(--display); }
+.commission-terms > span:last-child b { color: var(--green); }
+.commission-checks { padding: 0; margin: 13px 0 15px; list-style: none; }
+.commission-checks li { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-bottom: 1px dotted #6d716245; font-size: 11px; line-height: 1.45; }
+.commission-checks .check-box { display: grid; flex: 0 0 14px; place-items: center; width: 14px; height: 14px; margin-top: 1px; border: 1px solid #7b7e6d; }
+.commission-checks .check-box .ui-icon { width: 14px; height: 14px; }
+.commission-checks li > span:nth-child(2) { flex: 1; }
+.commission-checks li.done { color: var(--green); }
+.commission-checks li.done .check-box { border-color: var(--green); background: #345d4309; }
+.check-result { padding-top: 1px; font: 500 8px/1.5 var(--mono); text-transform: uppercase; letter-spacing: .5px; }
+.commission .primary { width: 100%; margin: 0; padding: 10px; min-height: 44px; font-size: 20px; }
+.commission .primary:disabled { color: #696d60; background: #ddd5c1; border-color: #a4a48f; box-shadow: none; font-size: 17px; }
+.active-commission { border-top-color: var(--green); }
+.commission-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.commission-top > .eyebrow { color: var(--green); }
+.commission-stamp { color: var(--green); padding: 3px 5px; border: 2px solid currentColor; transform: rotate(3deg); font: 700 16px/1 var(--display); }
+.commission-car-label { margin: 16px 0 8px; color: var(--muted); font: 500 9px/1.4 var(--mono); letter-spacing: .6px; }
+.commission-selected-car { margin: 7px 0 10px; font: 700 21px/1.2 var(--display); }
+.commission-cars { margin-bottom: 0; }
+.commission-next { display: flex; align-items: flex-start; gap: 9px; padding: 11px; border-left: 3px solid var(--rust); background: #a63e2e08; }
+.commission-next > .ui-icon { color: var(--rust); width: 20px; height: 20px; }
+.commission-next p { margin: 0; font-size: 12px; line-height: 1.5; }
+.commission-next.ready { border-color: var(--green); background: #345d4309; }
+.commission-next.ready > .ui-icon { color: var(--green); }
+.commission-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 10px; margin-top: 14px; }
+.commission-actions .secondary { margin: 0; min-height: 44px; font-size: 10px; }
+.commission .paper-footnote { margin-top: 14px; font-size: 9px; }
+.upcoming-commissions, .completed-commissions { margin: 0; padding: 0; list-style: none; }
+.upcoming-commissions li, .completed-commissions li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.upcoming-commissions li > div { flex: 1; min-width: 0; }
+.upcoming-commissions b { font: 700 20px/1.1 var(--display); }
+.upcoming-commissions small { margin-top: 3px; font-size: 9px; }
+.upcoming-commissions li > span { flex: 0 0 auto; text-align: right; font: 500 10px/1.4 var(--mono); }
+.upcoming-commissions li > span small { color: var(--rust); font-size: 8px; }
+.completed-commissions .ui-icon { width: 18px; height: 18px; color: var(--green); }
+.completed-commissions li > span { flex: 1; font: 700 20px/1.1 var(--display); }
+.completed-commissions small { margin-top: 3px; font-size: 9px; }
+.completed-commissions b { color: var(--green); font: 700 21px/1 var(--display); }
+.commissions-record { padding: 10px 11px; background: #f8f0dd80; border: 1px solid #8c948477; }
+.commissions-record > b { font: 700 23px/1 var(--display); text-transform: uppercase; }
+.commissions-record p { margin: 6px 0 9px; font-size: 11px; line-height: 1.5; }
+.commissions-record button, .commission-review { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 9px 10px; width: 100%; color: var(--ink); border: 1px solid #8c948477; background: transparent; font: 700 18px/1.2 var(--display); }
+.commissions-record button:hover, .commission-review:hover { background: #ddd3ba; }
+#panel.dealer-panel:has(.customer-delivery) { display: block; }
+.dealer-panel:has(.customer-delivery) > .dealer-scroll { max-height: 165px; }
+.customer-delivery { padding: 14px; margin: 13px 0 20px; background: #f8f0dd80; border: 1px solid #8c948477; border-top: 3px solid var(--green); }
+.customer-delivery > p, .delivery-blockers { font-size: 12px; line-height: 1.5; }
+.delivery-blockers { padding-left: 17px; margin: 10px 0 12px; }
+.delivery-blockers li + li { margin-top: 5px; }
+.customer-delivery .commission-terms b { font-size: 23px; }
+.customer-delivery > .primary { width: 100%; min-height: 44px; margin: 6px 0 11px; font-size: 22px; }
+.customer-delivery > .primary:disabled { background: #c5cebd; border-color: #8f9b88; color: #4e5a48; box-shadow: none; }
+.customer-delivery > small { font-size: 9px; }
+.customer-delivery .commission-review { margin-top: 10px; font-size: 17px; }
+body[data-input="touch"] #panel.jobs-panel { width: min(800px, calc(100vw - 40px)); }
+body[data-input="touch"] .commission-checks li { font-size: 12px; }
+body[data-input="touch"] .commission-checks .check-result { font-size: 9px; }
+@media (max-width: 800px) {
+  #panel.jobs-panel { top: 20px; bottom: 20px; }
+  .commission { padding: 14px; }
+  .commission-grid { gap: 10px; }
+  .workshop-jobs-link { margin-bottom: 9px; padding: 6px 8px; }
+  .workshop-jobs-link > span { font-size: 17px; }
+}
+@media (max-width: 640px) {
+  .commission-grid { grid-template-columns: 1fr; }
+  .commission-actions { grid-template-columns: 1fr; }
+  .upcoming-commissions li { align-items: flex-start; }
+  .upcoming-commissions li > span { max-width: 108px; }
+  .commission-top { align-items: flex-start; }
 }

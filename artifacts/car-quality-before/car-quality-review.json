@@ -1,0 +1,821 @@
+{
+  "baseURL": "http://127.0.0.1:4187/junkyard-drivers/",
+  "capturedAt": "2026-11-14T18:18:34.329Z",
+  "viewport": {
+    "width": 1200,
+    "height": 800
+  },
+  "seed": 642019,
+  "hour": 13,
+  "setup": "Actual game, shell-only or restored startup save in the garage bay. Original salvage paint on shell-only fixtures. Photo Mode entered through KeyP; QA hooks change only camera, hour and graphics tier.",
+  "comparison": "Identical front and rear three-quarter cameras, target, midday light and viewport for every model. Car geometry comes from the served build, not this script.",
+  "performanceScope": "Stationary Photo Mode, 600 ms animation-frame samples after warm-up. Draw calls and triangles cover the full rendered scene and passes, not the individual car. Frame intervals are vsync-limited.",
+  "cars": [
+    {
+      "id": "hachiro",
+      "baseline": true
+    },
+    {
+      "id": "packhorse",
+      "baseline": true
+    },
+    {
+      "id": "estate",
+      "baseline": false
+    },
+    {
+      "id": "sprite",
+      "baseline": false
+    },
+    {
+      "id": "courier",
+      "baseline": false
+    }
+  ],
+  "tierSamples": false,
+  "captures": [
+    {
+      "name": "hachiro-salvage-front-high",
+      "file": "hachiro-salvage-front-high.jpg",
+      "car": "hachiro",
+      "baseline": true,
+      "condition": "salvage",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 723,
+      "triangles": 625829,
+      "memory": {
+        "geometries": 667,
+        "textures": 120
+      },
+      "programs": 45,
+      "mainThreadMs": 3.277904515177025,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-hachiro",
+        "shellId": "hachiro",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#83908a"
+      }
+    },
+    {
+      "name": "hachiro-salvage-rear-high",
+      "file": "hachiro-salvage-rear-high.jpg",
+      "car": "hachiro",
+      "baseline": true,
+      "condition": "salvage",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1514,
+      "triangles": 896375,
+      "memory": {
+        "geometries": 1227,
+        "textures": 184
+      },
+      "programs": 50,
+      "mainThreadMs": 4.376005610029607,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.80000000000109,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-hachiro",
+        "shellId": "hachiro",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#83908a"
+      }
+    },
+    {
+      "name": "hachiro-restored-front-high",
+      "file": "hachiro-restored-front-high.jpg",
+      "car": "hachiro",
+      "baseline": true,
+      "condition": "restored",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 753,
+      "triangles": 689541,
+      "memory": {
+        "geometries": 680,
+        "textures": 118
+      },
+      "programs": 48,
+      "mainThreadMs": 3.436546216292616,
+      "medianFrameMs": 16.700000000000728,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-hachiro",
+        "shellId": "hachiro",
+        "engineId": "instance-part-i4-stock",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#e7ad36"
+      }
+    },
+    {
+      "name": "hachiro-restored-rear-high",
+      "file": "hachiro-restored-rear-high.jpg",
+      "car": "hachiro",
+      "baseline": true,
+      "condition": "restored",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1544,
+      "triangles": 960087,
+      "memory": {
+        "geometries": 1242,
+        "textures": 184
+      },
+      "programs": 53,
+      "mainThreadMs": 3.947441372157679,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-hachiro",
+        "shellId": "hachiro",
+        "engineId": "instance-part-i4-stock",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#e7ad36"
+      }
+    },
+    {
+      "name": "packhorse-salvage-front-high",
+      "file": "packhorse-salvage-front-high.jpg",
+      "car": "packhorse",
+      "baseline": true,
+      "condition": "salvage",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 746,
+      "triangles": 642663,
+      "memory": {
+        "geometries": 665,
+        "textures": 118
+      },
+      "programs": 45,
+      "mainThreadMs": 3.1558351485043388,
+      "medianFrameMs": 16.700000000000728,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-packhorse",
+        "shellId": "packhorse",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#6f8478"
+      }
+    },
+    {
+      "name": "packhorse-salvage-rear-high",
+      "file": "packhorse-salvage-rear-high.jpg",
+      "car": "packhorse",
+      "baseline": true,
+      "condition": "salvage",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1559,
+      "triangles": 928203,
+      "memory": {
+        "geometries": 1227,
+        "textures": 184
+      },
+      "programs": 50,
+      "mainThreadMs": 4.266791057196336,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-packhorse",
+        "shellId": "packhorse",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#6f8478"
+      }
+    },
+    {
+      "name": "packhorse-restored-front-high",
+      "file": "packhorse-restored-front-high.jpg",
+      "car": "packhorse",
+      "baseline": true,
+      "condition": "restored",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 776,
+      "triangles": 705319,
+      "memory": {
+        "geometries": 680,
+        "textures": 118
+      },
+      "programs": 48,
+      "mainThreadMs": 3.3782247485971566,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-packhorse",
+        "shellId": "packhorse",
+        "engineId": "instance-part-v8-stock",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#397d87"
+      }
+    },
+    {
+      "name": "packhorse-restored-rear-high",
+      "file": "packhorse-restored-rear-high.jpg",
+      "car": "packhorse",
+      "baseline": true,
+      "condition": "restored",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1589,
+      "triangles": 990859,
+      "memory": {
+        "geometries": 1242,
+        "textures": 184
+      },
+      "programs": 53,
+      "mainThreadMs": 3.815725272332373,
+      "medianFrameMs": 16.700000000000728,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-packhorse",
+        "shellId": "packhorse",
+        "engineId": "instance-part-v8-stock",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#397d87"
+      }
+    },
+    {
+      "name": "estate-salvage-front-high",
+      "file": "estate-salvage-front-high.jpg",
+      "car": "estate",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 723,
+      "triangles": 627713,
+      "memory": {
+        "geometries": 665,
+        "textures": 118
+      },
+      "programs": 45,
+      "mainThreadMs": 2.966982372594634,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-estate",
+        "shellId": "estate",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#82917c"
+      }
+    },
+    {
+      "name": "estate-salvage-rear-high",
+      "file": "estate-salvage-rear-high.jpg",
+      "car": "estate",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1536,
+      "triangles": 913253,
+      "memory": {
+        "geometries": 1227,
+        "textures": 184
+      },
+      "programs": 50,
+      "mainThreadMs": 4.216955266528607,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-estate",
+        "shellId": "estate",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#82917c"
+      }
+    },
+    {
+      "name": "estate-restored-front-high",
+      "file": "estate-restored-front-high.jpg",
+      "car": "estate",
+      "baseline": false,
+      "condition": "restored",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 753,
+      "triangles": 690721,
+      "memory": {
+        "geometries": 680,
+        "textures": 118
+      },
+      "programs": 48,
+      "mainThreadMs": 3.338572236642123,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-estate",
+        "shellId": "estate",
+        "engineId": "instance-part-i4-stock",
+        "wheelsId": "instance-part-wheels-classic",
+        "paint": "#f0dfad"
+      }
+    },
+    {
+      "name": "estate-restored-rear-high",
+      "file": "estate-restored-rear-high.jpg",
+      "car": "estate",
+      "baseline": false,
+      "condition": "restored",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1566,
+      "triangles": 976261,
+      "memory": {
+        "geometries": 1242,
+        "textures": 184
+      },
+      "programs": 53,
+      "mainThreadMs": 4.3699135224060015,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-estate",
+        "shellId": "estate",
+        "engineId": "instance-part-i4-stock",
+        "wheelsId": "instance-part-wheels-classic",
+        "paint": "#f0dfad"
+      }
+    },
+    {
+      "name": "sprite-salvage-front-high",
+      "file": "sprite-salvage-front-high.jpg",
+      "car": "sprite",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 724,
+      "triangles": 629441,
+      "memory": {
+        "geometries": 665,
+        "textures": 118
+      },
+      "programs": 45,
+      "mainThreadMs": 3.2449713212925873,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-sprite",
+        "shellId": "sprite",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#8c6b69"
+      }
+    },
+    {
+      "name": "sprite-salvage-rear-high",
+      "file": "sprite-salvage-rear-high.jpg",
+      "car": "sprite",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1537,
+      "triangles": 914981,
+      "memory": {
+        "geometries": 1227,
+        "textures": 184
+      },
+      "programs": 50,
+      "mainThreadMs": 4.417096713854464,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-sprite",
+        "shellId": "sprite",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#8c6b69"
+      }
+    },
+    {
+      "name": "sprite-restored-front-high",
+      "file": "sprite-restored-front-high.jpg",
+      "car": "sprite",
+      "baseline": false,
+      "condition": "restored",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 754,
+      "triangles": 694561,
+      "memory": {
+        "geometries": 680,
+        "textures": 118
+      },
+      "programs": 48,
+      "mainThreadMs": 3.0360603395836963,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-sprite",
+        "shellId": "sprite",
+        "engineId": "instance-part-i4-twin",
+        "wheelsId": "instance-part-wheels-rally",
+        "paint": "#6f303c"
+      }
+    },
+    {
+      "name": "sprite-restored-rear-high",
+      "file": "sprite-restored-rear-high.jpg",
+      "car": "sprite",
+      "baseline": false,
+      "condition": "restored",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1567,
+      "triangles": 980101,
+      "memory": {
+        "geometries": 1242,
+        "textures": 184
+      },
+      "programs": 53,
+      "mainThreadMs": 3.990261561443576,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-sprite",
+        "shellId": "sprite",
+        "engineId": "instance-part-i4-twin",
+        "wheelsId": "instance-part-wheels-rally",
+        "paint": "#6f303c"
+      }
+    },
+    {
+      "name": "courier-salvage-front-high",
+      "file": "courier-salvage-front-high.jpg",
+      "car": "courier",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 723,
+      "triangles": 629551,
+      "memory": {
+        "geometries": 665,
+        "textures": 118
+      },
+      "programs": 45,
+      "mainThreadMs": 3.1706726594009207,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.80000000000109,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-courier",
+        "shellId": "courier",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#9b937b"
+      }
+    },
+    {
+      "name": "courier-salvage-rear-high",
+      "file": "courier-salvage-rear-high.jpg",
+      "car": "courier",
+      "baseline": false,
+      "condition": "salvage",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1536,
+      "triangles": 915091,
+      "memory": {
+        "geometries": 1227,
+        "textures": 184
+      },
+      "programs": 50,
+      "mainThreadMs": 4.528675191085334,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.799999999999272,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-courier",
+        "shellId": "courier",
+        "engineId": null,
+        "wheelsId": null,
+        "paint": "#9b937b"
+      }
+    },
+    {
+      "name": "courier-restored-front-high",
+      "file": "courier-restored-front-high.jpg",
+      "car": "courier",
+      "baseline": false,
+      "condition": "restored",
+      "view": "front",
+      "position": [
+        -23.5,
+        2.65,
+        -8.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 753,
+      "triangles": 692559,
+      "memory": {
+        "geometries": 680,
+        "textures": 118
+      },
+      "programs": 48,
+      "mainThreadMs": 3.121638361118598,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-courier",
+        "shellId": "courier",
+        "engineId": "instance-part-v8-torque",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#f0dfad"
+      }
+    },
+    {
+      "name": "courier-restored-rear-high",
+      "file": "courier-restored-rear-high.jpg",
+      "car": "courier",
+      "baseline": false,
+      "condition": "restored",
+      "view": "rear",
+      "position": [
+        -23.5,
+        2.65,
+        -17.5
+      ],
+      "target": [
+        -20,
+        1.12,
+        -13
+      ],
+      "requestedQuality": "high",
+      "quality": "high",
+      "drawCalls": 1566,
+      "triangles": 978099,
+      "memory": {
+        "geometries": 1242,
+        "textures": 184
+      },
+      "programs": 53,
+      "mainThreadMs": 4.325361855907283,
+      "medianFrameMs": 16.69999999999891,
+      "p95FrameMs": 16.700000000000728,
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+      "hour": 13,
+      "fixture": {
+        "id": "car-courier",
+        "shellId": "courier",
+        "engineId": "instance-part-v8-torque",
+        "wheelsId": "instance-part-street-1",
+        "paint": "#f0dfad"
+      }
+    }
+  ],
+  "errors": [],
+  "failedRequests": [],
+  "externalRequests": []
+}

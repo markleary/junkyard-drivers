@@ -38,9 +38,9 @@ describe('tuning parts in the catalog', () => {
     expect(getPartsForSale('hidden', 'nitro')).toEqual([]);
   });
 
-  it('keeps the salvage racks to engines, wheels and paint', () => {
-    expect([...new Set(getPartsForSale('yard').map(part => part.kind))].sort()).toEqual(['engine', 'paint', 'wheels']);
-    expect(getCategoryStock('yard', 'tuning')).toEqual([]);
+  it('offers ordinary salvage tuning while keeping nitrous at the new-parts counter', () => {
+    expect([...new Set(getPartsForSale('yard').map(part => part.kind))].sort()).toEqual(['engine', 'exhaust', 'paint', 'turbo', 'wheels']);
+    expect(getCategoryStock('yard', 'tuning').map(part => part.id).sort()).toEqual(['exhaust-touring', 'turbo-yard']);
     expect(getPartsForSale('yard').some(part => part.rare)).toBe(false);
     expect(getPartsForSale('store').some(part => part.rare)).toBe(false);
   });

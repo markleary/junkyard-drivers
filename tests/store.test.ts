@@ -20,15 +20,15 @@ describe('auto parts store inventory', () => {
     }
   });
 
-  it('has independent new engines and wheel sets to complete every car', () => {
+  it('has distinct salvage and new parts to complete the whole collection at once', () => {
     let state = newGame();
-    const wheels = getPartsForSale('store', 'wheels');
+    const stock = PARTS.filter(part => part.source !== 'hidden');
+    const wheels = stock.filter(part => part.kind === 'wheels');
     for (const [index, shell] of SHELLS.entries()) {
-      const engines = getPartsForSale('store', 'engine').filter(part => part.mount === shell.mount);
-      expect(engines).toHaveLength(2);
-      expect(engines[1].power).toBeGreaterThan(engines[0].power!);
-      // Two cars share each of the smaller mounts, so the second takes the other crate engine.
+      const engines = stock.filter(part => part.kind === 'engine' && part.mount === shell.mount);
+      // A catalog listing is a unique physical part, so every build needs a different engine and wheel set.
       const engine = engines.find(part => !state.purchasedListings.includes(`part-${part.id}`))!;
+      expect(engine, `a spare ${shell.mount} for ${shell.name}`).toBeDefined();
       const wheelId = wheels[index].id;
       state = buy(state, `shell-${shell.id}`, `part-${engine.id}`, `part-${wheelId}`);
       state = install(state, `car-${shell.id}`, `instance-part-${engine.id}`);
@@ -37,6 +37,18 @@ describe('auto parts store inventory', () => {
     expect(state.cars.every(car => buildIssues(state, car).length === 0)).toBe(true);
     expect(availableInventory(state)).toHaveLength(0);
     expect(parseSave(JSON.stringify(state))).toEqual(state);
+  });
+
+  it.each(SHELLS)('offers both factory-new power levels for $name', shell => {
+    const engines = getPartsForSale('store', 'engine').filter(part => part.mount === shell.mount);
+    expect(engines).toHaveLength(2);
+    expect(engines[1].power).toBeGreaterThan(engines[0].power!);
+    for (const engine of engines) {
+      let state = buy(newGame(), `shell-${shell.id}`, `part-${engine.id}`, 'part-new-touring-1');
+      state = install(state, `car-${shell.id}`, `instance-part-${engine.id}`);
+      state = install(state, `car-${shell.id}`, 'instance-part-new-touring-1');
+      expect(buildIssues(state, state.cars[0])).toEqual([]);
+    }
   });
 
   it.each(SHELLS)('rejects the wrong factory-new engine mount for $name', shell => {

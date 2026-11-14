@@ -74,6 +74,12 @@ export const TIRE_WALL = { x: -40.9, zFrom: 3.2, zTo: 16.4 };
 export interface StashSpot { x: number; z: number; yaw: number; hint: string }
 /** Solid size of a salvage shell wherever it stands, and of a rare part on its pallet. */
 export const SHELL_SOLID = { w: 1.92, h: 1.3, d: 4.5 };
+/** The new project row, south of the crosslane and in front of the crane. */
+export const PROJECT_SHELLS = {
+  estate: { x: -53, z: 4, yaw: 0 },
+  sprite: { x: -56, z: 4, yaw: 0 },
+  courier: { x: -62, z: 4, yaw: 0 },
+};
 export const PART_SOLID = { w: 1, h: .9, d: 1 };
 export const PART_SPOTS: StashSpot[] = [
   { x: -58.1, z: -20.2, yaw: .2, hint: 'Deep in the sorted rows, in the gap between two stacks of shells.' },
@@ -114,6 +120,8 @@ export const KEEP_CLEAR: Bounds[] = [
   { minX: -72.2, maxX: -65.8, minZ: -46, maxZ: -2.4 },
   { minX: -80, maxX: -40, minZ: -5.2, maxZ: 1.2 },
   { minX: -77.5, maxX: -12.5, minZ: -38.2, maxZ: -31.8 },
+  // The established walk from the crosslane to the oil-can find beside the crane.
+  { minX: -58.1, maxX: -57.1, minZ: -2, maxZ: 9.2 },
 ];
 
 export function footprintBounds(shape: Footprint): Bounds {
@@ -128,6 +136,7 @@ export const overlaps = (a: Bounds, b: Bounds, margin = 0) =>
 /** Every solid feature added to the yard, as axis-aligned bounds. */
 export function yardObstacles(): { name: string; bounds: Bounds }[] {
   const list: { name: string; bounds: Bounds }[] = [];
+  for (const [name, spot] of Object.entries(PROJECT_SHELLS)) list.push({ name: `${name} project shell`, bounds: footprintBounds({ ...spot, ...SHELL_SOLID }) });
   CAR_STACKS.forEach((item, i) => list.push({ name: `car stack ${i}`, bounds: footprintBounds(item) }));
   CONTAINERS.filter(item => item.tier === 0).forEach((item, i) => list.push({ name: `container ${i}`, bounds: footprintBounds(item) }));
   // A heap's collider is a tapered core; its loose edge is walkable.

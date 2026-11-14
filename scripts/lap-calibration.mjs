@@ -3,10 +3,12 @@
 // real key events from inside the page every frame and follows the same line as the browser acceptance tests.
 // The two cars that are found as rare salvage also run a tuned build (race turbocharger, straight-through
 // pipes and the larger nitrous kit, with the driver holding N wherever it is flat out) to measure what those parts are worth.
-// Usage: node scripts/lap-calibration.mjs [filter, e.g. veloce:fast or wren:tuned]   (needs `npm run dev -- --port 5173`)
+// Usage: node scripts/lap-calibration.mjs [filters, e.g. veloce:fast or estate,sprite,courier]
+// VISUAL_BASE_URL selects the server; optional LAP_OUTPUT writes the measured rows as JSON.
 import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
 import { boot, read, walk, inspect, loopPath } from '../tests/browser/helpers.ts';
-const PAINT = { hachiro: ['#e7ad36', 'paint-saffron'], bison: ['#bd4432', 'paint-oxide'], veloce: ['#397d87', 'paint-teal'], wren: ['#e7ad36', 'paint-saffron'], packhorse: ['#397d87', 'paint-teal'] };
+const PAINT = { hachiro: ['#e7ad36', 'paint-saffron'], bison: ['#bd4432', 'paint-oxide'], veloce: ['#397d87', 'paint-teal'], wren: ['#e7ad36', 'paint-saffron'], packhorse: ['#397d87', 'paint-teal'], estate: ['#f0dfad', 'paint-cream'], sprite: ['#6f303c', 'paint-burgundy'], courier: ['#e4dfcb', 'paint-ivory'] };
 const TUNING = ['turbo-race', 'exhaust-race', 'nitro-150'];
 function fixture(shellId, engine, wheels, tuned) {
   const [paint, paintId] = PAINT[shellId], parts = [engine, wheels, ...(tuned ? TUNING : [])];
@@ -22,6 +24,9 @@ const CARS = [
   ['veloce', 'v12-stock', 'street-1'], ['veloce', 'crate-v12-performance', 'new-sport-1'],
   ['wren', 'i4-stock', 'street-1'], ['wren', 'crate-i4-performance', 'new-sport-1'], ['wren', 'crate-i4-performance', 'new-sport-1', 'tuned'],
   ['packhorse', 'v8-stock', 'street-1'], ['packhorse', 'crate-v8-performance', 'new-sport-1'], ['packhorse', 'crate-v8-performance', 'new-sport-1', 'tuned'],
+  ['estate', 'i4-stock', 'street-1'], ['estate', 'crate-i4-performance', 'new-sport-1'],
+  ['sprite', 'i4-stock', 'street-1'], ['sprite', 'crate-i4-performance', 'new-sport-1'],
+  ['courier', 'v8-torque', 'street-1'], ['courier', 'crate-v8-performance', 'new-sport-1'],
 ];
 const PACES = { brisk: { vmax: 22, alat: 5.5, decel: 5 }, fast: { vmax: 45, alat: 9, decel: 7.5 } };
 const only = process.argv[2];
@@ -31,7 +36,7 @@ try {
   for (const [shell, engine, wheels, tuned] of CARS) for (const [pace, tune] of Object.entries(PACES)) {
     // A tuned car only runs the quick pace: at the tidy one it never reaches a speed where the parts matter.
     if (tuned && pace !== 'fast') continue;
-    if (only && !`${shell}:${tuned ? 'tuned' : pace}`.includes(only)) continue;
+    if (only && !only.split(',').some(filter => `${shell}:${tuned ? 'tuned' : pace}`.includes(filter))) continue;
     const page = await browser.newPage({ baseURL: process.env.VISUAL_BASE_URL || 'http://127.0.0.1:5173/', viewport: { width: 960, height: 600 } });
     page.on('pageerror', error => console.log('PAGEERROR', error.message));
     await page.addInitScript(({ save, progress }) => {
@@ -91,3 +96,4 @@ try {
   }
 } finally { await browser.close(); }
 console.table(results.map(({ note, ...row }) => row));
+if (process.env.LAP_OUTPUT) writeFileSync(process.env.LAP_OUTPUT, JSON.stringify(results, null, 2));

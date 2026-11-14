@@ -18,9 +18,9 @@ export interface PadState {
   /** B, held: nitrous while driving. The same button closes a sheet when one is open. */
   nitro: boolean;
 }
-export type PadButton = 'interact' | 'recover' | 'camera' | 'lights' | 'pause' | 'back' | 'photo' | 'map';
+export type PadButton = 'interact' | 'recover' | 'camera' | 'lights' | 'pause' | 'back' | 'photo' | 'map' | 'confirm';
 
-const BUTTONS: Record<PadButton, number> = { interact: 2, recover: 3, camera: 5, lights: 12, pause: 9, back: 1, photo: 8, map: 13 };
+const BUTTONS: Record<PadButton, number> = { interact: 2, recover: 3, camera: 5, lights: 12, pause: 9, back: 1, photo: 8, map: 13, confirm: 0 };
 
 /** Dead zone, then a curve that is gentle near the centre and full at the edge. */
 export function stickCurve(value: number, dead = .14): number {

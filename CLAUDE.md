@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Junkyard Drivers is a single-player browser game (desktop and tablet): find a car shell in a salvage yard, fit an engine and wheels, drive a timed loop through a seeded town. TypeScript, Vite, vanilla Three.js and Rapier 3D; no framework, no backend. It deploys as a static site to GitHub Pages from `main`. `README.md` is long and is the detailed reference: controls, a per-file responsibility table ("Code and assets"), quality tiers, and the measured acceptance history.
+Junkyard Drivers is a single-player browser game (desktop and tablet): find one of eight car shells in a salvage yard, build it from compatible parts, drive a timed loop through a seeded town, and fulfill customer restoration commissions. TypeScript, Vite, vanilla Three.js and Rapier 3D; no framework, no backend. It deploys as a static site to GitHub Pages from `main`. `README.md` is long and is the detailed reference: controls, a per-file responsibility table ("Code and assets"), quality tiers, and the measured acceptance history.
 
 ## Commands
 
@@ -17,7 +17,7 @@ npm test                   # Vitest only
 npx vitest run tests/state.test.ts            # one unit file
 npx vitest run tests/state.test.ts -t "name"  # one unit test by name
 npm run build              # typecheck + production build into dist/
-npm run test:browser       # full Playwright suite (21 tests, minutes, real-time driving)
+npm run test:browser       # full Playwright suite (24 tests, minutes, real-time driving)
 npm run test:browser:ci    # only the three tests tagged @deployment
 npx playwright test tests/browser/menus.spec.ts -g "title text"   # one browser test
 ```
@@ -36,6 +36,10 @@ There is no linter or formatter; `tsc` in strict mode is the only static check.
 
 `scripts/*.mjs` drive a real browser against a running server (`VISUAL_BASE_URL`, default `http://127.0.0.1:5173/`) and write measurements into `artifacts/overhaul-after`. The README table lists what each one records. Large PNG captures are git-ignored; the JSON beside them is tracked.
 
+`scripts/project-car-review.mjs` captures the project-shell row and separate restored Wayfarer, Sprite and Courier fixtures at the Garage, with renderer/error measurements. It accepts `VISUAL_OUTPUT_DIR`; its fixtures seed storage only at startup and its review hooks only change camera, hour and quality. `scripts/lap-calibration.mjs` includes stock/upgraded runs for all eight shells; arguments such as `sprite:fast` or `estate,sprite,courier` filter its runs, and `LAP_OUTPUT` optionally writes the results to JSON.
+
+`scripts/car-quality-review.mjs` compares the Hachiro/Packhorse baseline with the three project cars using identical garage cameras, light and shell-only/restored startup fixtures. It writes JPGs and JSON under `artifacts/car-quality-review`; `VISUAL_OUTPUT_DIR`, `CAR_REVIEW_CARS`, `CAR_REVIEW_DETAILS=0` and `CAR_REVIEW_TIERS=0` control the run. Painted body panels need nondegenerate UVs before batching, which otherwise supplies all-zero coordinates; `tests/cars.test.ts` checks the Courier cargo walls for this regression.
+
 ## Architecture
 
 ### Layers
@@ -51,10 +55,12 @@ The dependency direction is one-way: `game/` and `world/` are plain data and pur
 
 Keyboard, touch and gamepad are merged into the same intents inside `step()` in `main.ts`; a new control has to be wired for all three there (and in `touch-markup.ts` for a touch button).
 
+While a menu is open, controller D-pad up/down moves focus through enabled buttons, A activates the focused button, and B closes. `ui/focus.ts` owns focus traversal and scrolls the chosen control into view. Menus retain ordinary Tab/Shift+Tab and Enter/Space support.
+
 ### Two saves
 
 - `junkyard-drivers-save-v1` (`game/state.ts`): purchases, inventory, installed parts, paint, town seed. Its format is frozen at what the first release wrote; do not add fields to it. Catalog ids are part of that format: a save is rejected whole if it names a listing the build does not know, so never rename or remove one, and expect an older build to start a new game on a save that holds newer parts.
-- `junkyard-drivers-progress-v1` (`game/progress.ts`): budget, laps, medals, finds, finishes and stripes, settings, hour, and everything the dealer, tuning parts and rare salvage need (`fitted`, `proof`, `sales`, `stash`, `restock`). New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
+- `junkyard-drivers-progress-v1` (`game/progress.ts`): budget, laps, medals, finds, finishes and stripes, settings, hour, everything the dealer, tuning parts and rare salvage need (`fitted`, `proof`, `sales`, `stash`, `restock`), and customer commissions (`jobs`). New persistent data goes here. Its parser repairs damaged fields one at a time instead of rejecting the record.
 
 Available funds equal the budget minus the catalog cost of current receipts. A purchase only writes the collection save. A dealer sale removes its receipts and updates the budget to reflect the full payout. `VITE_STARTING_FUNDS` sets the opening balance for new games.
 
@@ -67,7 +73,18 @@ These three features are built around the frozen save rather than into it:
 - A turbocharger, exhaust or nitrous kit is an ordinary catalog part and inventory instance. `install` refuses them; which car one is bolted to is `progress.fitted[carId]`, changed only through `game/upgrades.ts`. `reconcileFitted` drops fittings whose car or instance no longer exists, and `buildTuning` is the one place a build is turned into power, boost, nitrous and exhaust note for physics and audio.
 - Rare parts and the two rare shells are ordinary listings with `source: 'hidden'` / `hidden: true`, bought where they lie. Where that is comes from `stashLayout(progress.stash, progress.restock)` in `game/stash.ts`; the hiding places are data in `world/yard.ts` (`PART_SPOTS`, `SHELL_SPOTS`). `tests/stash.test.ts` holds each place clear of the `KEEP_CLEAR` routes and floods the built yard with a walker-sized body to prove every one can be reached, so add or move a place there first and let that test judge it. `seedPlacing` finds a seed that puts a piece in a place, for browser tests.
 - `game/dealer.ts` is pure: outlay, lap proof against `MEDAL_TIMES`, offer range, and an offer drawn from a session seed that `main.ts` rolls once per page load. `completeSale` removes the car, its parts and their receipts from the purchase save (so they can be bought again), clears that car's `proof` and `fitted`, logs `sales`, and bumps `restock` for rare pieces so they reappear elsewhere. The offer sheet shows one figure; the range is deliberately not displayed.
-- A new shell needs a `BODIES` entry in `render/cars.ts`, a profile in `ui/icons.ts`, positions in `main.ts`, and medal times measured with `scripts/lap-calibration.mjs`.
+- The ordinary Wayfarer, Sprite and Courier project shells stand at `PROJECT_SHELLS` positions in `world/yard.ts`, used by `main.ts`. The yard footprint and physics flood checks protect their access just as they protect rare salvage. A new shell also needs a `BODIES` entry in `render/cars.ts`, a profile in `ui/icons.ts`, progress shell IDs, and medal times measured with `scripts/lap-calibration.mjs`.
+- Every ordinary yard rack exposes Engines, Wheels, Paint and Tuning tabs. The yard now includes economy and twin-carb I4s, a utility V8, classic and rally wheels, a small turbo, a touring exhaust and two vintage paints. Nitrous remains exclusive to Holloway. Keep enough independent yard engines and wheels to complete all shells at once, and preserve full-catalog affordability under the $150,000 default; both are unit-tested.
+
+### Customer restoration jobs
+
+`game/job-catalog.ts` holds nine authored customer requests. `game/jobs.ts` is pure: acceptance/cancellation, checklist assessment, exact-build road-test proof, reputation rank and delivery. The board opens from the workbench, pause menu or logbook; it is a DOM panel and pauses simulation like the other sheets. Only one request can be active. Completed request IDs unlock later requests and derive the workshop rank. Releasing a request has no cost and keeps the collection.
+
+- `assessJob` is the single source for the board, objective and handover. Budget means catalog investment in the finished car, including paint and fitted tuning; it is not cash advanced to the player. Engine-power constraints use the engine's rated power before tuning. All requirements appear before acceptance.
+- `beginJobLap` snapshots the active job, acceptance revision and build signature at the first checkpoint. `recordJobLap` accepts a completed loop only when the same accepted job and matching qualifying build are still present. It uses actual elapsed time, not rounded display time. Accepting halfway through a lap, releasing and reaccepting, or reusing a prior dealer lap cannot supply proof.
+- The signature binds car, engine and wheel instance IDs, fitted tuning, paint, finish and stripes. Call `reconcileJobs` after every collection/build/style change or sale so changing a build and changing it back cannot recover old proof. Call it when loading too. `progress.jobs` holds active ID, completed IDs, proof and revision; malformed fields are repaired individually.
+- `completeJob` verifies the checklist again, reuses `completeSale` removal/restock behavior, substitutes the agreed fixed payment, and keeps ordinary dealer-sales totals separate. The customer takes the car and all fitted parts; reusable paint stays owned. Main only permits delivery while stopped in the dealer bay. Keep that location gate in the interaction layer and business rules in `game/jobs.ts`.
+- Tests must cover achievable briefs, once-only payouts, save repair, stale/mismatched proof, unlocks, and rare restocking. `tests/cars.test.ts` constructs every catalog model in salvage/restored states without a real DOM, using the shared canvas stand-in.
 
 ### Scenery: builder, cells, and the coplanar check
 
