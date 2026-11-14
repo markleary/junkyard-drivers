@@ -13,4 +13,5 @@ artifacts/overhaul-before/*.png
 artifacts/overhaul-after/*.png
 artifacts/overhaul-after/mobile/*.png
 artifacts/overhaul-after/flicker/*.png
+artifacts/restoration/*.png
 .DS_Store

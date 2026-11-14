@@ -1,4 +1,4 @@
-const actionAttributes = ['data-job', 'data-id', 'data-action', 'data-buy', 'data-category', 'data-select', 'data-install', 'data-paint', 'data-fit', 'data-unfit', 'id'];
+const actionAttributes = ['data-job', 'data-id', 'data-action', 'data-buy', 'data-category', 'data-select', 'data-install', 'data-paint', 'data-restoration-route', 'data-restoration-paint', 'data-fit', 'data-unfit', 'id'];
 
 function controls(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'))

@@ -6,6 +6,7 @@ import type { StashItem } from '../game/stash';
 import { JOBS, activeJob, assessJob, jobRank, type RestorationJob } from '../game/jobs';
 import { FINISHES, MEDAL_TIMES, STRIPES, bestMedal, finishUnlocked, formatLap, medalFor, stripeUnlocked, styleFor, type Medal, type Progress } from '../game/progress';
 import type { Find } from '../game/finds';
+import { restorationFor } from '../game/restoration';
 import { icon, vehicleStamp } from './icons';
 
 const money = (value: number) => `$${value.toLocaleString()}`;
@@ -248,6 +249,8 @@ export function garageMarkup(state: GameState, selectedId: string, progress: Pro
 
 function garageContents(state: GameState, car: OwnedCar, progress: Progress) {
   const shell = getShell(car.shellId), issues = buildIssues(state, car), style = styleFor(progress, car.id);
+  const restoration = restorationFor(progress, car.id), preservePatina = restoration?.route === 'patina';
+  const preparingPaint = restoration?.route === 'paint' && restoration.stage !== 'complete';
   const slot = (kind: 'engine' | 'wheels') => {
     const current = getPart(state, kind === 'engine' ? car.engineId : car.wheelsId);
     const inventory = availableInventory(state, kind).sort((a, b) => Number(kind === 'engine' && getPart(state, a.id)?.mount !== shell.mount) - Number(kind === 'engine' && getPart(state, b.id)?.mount !== shell.mount));
@@ -260,21 +263,21 @@ function garageContents(state: GameState, car: OwnedCar, progress: Progress) {
       }).join('') || '<p class="empty">No loose parts. Visit the yard racks or Auto Parts store.</p>'}</div></section>`;
   };
   const finishes = FINISHES.map(item => {
-    const open = finishUnlocked(progress, item.id), active = style.finish === item.id;
-    return `<button data-finish="${item.id}" class="${active ? 'active' : ''}" aria-pressed="${active}" ${open ? '' : 'disabled'} title="${item.note}"><b>${item.name}</b><small>${open ? item.note : `${item.finds} finds`}</small></button>`;
+    const open = finishUnlocked(progress, item.id), active = !preservePatina && style.finish === item.id;
+    return `<button data-finish="${item.id}" class="${active ? 'active' : ''}" aria-pressed="${active}" ${open && !preservePatina ? '' : 'disabled'} title="${preservePatina ? 'Patina preserves the original finish' : item.note}"><b>${item.name}</b><small>${open ? item.note : `${item.finds} finds`}</small></button>`;
   }).join('');
   const stripes = STRIPES.map(item => {
-    const open = stripeUnlocked(progress, item.id), active = style.stripe === item.id;
-    return `<button data-stripe="${item.id}" class="${active ? 'active' : ''}" aria-pressed="${active}" ${open ? '' : 'disabled'} style="--swatch:${item.color ?? 'transparent'}"><span class="stripe-chip ${item.color ? '' : 'plain'}"></span><b>${item.name}</b>${open ? '' : `<small>${MEDAL_NAME[item.medal!]} medal</small>`}</button>`;
+    const open = stripeUnlocked(progress, item.id), active = !preservePatina && style.stripe === item.id;
+    return `<button data-stripe="${item.id}" class="${active ? 'active' : ''}" aria-pressed="${active}" ${open && !preservePatina ? '' : 'disabled'} style="--swatch:${item.color ?? 'transparent'}"><span class="stripe-chip ${item.color ? '' : 'plain'}"></span><b>${item.name}</b>${open ? '' : `<small>${MEDAL_NAME[item.medal!]} medal</small>`}</button>`;
   }).join('');
   return `<div class="work-order"><span>PROJECT</span><strong>${shell.name}</strong><span>${shell.mount} / ${shell.mass.toLocaleString()} KG</span></div>
-    <div class="build-scroll">${slot('engine')}${slot('wheels')}<section class="build-slot"><div class="slot-heading"><span class="slot-number">03</span><span>PAINT</span><b>REUSABLE</b></div><div class="swatches">${state.paints.map(id => {
+    <div class="build-scroll"><button class="workshop-jobs-link workshop-restoration-link" data-action="restoration">${icon('paint')}<span>Hands-on bodywork<small>${restoration?.stage === 'complete' ? 'Your finish & before-and-after photos' : restoration ? 'Pick up where you left off' : 'Wash, repair & paint — or preserve the patina'}</small></span>${icon('arrow')}</button>${slot('engine')}${slot('wheels')}<section class="build-slot"><div class="slot-heading"><span class="slot-number">03</span><span>${preparingPaint ? 'FINAL COLOUR' : 'PAINT'}</span><b>REUSABLE</b></div>${preservePatina ? '<p class="fitted-note">Patina preserves the old paint and finish. New colour, finishes and stripes are unavailable on this route.</p>' : preparingPaint ? '<p class="fitted-note">Choose the colour for your final coat. It appears as you complete the paint step in hands-on bodywork.</p>' : ''}<div class="swatches">${state.paints.map(id => {
       const paint = PARTS.find(item => item.id === id)!;
-      const selected = car.paint === paint.color;
-      return `<button data-paint="${id}" class="${selected ? 'active' : ''}" style="--swatch:${paint.color}" title="${paint.name}" aria-label="Apply ${paint.name}" aria-pressed="${selected}"><span class="paint-chip">${selected ? icon('check') : ''}</span><b>${paint.name}</b></button>`;
+      const selected = !preservePatina && car.paint === paint.color;
+      return `<button data-paint="${id}" class="${selected ? 'active' : ''}" style="--swatch:${paint.color}" title="${paint.name}" aria-label="${preparingPaint ? 'Choose final colour:' : 'Apply'} ${paint.name}" aria-pressed="${selected}" ${preservePatina ? 'disabled' : ''}><span class="paint-chip">${selected ? icon('check') : ''}</span><b>${paint.name}</b></button>`;
     }).join('') || '<p class="empty">Pick up a color at the yard or Auto Parts store.</p>'}</div></section>
     <section class="build-slot" data-slot="finish"><div class="slot-heading"><span class="slot-number">04</span><span>FINISH &amp; STRIPES</span><b>EARNED</b></div>
-      <p class="fitted-note">Finds from around the yard and town unlock finishes. Medals on the test loop unlock stripes.</p>
+      <p class="fitted-note">${preservePatina ? 'The original finish is kept beneath its protective satin sealer.' : `${preparingPaint ? 'Choose the finish and stripes for your final coat. ' : ''}Finds from around the yard and town unlock finishes. Medals on the test loop unlock stripes.`}</p>
       <div class="finish-options" role="group" aria-label="Paint finish">${finishes}</div><div class="stripe-options" role="group" aria-label="Stripes">${stripes}</div></section>
     ${tuningSlot(state, car, progress)}</div>
     <div class="build-status ${issues.length ? 'incomplete' : 'ready'}">${icon(issues.length ? 'warning' : 'check')}<div><b>${issues.length ? 'BUILD INCOMPLETE' : 'READY FOR THE ROAD'}</b><p>${issues.length ? issues.join(' ') : '<span class="desktop-only">Close the sheet. Press E beside the car to drive.</span><span class="touch-only">Close the sheet. Walk beside the car and tap Enter car.</span>'}</p></div></div>

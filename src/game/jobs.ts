@@ -4,6 +4,7 @@ import { JOBS, getJob, type RestorationJob } from './job-catalog';
 import { formatLap, styleFor, type Progress } from './progress';
 import { availableFunds, buildIssues, collectionCost, getPart, type GameState, type OwnedCar } from './state';
 import { fittedUpgrades } from './upgrades';
+import { restorationFor, restorationSignature } from './restoration';
 
 export { JOBS, getJob, type RestorationJob } from './job-catalog';
 
@@ -37,8 +38,9 @@ export function cancelJob(progress: Progress): Progress {
 /** The accepted lap belongs to these exact parts and appearance, not just a reusable car id. */
 export function jobBuildSignature(state: GameState, progress: Progress, car: OwnedCar): string {
   const fitted = fittedUpgrades(state, progress, car.id), style = styleFor(progress, car.id);
+  const bodywork = restorationSignature(progress, car.id);
   return JSON.stringify([car.id, car.shellId, car.engineId, car.wheelsId, car.paint.toLowerCase(), style.finish, style.stripe,
-    ...UPGRADE_KINDS.map(kind => fitted[kind]?.instanceId ?? null)]);
+    ...UPGRADE_KINDS.map(kind => fitted[kind]?.instanceId ?? null), ...(bodywork ? [bodywork] : [])]);
 }
 
 export interface JobCheck { id: string; label: string; done: boolean }
@@ -75,7 +77,9 @@ export function assessJob(state: GameState, progress: Progress, selectedCar: Own
   for (const kind of job.forbiddenUpgrades ?? []) checks.push({ id: `without-${kind}`, label: `No ${UPGRADE_NAME[kind]}`, done: !!owned && !fitted[kind] });
   if (job.paintId) {
     const paint = PARTS.find(item => item.id === job.paintId);
-    checks.push({ id: 'paint', label: `Paint: ${paint?.name ?? job.paintId}`, done: !!owned && !!paint?.color && car.paint.toLowerCase() === paint.color.toLowerCase() });
+    const bodywork = car ? restorationFor(progress, car.id) : undefined;
+    const paintVisible = !bodywork || bodywork.stage === 'complete' && bodywork.route === 'paint';
+    checks.push({ id: 'paint', label: `Paint: ${paint?.name ?? job.paintId}`, done: !!owned && paintVisible && !!paint?.color && car.paint.toLowerCase() === paint.color.toLowerCase() });
   }
   const buildReady = checks.every(check => check.done);
   const proof = progress.jobs.proof;
