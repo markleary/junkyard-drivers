@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type Request } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { boot, closePanel, drivePath, inspect, loopPath, read, stop, walk } from './helpers';
 import { bootTablet, closeTabletPanel, touchInspect, touchWalk } from './touch-helpers';
@@ -14,11 +14,19 @@ async function capture(page: Page, name: string) {
 
 function watch(page: Page, baseURL: string) {
   const errors: string[] = [], failed: string[] = [], external: string[] = [], origin = new URL(baseURL).origin;
+  const pending = new Set<Request>();
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  page.on('requestfailed', request => failed.push(request.url()));
-  page.on('request', request => { if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== origin) external.push(request.url()); });
-  return { errors, failed, external };
+  page.on('requestfinished', request => pending.delete(request));
+  page.on('requestfailed', request => { pending.delete(request); failed.push(request.url()); });
+  page.on('request', request => {
+    pending.add(request);
+    if (/^https?:/.test(request.url()) && new URL(request.url()).origin !== origin) external.push(request.url());
+  });
+  const waitForDownloads = () => expect.poll(() => pending.size, {
+    message: 'Bundled asset downloads finish before reload', timeout: 30_000,
+  }).toBe(0);
+  return { errors, failed, external, waitForDownloads };
 }
 
 async function prepare(page: Page, save = newGame(), progress = newProgress()) {
@@ -142,6 +150,8 @@ test.describe('tablet customer workshop', () => {
     await panelFits(page);
     await page.locator('#panel').evaluate(element => { element.scrollTop = 0; });
     await capture(page, 'family-brief-portrait');
+    // Finish the startup audio downloads before the deliberate reload can cancel them.
+    await watched.waitForDownloads();
     await page.reload();
     await expect(page.locator('#begin')).toBeEnabled();
     expect((await read(page)).progress.jobs.active).toBe('family-estate');
