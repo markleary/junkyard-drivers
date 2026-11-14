@@ -79,7 +79,9 @@ export function assessJob(state: GameState, progress: Progress, selectedCar: Own
     const paint = PARTS.find(item => item.id === job.paintId);
     const bodywork = car ? restorationFor(progress, car.id) : undefined;
     const paintVisible = !bodywork || bodywork.stage === 'complete' && bodywork.route === 'paint';
-    checks.push({ id: 'paint', label: `Paint: ${paint?.name ?? job.paintId}`, done: !!owned && paintVisible && !!paint?.color && car.paint.toLowerCase() === paint.color.toLowerCase() });
+    const paintNote = bodywork?.route === 'patina' ? ' · Fresh paint required: refinish the patina at the workbench'
+      : bodywork && bodywork.stage !== 'complete' ? ' · Finish the bodywork colour coat' : '';
+    checks.push({ id: 'paint', label: `Paint: ${paint?.name ?? job.paintId}${paintNote}`, done: !!owned && paintVisible && !!paint?.color && car.paint.toLowerCase() === paint.color.toLowerCase() });
   }
   const buildReady = checks.every(check => check.done);
   const proof = progress.jobs.proof;

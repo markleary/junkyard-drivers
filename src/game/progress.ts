@@ -40,6 +40,8 @@ export interface Settings {
   /** Camera shake and speed effects. Off for players who prefer a steady view. */
   motion: boolean;
   map: boolean;
+  /** Match controllers whose physical X/Y labels use the opposite browser button slots. */
+  controllerSwapXY: boolean;
 }
 export interface Progress {
   version: 1;
@@ -101,7 +103,7 @@ export const MEDAL_TIMES: Record<ShellId, Record<Medal, number>> = {
   courier: { bronze: 72, silver: 58, gold: 52 },
 };
 const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
-export const DEFAULT_SETTINGS: Settings = { quality: 'auto', time: 'auto', camera: 'chase', lights: 'auto', motion: true, map: true };
+export const DEFAULT_SETTINGS: Settings = { quality: 'auto', time: 'auto', camera: 'chase', lights: 'auto', motion: true, map: true, controllerSwapXY: false };
 export const DEFAULT_STYLE: CarStyle = { finish: 'gloss', stripe: 'none' };
 const START_HOUR = 16.6;
 export type ProgressStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -216,6 +218,7 @@ export function parseProgress(raw: string, knownFinds?: readonly string[], initi
     camera: oneOf(saved.camera, ['chase', 'far', 'bonnet'] as const, 'chase'),
     lights: oneOf(saved.lights, ['auto', 'on', 'off'] as const, 'auto'),
     motion: typeof saved.motion === 'boolean' ? saved.motion : true,
+    controllerSwapXY: typeof saved.controllerSwapXY === 'boolean' ? saved.controllerSwapXY : false,
     map: typeof saved.map === 'boolean' ? saved.map : true,
   };
   const fitted: Record<string, UpgradeFit> = {};

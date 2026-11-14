@@ -43,4 +43,42 @@ describe('controller button edges', () => {
     input.poll();
     expect(input.state).toMatchObject({ handbrake: false, nitro: false, lookBack: false, horn: false });
   });
+
+  it.each(['pressed', 'value'] as const)('swaps physical X/Y slots using %s without changing other controls', signal => {
+    const { input, buttons } = rig();
+    const down = (index: number, active: boolean) => {
+      buttons[index].pressed = signal === 'pressed' && active;
+      buttons[index].value = signal === 'value' && active ? 1 : 0;
+    };
+    input.poll(true);
+    down(3, true);
+    input.poll(true);
+    expect(input.take('interact')).toBe(true);
+    expect(input.take('recover')).toBe(false);
+    input.poll(true);
+    expect(input.take('interact')).toBe(false);
+    down(3, false); down(2, true); down(0, true); down(1, true);
+    input.poll(true);
+    expect(input.take('recover')).toBe(true);
+    expect(input.take('interact')).toBe(false);
+    expect(input.take('confirm')).toBe(true);
+    expect(input.take('back')).toBe(true);
+    expect(input.state).toMatchObject({ handbrake: true, nitro: true });
+  });
+
+  it('requires release before a held physical button can invoke its newly mapped action', () => {
+    const { input, buttons } = rig();
+    buttons[2].pressed = true;
+    input.poll();
+    expect(input.take('interact')).toBe(true);
+    input.poll(true);
+    expect(input.take('recover')).toBe(false);
+    input.poll();
+    expect(input.take('interact')).toBe(false);
+    buttons[2].pressed = false;
+    input.poll(true);
+    buttons[2].pressed = true;
+    input.poll(true);
+    expect(input.take('recover')).toBe(true);
+  });
 });

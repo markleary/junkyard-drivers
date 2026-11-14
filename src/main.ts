@@ -8,7 +8,7 @@ import { buildTuning, fitUpgrade, fittedUpgrades, reconcileFitted, removeUpgrade
 import { appraise, completeSale } from './game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, cancelJob, completeJob, jobRank, reconcileJobs, recordJobLap, type JobLapStart } from './game/jobs';
 import { stashLayout, type StashItem } from './game/stash';
-import { startRestoration, chooseRestorationRoute, workRestoration, reconcileRestorations, restorationFor, type RestorationSnapshot } from './game/restoration';
+import { startRestoration, chooseRestorationRoute, refinishRestoration, workRestoration, reconcileRestorations, restorationFor, type RestorationSnapshot } from './game/restoration';
 import { FINISHES, MEDAL_TIMES, PROGRESS_KEY, STRIPES, finishUnlocked, formatLap, loadProgress, newProgress, recordDriving, recordFind, recordLap, saveProgress, setStyle, stripeUnlocked, styleFor,
   type CameraMode, type FinishId, type LightMode, type Medal, type Progress, type QualityPreference, type StripeId, type TimePreference } from './game/progress';
 import { FIND_IDS, findSpots, type Find } from './game/finds';
@@ -294,7 +294,7 @@ function syncCars() {
 
 function pauseOptions() {
   return {
-    soundOn: !audio.muted, routeOn: !$('route').dataset.disabled, carCount: state.cars.length, touchEnabled, funds: availableFunds(state, progress.budget),
+    controllerSwapXY: progress.settings.controllerSwapXY, soundOn: !audio.muted, routeOn: !$('route').dataset.disabled, carCount: state.cars.length, touchEnabled, funds: availableFunds(state, progress.budget),
     graphics: progress.settings.quality === 'auto' ? `Auto (${QUALITY_LABEL[lighting.quality]})` : QUALITY_LABEL[lighting.quality],
     time: TIME_LABEL[progress.settings.time], motion: progress.settings.motion, map: progress.settings.map,
     finds: progress.finds.length, findTotal: finds.length, canPhoto: started,
@@ -1075,7 +1075,7 @@ function updateClock(dt: number) {
 function handlePad() {
   const wasPaused = paused;
   const wasConnected = pad.state.connected;
-  pad.poll();
+  pad.poll(progress.settings.controllerSwapXY);
   if (wasConnected !== pad.state.connected) {
     document.body.toggleAttribute('data-gamepad', pad.state.connected);
     setText('pause-key', pad.state.connected ? 'START' : 'ESC');
@@ -1192,6 +1192,13 @@ app.addEventListener('click', event => {
     if (action === 'restoration' && panelKind === 'garage' && mode === 'foot') {
       openPanel('restoration'); renderRestoration(); return;
     }
+    if (action === 'restoration-refinish' && (panelKind === 'garage' || panelKind === 'restoration') && mode === 'foot') {
+      const car = selectedCar(); if (!car) return;
+      restorationInput.clear(); saveRestorationWork();
+      progress = refinishRestoration(state, progress, car.id);
+      progress = reconcileJobs(state, progress); persist(); updateObjective();
+      openPanel('restoration'); renderRestoration(); return;
+    }
     if (action?.startsWith('restoration-') || button.dataset.restorationRoute || button.dataset.restorationPaint) {
       if (panelKind !== 'restoration' || mode !== 'foot') return;
       const car = selectedCar(); if (!car) return;
@@ -1214,6 +1221,7 @@ app.addEventListener('click', event => {
       else return;
       progress = reconcileJobs(state, progress); persist(); updateObjective(); renderRestoration(); audio.click(); return;
     }
+    if (action === 'controller-swap-xy') { setPreference({ controllerSwapXY: !progress.settings.controllerSwapXY }); pause(); return; }
     if (action === 'sound') { audio.muted = !audio.muted; pause(); return; }
     if (action === 'route') { const route = $('route'); if (route.dataset.disabled) delete route.dataset.disabled; else route.dataset.disabled = '1'; pause(); return; }
     if (action === 'touch-controls') {

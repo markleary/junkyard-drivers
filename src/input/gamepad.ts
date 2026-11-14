@@ -41,8 +41,8 @@ export class GamepadInput {
   private pressed = new Set<PadButton>();
   private index = -1;
 
-  /** Read the pad. Buttons pressed since the last poll are available once from `take`. */
-  poll(): PadState {
+  /** Read the pad. The optional swap matches controllers whose physical X/Y labels are reversed. */
+  poll(swapXY = false): PadState {
     this.pressed.clear();
     const pads = typeof navigator !== 'undefined' && navigator.getGamepads ? navigator.getGamepads() : [];
     let pad: Gamepad | null = this.index >= 0 ? pads[this.index] ?? null : null;
@@ -64,8 +64,11 @@ export class GamepadInput {
     state.lookBack = buttonDown(pad.buttons[4]);
     state.horn = buttonDown(pad.buttons[10]);
     state.nitro = buttonDown(pad.buttons[1]);
-    for (const [name, button] of Object.entries(BUTTONS) as [PadButton, number][]) {
+    for (const [name, standardButton] of Object.entries(BUTTONS) as [PadButton, number][]) {
+      const button = swapXY && name === 'interact' ? BUTTONS.recover
+        : swapXY && name === 'recover' ? BUTTONS.interact : standardButton;
       const down = buttonDown(pad.buttons[button]);
+      // Track physical buttons so changing the preference cannot reuse a held press for another action.
       if (down && !this.held.has(button)) this.pressed.add(name);
       if (down) this.held.add(button); else this.held.delete(button);
     }

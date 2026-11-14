@@ -70,7 +70,12 @@ test('inspection pauses movement and focus loss clears held input', async ({ pag
   await page.keyboard.up('KeyS');
 });
 
-for (const buttonSignal of ['pressed', 'value'] as const) test(`gamepad ${buttonSignal} signals inspect, enter and offer a car with X`, async ({ page }) => {
+for (const { buttonSignal, swapXY } of [
+  { buttonSignal: 'pressed', swapXY: false },
+  { buttonSignal: 'value', swapXY: false },
+  { buttonSignal: 'value', swapXY: true },
+] as const) test(`gamepad ${swapXY ? 'saved Swap X/Y setting' : `${buttonSignal} signals`} inspects, enters and offers a car with X`, async ({ page }) => {
+  const interactButton = swapXY ? 3 : 2;
   let save = newGame();
   for (const id of ['shell-bison', 'part-v8-stock', 'part-street-1']) save = purchase(save, id);
   save = install(install(save, 'car-bison', 'instance-part-v8-stock'), 'car-bison', 'instance-part-street-1');
@@ -105,6 +110,22 @@ for (const buttonSignal of ['pressed', 'value'] as const) test(`gamepad ${button
   await expect(page.locator('.admission-stamp')).toContainText('$150,000');
   await begin.click();
   await expect(page.locator('#pause-key')).toHaveText('START');
+  if (swapXY) {
+    await tap(9);
+    const swap = page.locator('[data-action="controller-swap-xy"]');
+    await expect(swap).toHaveAttribute('aria-pressed', 'false');
+    await swap.click();
+    await expect(swap).toHaveAttribute('aria-pressed', 'true');
+    expect((await read(page)).progress.settings.controllerSwapXY).toBe(true);
+    await page.reload(); await expect(begin).toBeEnabled();
+    await page.evaluate(() => document.body.setAttribute('data-test-pad', ''));
+    await begin.click();
+    await tap(9);
+    await expect(swap).toHaveAttribute('aria-pressed', 'true');
+    mkdirSync('artifacts/restoration', { recursive: true });
+    await page.screenshot({ path: 'artifacts/restoration/controller-swap-settings.png' });
+    await page.locator('[data-action="resume"]').click();
+  }
   await walk(page, -18.2, 14.1);
   const { position } = await read(page);
   await look(page, Math.atan2(position.x + 15, position.z - 12), -.08);
@@ -112,7 +133,7 @@ for (const buttonSignal of ['pressed', 'value'] as const) test(`gamepad ${button
   const hint = page.locator('#hint kbd');
   await expect(hint).toBeVisible();
   await expect(hint).toHaveText('X');
-  await page.evaluate(() => document.body.setAttribute('data-test-button', '2'));
+  await press(interactButton);
   await expect(page.locator('#panel')).toContainText('Hachiro Kestrel');
   await page.evaluate(() => document.body.setAttribute('data-test-button', '1'));
   await expect(page.locator('#panel')).toBeHidden();
@@ -134,23 +155,23 @@ for (const buttonSignal of ['pressed', 'value'] as const) test(`gamepad ${button
     document.body.setAttribute('data-test-pad', '');
   });
   await expect(hint).toHaveText('X');
-  await tap(2);
+  await tap(interactButton);
   await expect.poll(async () => (await read(page)).mode).toBe('drive');
   await expect(page.locator('#drive-keys')).toHaveText('RT / LT · DRIVE');
   await expect(page.locator('#recover-key')).toHaveText('Y');
-  await tap(2);
+  await tap(interactButton);
   await expect.poll(async () => (await read(page)).mode).toBe('foot');
   await walk(page, -22.6, -13);
   const beside = await read(page);
   await look(page, Math.atan2(beside.position.x + 20, beside.position.z + 13), -.08);
   await expect.poll(async () => (await read(page)).activeTarget).toBe('garage-car');
-  await tap(2);
+  await tap(interactButton);
   await expect.poll(async () => (await read(page)).mode).toBe('drive');
   const site = (await read(page)).dealer;
   await drivePath(page, [{ x: -20, z: 30 }, { x: -20, z: 60 }, { x: -19.5, z: site.bay.z - 12 }, { x: -15, z: site.bay.z - 3 }, { x: site.bay.x - 6, z: site.bay.z }, { x: site.bay.x - .5, z: site.bay.z }]);
   await stop(page);
   await expect(page.locator('#hint')).toContainText('Second Chance Motors');
-  await press(2);
+  await press(interactButton);
   await expect(page.locator('#panel')).toContainText('Trade-in offer');
   await page.waitForTimeout(150);
   expect((await read(page)).state.cars).toHaveLength(1);

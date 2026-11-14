@@ -3,7 +3,7 @@ import { DEFAULT_PAINT, SHELLS, getShell, type ShellId } from '../src/game/catal
 import { completeSale } from '../src/game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, jobBuildSignature, reconcileJobs, recordJobLap } from '../src/game/jobs';
 import { newProgress, parseProgress, setStyle } from '../src/game/progress';
-import { chooseRestorationRoute, reconcileRestorations, restorationFor, startRestoration, workRestoration } from '../src/game/restoration';
+import { chooseRestorationRoute, reconcileRestorations, refinishRestoration, restorationFor, startRestoration, workRestoration } from '../src/game/restoration';
 import { install, newGame, paintCar, parseSave, purchase, restoreOriginalPaint, type GameState } from '../src/game/state';
 
 const carId = 'car-estate';
@@ -162,6 +162,56 @@ describe('hands-on restoration', () => {
     }
     expect(record(progress).after?.restored).toBe(false);
     expect(parseProgress(JSON.stringify(progress))).toEqual(progress);
+  });
+
+  it.each(['rust', 'repair', 'seal', 'complete'] as const)('can refinish patina from %s without skipping unfinished preparation or replacing the before photo', stage => {
+    const state = purchase(project(), 'shell-hachiro'), originalSave = JSON.stringify(state);
+    let progress = startRestoration(state, newProgress(), carId);
+    progress = workRestoration(state, progress, carId, 1);
+    progress = chooseRestorationRoute(state, progress, carId, 'patina').progress;
+    while (record(progress).stage !== stage) progress = workRestoration(state, progress, carId, 1);
+    if (stage !== 'complete') progress = workRestoration(state, progress, carId, .4);
+    const previous = record(progress), originalBefore = previous.before;
+
+    const refinishing = refinishRestoration(state, progress, carId);
+    expect(record(refinishing)).toMatchObject({ route: 'paint', stage: stage === 'rust' || stage === 'repair' ? stage : 'prime', work: 0, after: null });
+    expect(record(refinishing).before).toBe(originalBefore);
+    expect(record(progress)).toBe(previous);
+    expect(previous.route).toBe('patina');
+    expect(previous.work).toBe(stage === 'complete' ? 0 : .4);
+    expect(previous.after !== null).toBe(stage === 'complete');
+    expect(JSON.stringify(state)).toBe(originalSave);
+    expect(parseSave(originalSave)).toEqual(state);
+    expect(parseProgress(JSON.stringify(refinishing))).toEqual(refinishing);
+    expect(refinishRestoration(state, refinishing, carId)).toBe(refinishing);
+  });
+
+  it('requires an owned started project and leaves a fresh-paint project unchanged', () => {
+    const state = project(), progress = startRestoration(state, newProgress(), carId);
+    expect(() => refinishRestoration(newGame(), progress, carId)).toThrow(/owned car/);
+    expect(() => refinishRestoration(state, newProgress(), carId)).toThrow(/Start bodywork/);
+    expect(refinishRestoration(state, progress, carId)).toBe(progress);
+    let finished = progress;
+    for (let i = 0; i < 5; i++) finished = workRestoration(state, finished, carId, 1);
+    expect(refinishRestoration(state, finished, carId)).toBe(finished);
+  });
+
+  it('invalidates a completed patina project road test when its owner begins a fresh finish', () => {
+    const id = 'car-sprite';
+    const state = install(purchase(project('sprite'), 'part-wheels-rally'), id, 'instance-part-wheels-rally');
+    let progress = newProgress();
+    progress = acceptJob({ ...progress, jobs: { ...progress.jobs, completed: ['first-wheels'] } }, 'weekend-sprite');
+    progress = startRestoration(state, progress, id);
+    progress = workRestoration(state, progress, id, 1);
+    progress = chooseRestorationRoute(state, progress, id, 'patina').progress;
+    for (let i = 0; i < 3; i++) progress = workRestoration(state, progress, id, 1);
+    const job = activeJob(progress)!, oldLap = beginJobLap(state, progress, id);
+    progress = recordJobLap(state, progress, id, 70, oldLap);
+    expect(assessJob(state, progress, state.cars[0], job).ready).toBe(true);
+    const refinishing = refinishRestoration(state, progress, id);
+    expect(refinishing.jobs.proof).toBeNull();
+    expect(recordJobLap(state, refinishing, id, 70, oldLap).jobs.proof).toBeNull();
+    expect(progress.jobs.proof).not.toBeNull();
   });
 
   it('freezes the before and after builds so later styling and parts cannot rewrite the photos', () => {

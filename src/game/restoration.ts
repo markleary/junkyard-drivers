@@ -86,6 +86,17 @@ export function chooseRestorationRoute(state: GameState, progress: Progress, car
   return { state: preserved, progress: put(progress, carId, { ...record, route }) };
 }
 
+/** Keep the original before photo, but let preserved bodywork become a fresh painted finish. */
+export function refinishRestoration(state: GameState, progress: Progress, carId: string): Progress {
+  ownedCar(state, carId);
+  const record = restorationFor(progress, carId);
+  if (!record) throw new Error('Start bodywork at the workbench first.');
+  if (record.route !== 'patina') return progress;
+  // Unfinished preparation still needs doing. A repaired or sealed body only needs its new primer and coat.
+  const stage = record.stage === 'wash' || record.stage === 'rust' || record.stage === 'repair' ? record.stage : 'prime';
+  return put(progress, carId, { ...record, route: 'paint', stage, work: 0, after: null });
+}
+
 /** A bounded tool pass cannot spill into the next operation, even when a frame takes a long time. */
 export function workRestoration(state: GameState, progress: Progress, carId: string, amount: number): Progress {
   const car = ownedCar(state, carId), record = restorationFor(progress, carId);
