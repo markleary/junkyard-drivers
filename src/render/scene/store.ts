@@ -100,7 +100,7 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
     for (let i = 0; i < 6; i++) for (const y of [.62, 1.37, 2.1]) {
       if (x === 3 && z === 11.5 && y > 2) continue; // Open display shelf for the crate V8.
       const tint = boxTints[Math.floor(rng() * boxTints.length)], depth = .5 + rng() * .5, height = .34 + rng() * .22;
-      b.box(flat.matte, x + side * (.9 - depth) * .5 - side * .1, y - .26 + height / 2, z - 1.75 + i * .7, 1.1 + depth * .7, height, .56, { color: tint });
+      b.box(flat.matte, x + side * (.9 - depth) * .5 - side * .025, y - .26 + height / 2, z - 1.75 + i * .7, 1.1 + depth * .7, height, .56, { color: tint });
       b.box(flat.matte, x + side * .93, y - .26 + height * .5, z - 1.75 + i * .7, .012, height * .5, .3, { color: C.paper });
     }
   }
@@ -121,6 +121,11 @@ export function buildStore(ctx: SceneContext, plants: Vegetation, marks: GroundM
   counter.box(lights.interior, 2.7, 1.8, -.08, .6, .38, .04, { color: 0x9fd0c8, cast: false });
   counter.box(flat.satin, 2.7, 1.82, -.12, .7, .46, .06, { color: 0x2c3a40 });
   counter.box(flat.matte, -1.2, 1.3, .3, .5, .03, .36, { color: C.paper, yaw: .2 });
+  const note = sign(ctx, 'Dad’s old Courier…', 9.4, 1.72, 8.62, 1.04, .76,
+    { color:'#3b4736', bg:'#eee1b9', sub:'— Nell', style:'paper', bare:true });
+  note.rotation.set(-.20, .07, -.07); note.updateMatrix();
+  counter.box(wood,-2.6,1.48,.53,.72,.36,.22,{color:C.woodDark});
+  ctx.interactables.push({id:'orchard-note',kind:'note',position:new THREE.Vector3(9.4,1.7,8.9),label:'Read Nell’s handwritten note'});
   counter.cyl(flat.chrome, -3.2, 1.36, .2, .09, .14, { color: 0xc8cdc9, segments: 10 });
   sign(ctx, 'PARTS COUNTER', store.x, 2.75, 4.19, 9.5, .9, { bg: '#24566a', sub: 'I4 · V8 · V12 / STREET · SPORT', bare: true });
   // Colour wall behind the till: one chip per store paint.

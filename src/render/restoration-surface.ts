@@ -8,6 +8,7 @@ export interface RestorationAppearance {
   work: number;
   /** The colour captured before bodywork; choosing a final coat must not recolour the aged skin. */
   startingPaint?: string;
+  orchardLettering?: boolean;
 }
 
 type Surface = 'dirty' | 'washed' | 'metal' | 'stabilized' | 'repaired' | 'preserved' | 'primer' | 'paint' | 'sealed';

@@ -46,6 +46,64 @@ async function keyboardStep(page: Page, next: string) {
   await page.keyboard.up('Space'); await page.waitForTimeout(50);
 }
 
+test('the repainted orchard door keeps its lettering choice on reload and in the exported photo pair', async ({ page, baseURL }, testInfo) => {
+  const id = 'car-orchard';
+  const state = purchase(runningCar('orchard'), 'part-paint-cobalt');
+  let progress = startRestoration(state, { ...newProgress(), recovery: 'complete' }, id);
+  for (let i = 0; i < 4; i++) progress = workRestoration(state, progress, id, 1);
+  const watched = await prepare(page, baseURL!, state, progress);
+  const clean = page.getByRole('button', { name: 'Clean door' });
+  const lettering = page.getByRole('button', { name: 'Bell Orchard lettering' });
+  const exportPair = async (path: string) => {
+    await page.getByRole('button', { name: 'Before & after' }).click();
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Save photo pair' }).click();
+    await (await download).saveAs(path);
+    await page.getByRole('button', { name: 'Back to bodywork' }).click();
+    return readFileSync(path).toString('base64');
+  };
+
+  await boot(page); await enterBench(page);
+  await expect(lettering).toHaveCount(0);
+  await page.locator('[data-restoration-paint="paint-cobalt"]').click();
+  await keyboardStep(page, 'complete');
+  await expect(clean).toHaveAttribute('aria-pressed', 'true');
+  await lettering.focus(); await page.keyboard.press('Enter');
+  await expect(lettering).toHaveAttribute('aria-pressed', 'true');
+  await boot(page); await enterBench(page);
+  await expect(lettering).toHaveAttribute('aria-pressed', 'true');
+  mkdirSync('artifacts/recovery', { recursive: true });
+  const withLogo = await exportPair('artifacts/recovery/relettered-photo-pair.png');
+  await clean.click();
+  const plain = await exportPair(testInfo.outputPath('clean-photo-pair.png'));
+  // Compare the actual downloaded prints. Count visibly changed pixels inside each photo, excluding its caption.
+  const [before, after] = await page.evaluate(async (prints) => {
+    const images = await Promise.all(prints.map(async data => {
+      const image = new Image();
+      image.src = 'data:image/png;base64,' + data;
+      await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(image, 0, 0);
+      return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }));
+    const [a, b] = images;
+    return [40, 860].map(left => {
+      let changed = 0;
+      for (let y = 148; y < 733; y++) for (let x = left; x < left + 780; x++) {
+        const i = (y * a.width + x) * 4;
+        if (Math.abs(a.data[i] - b.data[i]) > 40) changed++;
+      }
+      return changed;
+    });
+  }, [withLogo, plain]);
+  expect(before).toBeLessThan(150);
+  expect(after).toBeGreaterThan(before + 800);
+  await boot(page); await enterBench(page);
+  await expect(clean).toHaveAttribute('aria-pressed', 'true');
+  expect(watched).toEqual({ errors: [], failed: [], external: [] });
+});
+
 test('hands-on bodywork restores the Sirocco, saves stages and exports frozen before-and-after photos', async ({ page, baseURL }) => {
   const watched = await prepare(page, baseURL!, runningCar('veloce'));
   await boot(page); await enterBench(page);

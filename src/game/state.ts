@@ -1,4 +1,4 @@
-import { DEFAULT_PAINT, LISTINGS, PARTS, SHELLS, getCatalogPart, getShell } from './catalog';
+import { DEFAULT_PAINT, LISTINGS, PARTS, OWNABLE_SHELLS, getCatalogPart, getShell } from './catalog';
 import type { Listing, Part, PartKind, ShellId } from './catalog';
 
 export interface OwnedCar {
@@ -135,7 +135,7 @@ export function sellCar(state: GameState, carId: string, fitted: readonly string
 }
 
 export function buildIssues(state: GameState, car: OwnedCar): string[] {
-  const shell = SHELLS.find((item) => item.id === car.shellId);
+  const shell = OWNABLE_SHELLS.find((item) => item.id === car.shellId);
   if (!shell) return ['Unknown car shell.'];
   const issues: string[] = [];
   const engine = getPart(state, car.engineId);

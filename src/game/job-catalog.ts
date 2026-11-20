@@ -48,7 +48,7 @@ export const JOBS: RestorationJob[] = [
   {
     id: 'shop-courier', title: 'Back on the rounds', customer: 'Holloway Auto Parts', unlocksAfter: 2,
     brief: 'Our old delivery van deserves another shift. Build a Courier with a stout V8 and sensible tires. We need dependable pulling power, not boost bottles or turbo plumbing.',
-    shells: ['courier'], enginePower: { min: 210, max: 290 }, minGrip: 1.65,
+    shells: ['courier', 'orchard'], enginePower: { min: 210, max: 290 }, minGrip: 1.65,
     forbiddenUpgrades: ['turbo', 'nitro'], maxInvestment: 8200, payout: 10500,
   },
   {

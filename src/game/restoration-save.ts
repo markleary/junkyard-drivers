@@ -1,4 +1,4 @@
-import { PARTS, SHELLS, UPGRADE_KINDS, type ShellId } from './catalog';
+import { PARTS, OWNABLE_SHELLS, UPGRADE_KINDS, type ShellId } from './catalog';
 import type { FinishId, StripeId } from './progress';
 import type { RestorationRecord, RestorationSnapshot, RestorationStage } from './restoration';
 
@@ -25,7 +25,7 @@ function parseSnapshot(value: unknown, shellId: ShellId): RestorationSnapshot | 
 export function parseRestorations(value: unknown): Record<string, RestorationRecord> {
   const result: Record<string, RestorationRecord> = {};
   if (!record(value)) return result;
-  for (const { id: shellId } of SHELLS) {
+  for (const { id: shellId } of OWNABLE_SHELLS) {
     const id = `car-${shellId}`, saved = value[id];
     if (!record(saved)) continue;
     const before = parseSnapshot(saved.before, shellId);
@@ -38,6 +38,9 @@ export function parseRestorations(value: unknown): Record<string, RestorationRec
     // A damaged finished photo sends only this last operation back for a fresh capture.
     if (stage === 'complete' && !after) stage = route === 'paint' ? 'paint' : 'seal';
     if (after) after = { ...after, restored: route === 'paint' };
+    if (after && shellId === 'orchard' && route === 'paint' && record(saved.after)) {
+      after.orchardLettering = saved.after.orchardLettering === true;
+    }
     const work = stage === 'complete' ? 0 : typeof saved.work === 'number' && Number.isFinite(saved.work) && saved.work >= 0 && saved.work < 1 ? saved.work : 0;
     result[id] = { stage, route, work, before, after };
   }

@@ -1,4 +1,4 @@
-export type ShellId = 'hachiro' | 'bison' | 'veloce' | 'wren' | 'packhorse' | 'estate' | 'sprite' | 'courier';
+export type ShellId = 'hachiro' | 'bison' | 'veloce' | 'wren' | 'packhorse' | 'estate' | 'sprite' | 'courier' | 'orchard';
 export type MountFamily = 'I4' | 'V8' | 'V12';
 export type PartKind = 'engine' | 'wheels' | 'paint' | 'turbo' | 'exhaust' | 'nitro';
 /** Tuning parts bolt on to a car that already has its engine. A car carries at most one of each. */
@@ -75,6 +75,13 @@ export const SHELLS: Shell[] = [
   { id: 'courier', name: 'Dunmore Courier', era: '1976 · American panel van', mount: 'V8', mass: 1760, price: 3600,
     description: 'A tall working van with solid cargo panels and twin rear doors. A useful old workhorse that rewards a torquey V8. Needs a V8 engine and any wheel set.' },
 ];
+
+// A distinct receipt gives the one-off recovery its own car, parts and sale history.
+export const ORCHARD_COURIER: Shell = {
+  ...SHELLS.find(shell => shell.id === 'courier')!, id: 'orchard', name: 'Dunmore Courier · Bell Orchard',
+  price: 0, description: 'The delivery van from the Bell family packing shed. V8 mount.',
+};
+export const OWNABLE_SHELLS = [...SHELLS, ORCHARD_COURIER];
 
 // Existing salvage IDs remain stable so saved purchases and installed parts keep working.
 const YARD_PARTS: Omit<Part, 'source'>[] = [
@@ -180,18 +187,18 @@ export function getCategoryStock(source: PartSource, category: ShopCategory): Pa
 }
 
 export const LISTINGS: Listing[] = [
-  ...SHELLS.map((shell): Listing => ({ id: `shell-${shell.id}`, kind: 'shell', itemId: shell.id, price: shell.price })),
+  ...OWNABLE_SHELLS.map((shell): Listing => ({ id: `shell-${shell.id}`, kind: 'shell', itemId: shell.id, price: shell.price })),
   ...PARTS.map((part): Listing => ({ id: `part-${part.id}`, kind: 'part', itemId: part.id, price: part.price })),
 ];
 
 /** The colour each shell wears as found. None of them matches a paint that can be bought. */
 export const DEFAULT_PAINT: Record<ShellId, string> = {
   hachiro: '#83908a', bison: '#8a5c42', veloce: '#8d715d', wren: '#8f8a6e', packhorse: '#6f8478',
-  estate: '#82917c', sprite: '#8c6b69', courier: '#9b937b',
+  estate: '#82917c', sprite: '#8c6b69', courier: '#9b937b', orchard: '#9b937b',
 };
 
 export function getShell(id: string): Shell {
-  const shell = SHELLS.find((item) => item.id === id);
+  const shell = OWNABLE_SHELLS.find((item) => item.id === id);
   if (!shell) throw new Error('Unknown car shell.');
   return shell;
 }

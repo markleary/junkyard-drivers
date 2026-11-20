@@ -12,6 +12,7 @@ import { buildYard } from './scene/yard';
 import { TROPHY_PEGS, buildGarage } from './scene/garage';
 import { buildStore } from './scene/store';
 import { buildTown } from './scene/town';
+import { buildOrchard } from './scene/orchard';
 import { buildLandscape } from './scene/landscape';
 import type { LampSpot, SceneContext, WorldInteractable } from './scene/kit';
 
@@ -50,6 +51,7 @@ export function createWorld(scene: THREE.Scene, world: RAPIER.World, layout: Tow
   buildStore(ctx, plants, marks);
   buildTown(ctx, plants, marks);
   buildLandscape(ctx, plants);
+  buildOrchard(ctx, plants);
   const built = builder.build();
 
   // A handful of real lights follow the viewer from lamp to lamp after dark.

@@ -1,3 +1,5 @@
+import { ORCHARD_LANE, inOrchard } from './orchard';
+
 export interface Point { x: number; z: number }
 export interface Road { id: string; a: Point; b: Point; width: number }
 export interface Building extends Point { w: number; d: number; h: number; color: number; style: number }
@@ -99,6 +101,7 @@ export function generateTown(seed: number): TownLayout {
   }
   const landmark = { x: east + 26, z: north + 25 };
   const lots = placeLots(roads, buildings, landmark);
+  roads.push(ORCHARD_LANE);
   const trees: Point[] = [];
   for (let i = 0; i < 110; i++) {
     const p = { x: -75 + random() * 275, z: -45 + random() * 250 };
@@ -110,7 +113,7 @@ export function generateTown(seed: number): TownLayout {
     // Each candidate draws the same two numbers whether or not it is kept, so
     // clearing the lots leaves every other tree exactly where older saves had it.
     if (lots.some(lot => overlapsBox({ ...p, w: 2, d: 2 }, lot, 2.5))) continue;
-    trees.push(p);
+    if (!inOrchard(p.x, p.z) && !(p.x < -53 && p.z < 89 && p.z > 75)) trees.push(p);
   }
   return {
     seed, roads, buildings, trees,

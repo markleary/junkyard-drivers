@@ -1,4 +1,4 @@
-import { SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { OWNABLE_SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
 import { getJob } from './job-catalog';
 import { DEFAULT_STARTING_FUNDS } from './state';
 import { parseRestorations } from './restoration-save';
@@ -43,7 +43,11 @@ export interface Settings {
   /** Match controllers whose physical X/Y labels use the opposite browser button slots. */
   controllerSwapXY: boolean;
 }
+export const RECOVERY_STAGES = ['unknown', 'lead', 'shed', 'loaded', 'complete'] as const;
+export type RecoveryStage = typeof RECOVERY_STAGES[number];
+
 export interface Progress {
+  recovery: RecoveryStage;
   version: 1;
   /** Available cash plus the cost of purchases still held. Purchases only need to save their receipts. */
   budget: number;
@@ -73,7 +77,7 @@ export interface Progress {
   restorations: Record<string, RestorationRecord>;
 }
 
-export const SHELL_IDS: ShellId[] = SHELLS.map(shell => shell.id);
+export const SHELL_IDS: ShellId[] = OWNABLE_SHELLS.map(shell => shell.id);
 export const FINISHES: { id: FinishId; name: string; finds: number; note: string }[] = [
   { id: 'gloss', name: 'Gloss', finds: 0, note: 'Workshop standard' },
   { id: 'metallic', name: 'Metallic', finds: 3, note: 'Fine flake under clear coat' },
@@ -100,6 +104,7 @@ export const MEDAL_TIMES: Record<ShellId, Record<Medal, number>> = {
   packhorse: { bronze: 72, silver: 58, gold: 52 },
   estate: { bronze: 73, silver: 59, gold: 52 },
   sprite: { bronze: 71, silver: 57, gold: 51 },
+  orchard: { bronze: 72, silver: 58, gold: 52 },
   courier: { bronze: 72, silver: 58, gold: 52 },
 };
 const MEDAL_RANK: Record<Medal, number> = { bronze: 1, silver: 2, gold: 3 };
@@ -110,7 +115,7 @@ export type ProgressStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function newProgress(budget = DEFAULT_STARTING_FUNDS): Progress {
   return {
-    version: 1, budget, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
+    version: 1, recovery: 'unknown', budget, finds: [], bestLap: {}, odometer: {}, topSpeed: {}, laps: 0, styles: {}, settings: { ...DEFAULT_SETTINGS }, hour: START_HOUR,
     fitted: {}, proof: {}, sales: { count: 0, takings: 0, profit: 0, best: 0 }, stash: 0, restock: {},
     jobs: { active: null, completed: [], proof: null, revision: 0 }, restorations: {},
   };
@@ -249,7 +254,7 @@ export function parseProgress(raw: string, knownFinds?: readonly string[], initi
   const jobs: JobProgress = { active, completed, proof: jobProof,
     revision: typeof savedJobs.revision === 'number' && Number.isSafeInteger(savedJobs.revision) && savedJobs.revision >= 0 ? savedJobs.revision : 0 };
   return {
-    version: 1, budget: typeof data.budget === 'number' && Number.isSafeInteger(data.budget) && data.budget >= 0 ? data.budget : fresh.budget,
+    version: 1, recovery: oneOf(data.recovery, RECOVERY_STAGES, 'unknown'), budget: typeof data.budget === 'number' && Number.isSafeInteger(data.budget) && data.budget >= 0 ? data.budget : fresh.budget,
     finds, bestLap: perShell(data.bestLap, 36000), odometer: perShell(data.odometer, 1e9), topSpeed: perShell(data.topSpeed, 200),
     laps: positive(data.laps, 1e7) ? Math.floor(data.laps as number) : 0, styles, settings,
     hour: positive(data.hour, 24) ? data.hour as number : START_HOUR,
