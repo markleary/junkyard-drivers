@@ -8,7 +8,7 @@ import { buildTuning, fitUpgrade, fittedUpgrades, reconcileFitted, removeUpgrade
 import { appraise, completeSale } from './game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, cancelJob, completeJob, jobRank, reconcileJobs, recordJobLap, type JobLapStart } from './game/jobs';
 import { stashLayout, type StashItem } from './game/stash';
-import { startRestoration, chooseRestorationRoute, refinishRestoration, workRestoration, reconcileRestorations, restorationFor, type RestorationSnapshot } from './game/restoration';
+import { startRestoration, chooseRestorationRoute, refinishRestoration, setOrchardLettering, workRestoration, reconcileRestorations, restorationFor, type RestorationSnapshot } from './game/restoration';
 import { FINISHES, MEDAL_TIMES, PROGRESS_KEY, STRIPES, finishUnlocked, formatLap, loadProgress, newProgress, recordDriving, recordFind, recordLap, saveProgress, setStyle, stripeUnlocked, styleFor,
   type CameraMode, type FinishId, type LightMode, type Medal, type Progress, type QualityPreference, type StripeId, type TimePreference } from './game/progress';
 import { FIND_IDS, findSpots, type Find } from './game/finds';
@@ -36,6 +36,11 @@ import { Minimap } from './ui/minimap';
 import { restorationMarkup, restorationPhotosMarkup } from './ui/restoration';
 import { RestorationInput } from './ui/restoration-input';
 import { downloadRestorationPhotos } from './ui/restoration-photos';
+import { advanceRecovery, reconcileRecovery, unloadRecovery, RECOVERY_OBJECTIVE } from './game/recovery';
+import { STORE_RIG, SHED_RIG, LOADED_RIG, SHED_VAN, UNLOAD, inCourt, type Pose } from './world/orchard';
+import { RecoveryRig } from './render/recovery-rig';
+import { alignment, unloadingGuide } from './physics/trailer';
+import { recoveryNote } from './ui/recovery';
 import './ui/fonts.css';
 import './style.css';
 import './ui/touch.css';
@@ -67,6 +72,7 @@ const randomSeed = () => {
   try { return crypto.getRandomValues(new Uint32Array(1))[0] || 1; } catch { return Math.floor(Math.random() * 0xfffffffe) + 1; }
 };
 // Tuning parts are recorded against cars in the progress save; anything the collection no longer backs is dropped here.
+progress = reconcileRecovery(state, progress);
 progress = reconcileFitted(state, progress);
 progress = reconcileRestorations(state, progress);
 progress = reconcileJobs(state, progress);
@@ -81,7 +87,7 @@ let selectedId = state.cars.find(car => car.id === progress.jobs.proof?.carId)?.
   ?? state.cars.find(car => activeJob(progress)?.shells.includes(car.shellId))?.id
   ?? state.cars[0]?.id ?? '';
 let mode: 'foot' | 'drive' = 'foot';
-let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' | 'dealer' | 'jobs' | 'restoration' = 'none', started = false, dragMode = false;
+let paused = true, panelKind: 'none' | 'inspect' | 'rack' | 'garage' | 'dealer' | 'jobs' | 'restoration' | 'note' = 'none', started = false, dragMode = false;
 let restorationGallery = false, restorationDirty = false, restorationSound = 0;
 let restorationPhotos: { before: string; after: string } | undefined;
 let jobsFromGarage = false;
@@ -90,6 +96,7 @@ let yaw = 0, pitch = 0, dragging = false;
 let vehicle: Vehicle | undefined, drivenVisual: CarVisual | undefined, drivetrain: Drivetrain | undefined;
 /** What is fitted to the car being driven. */
 let tuning: BuildTuning | undefined;
+let rig: RecoveryRig | undefined, drivingRig = false, hitchView = false, winchNeedsRelease = true;
 let parked: CarVisual | undefined, parkedCollider: RAPIER.Collider | undefined;
 let inspectListing = '', rackKind: ShopCategory = 'engine', rackSource: PartSource = 'yard';
 let stash: StashItem[] = stashLayout(progress.stash, progress.restock), stashView: StashView;
@@ -118,9 +125,10 @@ const shellPositions: Record<ShellId, THREE.Vector3> = {
   wren: new THREE.Vector3(0, .72, 0), packhorse: new THREE.Vector3(0, .72, 0),
   estate: new THREE.Vector3(PROJECT_SHELLS.estate.x, .72, PROJECT_SHELLS.estate.z),
   sprite: new THREE.Vector3(PROJECT_SHELLS.sprite.x, .72, PROJECT_SHELLS.sprite.z),
+  orchard: new THREE.Vector3(SHED_VAN.x,.56,SHED_VAN.z),
   courier: new THREE.Vector3(PROJECT_SHELLS.courier.x, .72, PROJECT_SHELLS.courier.z),
 };
-const shellYaw: Record<ShellId, number> = { hachiro: -.12, bison: -.12, veloce: .25, wren: 0, packhorse: 0, estate: 0, sprite: 0, courier: 0 };
+const shellYaw: Record<ShellId, number> = { hachiro: -.12, bison: -.12, veloce: .25, wren: 0, packhorse: 0, estate: 0, sprite: 0, courier: 0, orchard: 0 };
 const BAY = new THREE.Vector3(-20, .8, -13);
 const tmp = new THREE.Vector3(), direction = new THREE.Vector3(), aim = new THREE.Vector3(), q = new THREE.Quaternion();
 const carPosition = new THREE.Vector3(), carRight = new THREE.Vector3(), carForward = new THREE.Vector3();
@@ -160,7 +168,7 @@ const restorationInput = new RestorationInput(panel, () => panelKind === 'restor
     return [hit.object.material].flat().some(material => material.name === 'restoration-body');
   }, saveRestorationWork);
 
-interface Target { id: string; kind: 'workbench' | 'listing' | 'rack' | 'store' | 'dealer' | 'car'; position: THREE.Vector3; label: string; listingId?: string }
+interface Target { id: string; kind: 'note' | 'rig' | 'lettering' | 'workbench' | 'listing' | 'rack' | 'store' | 'dealer' | 'car'; position: THREE.Vector3; label: string; listingId?: string }
 const dollars = (value: number) => `$${value.toLocaleString()}`;
 const interactKey = () => pad.state.connected ? 'X' : 'E';
 
@@ -177,7 +185,8 @@ function announce(options: BannerOptions, sound?: 'medal' | 'find' | 'unlock' | 
 }
 function clearInputs() {
   restorationInput.clear();
-  keys.clear(); setDragging(false); lookBack = false; touch.reset();
+  winchNeedsRelease = true;
+  keys.clear(); setDragging(false); lookBack = false; touch.reset(); pad.clearHeld();
   if (hornHeld) { hornHeld = false; audio.horn(false); }
 }
 // Looking by dragging turns the camera without capturing the mouse, so the cursor hides until the button comes up.
@@ -186,6 +195,7 @@ function setDragging(on: boolean) {
   document.body.toggleAttribute('data-drag-look', on && (!!photo || (dragMode && !paused && !touchEnabled && mode === 'foot')));
 }
 function syncUiScreen() {
+  document.body.toggleAttribute('data-recovery-drive',drivingRig);
   document.body.dataset.screen = photo ? 'photo' : panelKind !== 'none' ? panelKind : !started ? 'intro' : paused ? 'pause' : mode;
   document.body.dataset.input = touchEnabled ? 'touch' : 'desktop';
   touch.setContext({ enabled: touchEnabled, paused, mode });
@@ -199,7 +209,7 @@ function resizeGraphics() {
   lighting.resize(width, height);
   minimap?.resize();
 }
-function selectedCar() { return state.cars.find(car => car.id === selectedId); }
+function selectedCar() { return drivingRig ? undefined : state.cars.find(car => car.id === selectedId); }
 function persist() {
   progress = { ...progress, hour };
   const saved = saveProgress(progress);
@@ -226,15 +236,27 @@ function updateObjective() {
     else message = mode === 'drive' ? 'Follow the amber arrows through Willow Creek. Return to the Garage.'
       : `Your car is ready. Walk to its Garage bay and ${touchEnabled && !pad.state.connected ? 'tap Enter car' : `press ${interactKey()}`}.`;
   }
+  if (car?.shellId === 'orchard' && restorationFor(progress,car.id)?.stage === 'wash' && mode === 'foot') message = 'Wash the orchard lettering at the Garage workbench. Fit a V8 and wheels to drive.';
   if (trial.complete) message = `Loop complete. Return to the Garage, stop, then ${touchEnabled && !pad.state.connected ? 'tap Exit car' : `press ${interactKey()} to exit`}. Or sell it at Second Chance Motors.`;
   const job = activeJob(progress), assessment = job && car ? assessJob(state, progress, car, job) : null;
   if (job) message = assessment?.ready ? `${job.title}: deliver this car to Second Chance Motors.`
     : assessment?.buildReady ? `${job.title}: complete a fresh test loop in this build.`
     : `${job.title}: ${assessment?.unmet[0] ?? 'Choose a matching shell. Check Customer jobs for the brief.'}`;
-  $('objective').querySelector('.eyebrow')!.textContent = job ? 'CUSTOMER JOB' : 'CURRENT PROJECT';
+  const recovering = rig && (drivingRig || mode === 'foot');
+  if (recovering) {
+    message = RECOVERY_OBJECTIVE[progress.recovery];
+    if (mode === 'foot') message = 'Enter Holloway’s pickup. ' + message;
+    else if (rig?.attached) message = rig.winched < 1
+      ? 'Winch the Courier up the ramps. Release the winch to stop.'
+      : 'Secure the Courier to the deck before driving home.';
+  }
+  $('objective').querySelector('.eyebrow')!.textContent = recovering ? 'BELL ORCHARD RECOVERY' : job ? 'CUSTOMER JOB' : 'CURRENT PROJECT';
   $('objective').querySelector('p')!.textContent = message;
   const engine = !!car && getPart(state, car.engineId)?.kind === 'engine', wheels = !!car && getPart(state, car.wheelsId)?.kind === 'wheels';
-  $('job-steps').innerHTML = jobStepsMarkup(job ? [
+  $('job-steps').innerHTML = jobStepsMarkup(recovering ? [
+    { label: 'Tip', done: true }, { label: 'Shed', done: progress.recovery !== 'lead' },
+    { label: 'Load', done: progress.recovery === 'loaded' }, { label: 'Garage', done: false },
+  ] : job ? [
     { label: 'Accepted', done: true }, { label: 'Build', done: !!assessment?.buildReady },
     { label: 'Test drive', done: !!assessment?.ready }, { label: 'Deliver', done: false },
   ] : [
@@ -251,7 +273,8 @@ function appearanceOf(car: OwnedCar): CarAppearance {
   return {
     paint: car.paint, restored: complete || car.paint.toLowerCase() !== DEFAULT_PAINT[car.shellId], wheels: !!car.wheelsId,
     finish: style.finish, stripe: STRIPES.find(item => item.id === style.stripe)?.color ?? null,
-    restoration: restoration && { stage: restoration.stage, route: restoration.route, work: restoration.work, startingPaint: restoration.before.paint },
+    restoration: restoration && { stage: restoration.stage, route: restoration.route, work: restoration.work,
+      startingPaint: restoration.before.paint, orchardLettering: restoration.after?.orchardLettering },
     // Anything that did not come new from the counter shows its age; the uprated and rare engines carry the red covers.
     engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
     tuning: { exhaust: !!fitted.exhaust, turbo: !!fitted.turbo, nitro: !!fitted.nitro },
@@ -376,7 +399,8 @@ function snapshotAppearance(snapshot: RestorationSnapshot, after: boolean): CarA
     stripe: STRIPES.find(stripe => stripe.id === snapshot.stripe)?.color ?? null,
     engine: engine?.kind === 'engine' ? { family: engine.mount!.toLowerCase() as EngineFamily, salvage: engine.source !== 'store', performance: engine.id.includes('performance') || !!engine.rare } : null,
     tuning: { exhaust: snapshot.tuning.includes('exhaust'), turbo: snapshot.tuning.includes('turbo'), nitro: snapshot.tuning.includes('nitro') },
-    restoration: after ? { stage: 'complete', route: restorationFor(progress, selectedId)!.route, work: 0, startingPaint: snapshot.paint }
+    restoration: after ? { stage: 'complete', route: snapshot.restored ? 'paint' : 'patina', work: 0,
+      startingPaint: snapshot.paint, orchardLettering: snapshot.orchardLettering }
       : { stage: 'wash', route: 'paint', work: 0, startingPaint: snapshot.paint },
   };
 }
@@ -456,7 +480,60 @@ function renderDealer() {
   renderOverlay(panel, dealerMarkup((driving ? [car!] : state.cars).map(item => appraise(state, progress, item, SESSION_SEED)), driving, { state, progress }));
 }
 
+function checkpointPose(): Pose {
+  return progress.recovery === 'loaded' ? LOADED_RIG : progress.recovery === 'shed' ? SHED_RIG : STORE_RIG;
+}
+
+function setUpRig(onReload: boolean) {
+  if (progress.recovery === 'unknown' || progress.recovery === 'complete') return;
+  const at = checkpointPose();
+  rig = new RecoveryRig(world, scene, at);
+  rig.draw(progress.recovery, false);
+  if (onReload) {
+    walker.teleport({ x: at.x + 2.6 * Math.cos(at.yaw), y: 1, z: at.z - 2.6 * Math.sin(at.yaw) });
+    yaw = at.yaw + Math.PI / 2;
+  }
+}
+
+function rigAction() {
+  const r = rig!;
+  if (r.attached) return r.winched >= 1 ? 'Secure the Courier' : 'Winching';
+  if (progress.recovery === 'loaded' && !unloadingGuide(r.axle)) return 'Unload the Courier';
+  if (progress.recovery === 'shed' && !alignment(r.axle, vehicle!.speed)) return 'Attach the cable';
+  return 'Step out of the rig';
+}
+
+function interactRig() {
+  if (!rig || !vehicle) return;
+  if (Math.abs(vehicle.speed) > .6) { notify('Brake to a stop first.'); return; }
+  const action = rigAction();
+  if (action === 'Attach the cable') {
+    rig.attached = true; hitchView = true; winchNeedsRelease = true;
+    audio.play('ratchet'); updateObjective();
+  } else if (action === 'Secure the Courier') {
+    progress = advanceRecovery(progress,'loaded');
+    rig.attached = false; hitchView = false;
+    persist(); audio.play('install'); updateObjective(); notify('Straps tight. Take the Courier back to the Garage.');
+  } else if (action === 'Unload the Courier') {
+    const handoff = unloadRecovery(state, progress);
+    if (!saveGame(handoff.state) || !saveProgress(handoff.progress)) {
+      notify('Couldn’t save the handoff. Allow browser storage and try unloading again.'); return;
+    }
+    state = handoff.state; progress = handoff.progress; selectedId = 'car-orchard';
+    rig.dispose(); rig = undefined; drivingRig = false;
+    leaveVehicle({x:-24,y:1,z:-4}); updateObjective(); syncUiScreen();
+    announce({kicker:'BARN FIND RECOVERED',title:'Bell Orchard Courier',detail:'Wash the cargo door at the Garage workbench.',tone:'gold',glyph:'check'},'unlock');
+  } else if (!rig.attached) {
+    const {x,z,yaw:heading} = rig.truck;
+    drivingRig = false;
+    leaveVehicle({x:x+2.35*Math.cos(heading), y:1, z:z-2.35*Math.sin(heading)});
+    yaw = heading + Math.PI/2;
+    rig.draw(progress.recovery,false); syncUiScreen(); updateObjective();
+  }
+}
+
 function interact() {
+  if (drivingRig) { interactRig(); return; }
   if (mode === 'drive') {
     if (!dealerNear) { exitCar(); return; }
     // At the lot the same control asks for an offer instead of getting out.
@@ -467,7 +544,11 @@ function interact() {
   }
   if (!activeTarget) return;
   const t = activeTarget;
-  if (t.kind === 'listing') { openPanel('inspect'); renderInspect(t.listingId!); }
+  if (t.kind === 'note') {
+    openPanel('note'); panel.className = 'note-panel'; delete panel.dataset.source; renderOverlay(panel, recoveryNote(progress.recovery));
+  } else if (t.kind === 'rig') enterCar(true);
+  else if (t.kind === 'lettering') notify('Under the dust: “Bell Orchard · Farm Fresh Apples.” Nell remembers painting that door with her dad.');
+  else if (t.kind === 'listing') { openPanel('inspect'); renderInspect(t.listingId!); }
   else if (t.kind === 'store') { rackSource = 'store'; rackKind = 'engine'; openPanel('rack'); renderRack(); }
   else if (t.kind === 'rack') { rackSource = 'yard'; rackKind = t.id === 'rack-engines' ? 'engine' : t.id === 'rack-wheels' ? 'wheels' : 'paint'; openPanel('rack'); renderRack(); }
   else if (t.kind === 'workbench') { openPanel('garage'); renderGarage(); }
@@ -475,20 +556,23 @@ function interact() {
   else enterCar();
 }
 
-function enterCar() {
+function enterCar(loan = false) {
   const car = selectedCar();
-  if (!car) return;
-  const issues = buildIssues(state, car);
+  if (loan ? !rig : !car) return;
+  const issues = loan ? [] : buildIssues(state, car!);
   if (issues.length) { audio.play('error'); notify(`Not drivable yet. ${issues.join(' ')} Use the workbench.`); return; }
-  const engine = getPart(state, car.engineId)!;
+  const family = loan ? 'v8' : getPart(state, car!.engineId)!.mount!.toLowerCase() as EngineFamily;
+  drivingRig = loan;
+  if (loan) { hitchView = false; rig!.draw(progress.recovery,true); }
+  $('recover').querySelector('span')!.textContent = loan ? 'Reposition rig' : 'Recover to Garage';
   mode = 'drive';
   bonnet = 0;
   syncCars();
   // Engine, exhaust, tires, and whatever is bolted on: one description for the physics, the gearbox and the engine note.
-  tuning = buildTuning(state, progress, car);
-  vehicle = new Vehicle(world, tuning);
+  tuning = loan ? { mass: 1640, power: 210, peak: 210, grip: 2.4, boost: 0, lag: 0, shot: 0, burn: 0, exhaust: 'stock' } : buildTuning(state, progress, car!);
+  vehicle = loan ? new Vehicle(world, tuning, { ...rig!.truck, y: 1 }, rig!.truck.yaw) : new Vehicle(world, tuning);
   drivetrain = new Drivetrain(tuning.peak);
-  drivenVisual = createCar(car.shellId, appearanceOf(car));
+  drivenVisual = loan ? rig!.pickup : createCar(car!.shellId, appearanceOf(car!));
   scene.add(drivenVisual.group);
   // The beams ride with the car; they are created once so the light count never changes.
   headlights.forEach((light, index) => {
@@ -510,7 +594,7 @@ function enterCar() {
   updateDriveKeys();
   touch.setNitro(tuning.shot > 0);
   audio.play('enterCar');
-  audio.setEngine({ family: engine.mount!.toLowerCase() as EngineFamily, power: tuning.peak, exhaust: tuning.exhaust });
+  audio.setEngine({ family, power: tuning.peak, exhaust: tuning.exhaust });
   audio.play('ignition');
   // The car sits in the bay facing the door, so its tailpipes point at the back wall.
   for (const pipe of drivenVisual.exhausts) effects.emit('exhaust', BAY.x - pipe.x, BAY.y + pipe.y, BAY.z - pipe.z, 0, .4, -1.2, { count: 9, spread: .5, scale: 1.6 });
@@ -546,7 +630,8 @@ function leaveVehicle(at: { x: number; y: number; z: number }) {
   if (!vehicle) return;
   headlights.forEach(light => { scene.add(light, light.target); light.intensity = 0; });
   vehicle.dispose(); vehicle = undefined; drivetrain = undefined; tuning = undefined;
-  if (drivenVisual) { scene.remove(drivenVisual.group); drivenVisual.dispose(); drivenVisual = undefined; }
+  if (drivenVisual && drivenVisual !== rig?.pickup) drivenVisual.dispose();
+  drivenVisual = undefined;
   mode = 'foot';
   walker.teleport(at);
   characterCollider.setEnabled(true);
@@ -583,11 +668,25 @@ function sellDrivenCar(customer = false) {
   pad.rumble(220, .6);
   notify(customer ? 'Delivered. Your customer collected the car and its fitted parts. Check the job board for your next commission.' : sale.restocked.length
     ? 'Sold. The dealer ran you back to the yard gate. The rare pieces that went with the car have turned up somewhere new in the yard.'
+    : shell.id === 'orchard' ? 'Sold. The Bell Orchard recovery stays in your logbook.'
     : 'Sold. The dealer ran you back to the yard gate. Another shell like it has come in: build it again, or try a different car.');
 }
 
 function recover() {
   if (!vehicle) return;
+  if (drivingRig && rig) {
+    if (rig.attached) {
+      clearInputs();
+      notify(rig.winched < 1 ? 'Cable attached. Continue winching from here.' : 'Secure the Courier first.');
+      return;
+    }
+    const pose = checkpointPose();
+    rig.park(pose,true); rig.attached = false; rig.winched = 0;
+    vehicle.recover({...pose,y:1},pose.yaw);
+    clearInputs(); effects.breakSkids(); audio.play('recover'); updateObjective();
+    notify(progress.recovery === 'loaded' ? 'Loaded rig straightened on the orchard lane.' : 'Rig straightened. ' + RECOVERY_OBJECTIVE[progress.recovery]);
+    return;
+  }
   vehicle.recover();
   clearInputs();
   trial = newTrial(); jobLapStart = null; lastSpeed = 0;
@@ -599,6 +698,7 @@ function recover() {
 
 function cycleCamera() {
   if (mode !== 'drive' || paused) return;
+  if (drivingRig) { hitchView = !hitchView; notify(hitchView ? 'Trailer view' : 'Road view'); return; }
   const next = CAMERA_CYCLE[(CAMERA_CYCLE.indexOf(progress.settings.camera) + 1) % CAMERA_CYCLE.length];
   setPreference({ camera: next });
   audio.click();
@@ -626,7 +726,12 @@ function targets(): Target[] {
   // Rare parts still lying where the yard hides them carry the same inspection tag as a shell.
   const salvage = stashView.targets().map(item => ({ id: item.listingId, kind: 'listing' as const, listingId: item.listingId, position: item.position, label: item.label }));
   const car = selectedCar();
-  return [...list, ...cars, ...salvage, ...(car ? [{ id: 'garage-car', kind: 'car' as const, position: BAY, label: `${getShell(car.shellId).name} · ${buildIssues(state, car).length ? 'incomplete build' : 'drive'}` }] : [])];
+  const nearby: Target[] = [];
+  if (rig && mode === 'foot') {
+    nearby.push({ id:'loaner', kind:'rig', position:new THREE.Vector3(rig.truck.x,1.2,rig.truck.z), label:'Enter Holloway’s rig' });
+    if (progress.recovery !== 'loaded') nearby.push({id:'orchard-door',kind:'lettering',position:new THREE.Vector3(SHED_VAN.x+.9,1.3,SHED_VAN.z+1),label:'Read the orchard lettering'});
+  }
+  return [...nearby, ...list, ...cars, ...salvage, ...(car ? [{ id: 'garage-car', kind: 'car' as const, position: BAY, label: `${getShell(car.shellId).name} · ${buildIssues(state, car).length ? 'incomplete build' : 'drive'}` }] : [])];
 }
 
 function updateTarget() {
@@ -642,6 +747,20 @@ function updateTarget() {
     if (dist < 4.8 && dot > .25 && dist < nearest) { nearest = dist; activeTarget = t; }
   }
   const hint = $('hint');
+  if (drivingRig && rig && vehicle) {
+    const action = rigAction(), stopped = Math.abs(vehicle.speed) <= .6;
+    const near = progress.recovery === 'shed' && Math.hypot(rig.axle.x-SHED_VAN.x,rig.axle.z-SHED_VAN.z) < 17;
+    const control = pad.state.connected ? 'A' : touchEnabled ? 'Handbrake' : 'Space';
+    const atApron = progress.recovery === 'loaded' && Math.hypot(rig.axle.x - UNLOAD.x, rig.axle.z - UNLOAD.z) < 22;
+    const guide = atApron ? unloadingGuide(rig.axle) || (stopped ? '' : 'Brake to unload the Courier') : action === 'Winching' ? `Hold ${control} to winch · ${Math.floor(rig.winched*100)}%` :
+      near && action === 'Step out of the rig' ? alignment(rig.axle,vehicle.speed) : '';
+    const show = stopped || near || atApron || rig.attached;
+    hint.hidden = !show || paused;
+    const markup = guide ? `<span>${guide}</span>` : `<kbd>${interactKey()}</kbd><span>${action}</span>`;
+    if (markup !== hint.dataset.content) { hint.innerHTML = markup; hint.dataset.content = markup; }
+    touch.setAction({label:action, detail:guide || (stopped ? 'Holloway recovery' : 'Brake to a stop'),enabled:stopped && action !== 'Winching'});
+    return;
+  }
   // On foot the hint names whatever is in reach. In the car it appears only at the dealer's, once the car has slowed to pull in.
   const offer = mode === 'drive' && !!vehicle && dealerNear && Math.abs(vehicle.speed) < 6;
   const job = offer ? activeJob(progress) : undefined;
@@ -660,12 +779,14 @@ function updateTarget() {
     else touch.setAction({ label: 'Exit car', detail: !nearGarage ? 'Return to the Garage' : !stopped ? 'Brake to a stop' : 'Park in the Garage bay', enabled: nearGarage && stopped });
   } else if (activeTarget) {
     const t = activeTarget;
-    touch.setAction({ label: t.kind === 'listing' ? 'Inspect' : t.kind === 'rack' || t.kind === 'store' ? 'Browse' : t.kind === 'workbench' ? 'Open' : t.kind === 'dealer' ? 'Ask prices' : 'Enter car', detail: t.label, enabled: true });
+    touch.setAction({ label: t.kind === 'note' || t.kind === 'lettering' ? 'Read' : t.kind === 'rig' ? 'Enter rig' : t.kind === 'listing' ? 'Inspect' : t.kind === 'rack' || t.kind === 'store' ? 'Browse' : t.kind === 'workbench' ? 'Open' : t.kind === 'dealer' ? 'Ask prices' : 'Enter car', detail: t.label, enabled: true });
   } else touch.setAction({ label: 'Interact', detail: 'Look towards a nearby item', enabled: false });
 }
 
 /** Where the map's amber marker and the roadside beacon should point. */
 function destination(): Point | null {
+  if (rig && mode === 'foot') return rig.truck;
+  if (drivingRig) return progress.recovery === 'loaded' ? UNLOAD : SHED_VAN;
   if (mode === 'drive') {
     if ($('route').dataset.disabled) return null;
     const job = activeJob(progress), car = selectedCar();
@@ -697,7 +818,7 @@ function updateDriveKeys() {
 
 function updateLap() {
   const route = $('route');
-  if (!vehicle || route.dataset.disabled) { route.hidden = true; if (beacon) beacon.visible = false; return; }
+  if (!vehicle || drivingRig || route.dataset.disabled) { route.hidden = true; if (beacon) beacon.visible = false; return; }
   const position = vehicle.body.translation(), points = layout.loop, car = selectedCar()!;
   const event = advanceTrial(trial, points, position, simTime);
   if (event === 'start') { jobLapStart = beginJobLap(state, progress, car.id); audio.play('checkpoint', { pitch: .8 }); }
@@ -770,18 +891,39 @@ function step() {
     tmp.applyAxisAngle(THREE.Object3D.DEFAULT_UP, yaw);
     walker.move(tmp, FIXED_DT);
   } else if (vehicle) {
-    const forward = pedal();
+    const winching = drivingRig && rig?.attached;
+    const handbrake = keys.has('Space') || touch.input.handbrake || pad.state.handbrake;
+    if (winching && rig) {
+      if (!handbrake) winchNeedsRelease = false;
+      if (handbrake && !winchNeedsRelease && rig.winched < 1) {
+        const before = rig.winched;
+        rig.winched = Math.min(1, rig.winched + FIXED_DT / 4);
+        if (Math.floor(before*6) !== Math.floor(rig.winched*6)) audio.play('ratchet', {volume:.55});
+        if (rig.winched === 1) updateObjective();
+      }
+    }
+    const pull = drivingRig && progress.recovery === 'loaded' ? .72 : 1;
+    const forward = pedal() * pull;
     const back = Math.max(keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0, touch.input.brake, pad.state.brake);
     const brake = back > 0 && (vehicle.speed > 1 || forward > 0);
     vehicle.update({
-      throttle: brake ? 0 : back > 0 ? -.55 * back : forward,
+      throttle: winching || brake ? 0 : back > 0 ? -.55 * back * pull : forward,
       steer: THREE.MathUtils.clamp((keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) - (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) + touch.input.steer + pad.state.steer, -1, 1),
-      brake, handbrake: keys.has('Space') || touch.input.handbrake || pad.state.handbrake,
+      brake: !!winching || brake, handbrake: !!winching || handbrake,
       // Nitrous: N or Shift on the keyboard, B on a controller, the Nitro button on a touch screen.
       nitro: keys.has('KeyN') || keys.has('ShiftLeft') || keys.has('ShiftRight') || pad.state.nitro || touch.input.nitro,
     });
   }
   world.step();
+  if (drivingRig && rig && vehicle) {
+    const p = vehicle.body.translation(), r = vehicle.body.rotation();
+    const heading = Math.atan2(2*(r.w*r.y+r.x*r.z),1-2*(r.x*r.x+r.y*r.y));
+    if (!rig.follow({x:p.x,z:p.z,yaw:heading})) vehicle.recover({...rig.truck,y:p.y},rig.truck.yaw);
+    if (progress.recovery === 'lead' && inCourt(p.x,p.z)) {
+      progress = advanceRecovery(progress,'shed'); persist(); updateObjective();
+      notify('Bell packing shed. Turn around in the clearing. Change view to watch the trailer tail.');
+    }
+  }
 }
 
 /** The accelerator from every device. The touch Nitro button counts as a full pedal, so one thumb can do both. */
@@ -857,7 +999,8 @@ function updateDriving(dt: number) {
   drivenVisual.group.quaternion.copy(q);
   drivenVisual.animateWheels(vehicle.steering, vehicle.wheelAngle, [0, 1, 2, 3].map(i => -.08 - (vehicle!.controller.wheelSuspensionLength(i) ?? .27)));
 
-  pendingMetres += absolute * dt;
+  if (drivingRig) rig!.draw(progress.recovery,true);
+  else pendingMetres += absolute * dt;
   peakSpeed = Math.max(peakSpeed, absolute);
   driveSaveTimer += dt;
   if (driveSaveTimer > 12) { driveSaveTimer = 0; flushDriving(); }
@@ -871,7 +1014,7 @@ function updateDriving(dt: number) {
   setText('motion-state', speed < -.3 ? 'REVERSE' : absolute < .3 ? 'IDLE' : 'DRIVE');
   updateLap();
   collectFinds(p.x, p.z, 3.4);
-  dealerNear = atDealer(layout, p.x, p.z);
+  dealerNear = !drivingRig && atDealer(layout, p.x, p.z);
   audio.updateDrive({ rpm: drivetrain.rpm, throttle, speed, slip, surface: ground, grounded, boost: tuning?.boost ? vehicle.spool : 0, nitro: vehicle.nitro ? 1 : 0 }, dt);
   if (p.y < -10) recover();
 }
@@ -953,7 +1096,8 @@ function updateCamera(dt: number) {
   let fov = base;
   if (panelKind === 'restoration') {
     // A consistent three-quarter view keeps bodywork and matching photographs legible.
-    camera.position.set(BAY.x - 4.4, 2.9, BAY.z + 6.2);
+    if (selectedCar()?.shellId === 'orchard') camera.position.set(BAY.x - 5.8, 2.05, BAY.z + 2.0);
+    else camera.position.set(BAY.x - 4.4, 2.9, BAY.z + 6.2);
     camera.lookAt(BAY.x, 1.15, BAY.z);
     camera.aspect = 4 / 3; camera.fov = fov = 46; camera.updateProjectionMatrix();
   } else if (qaCamera) {
@@ -985,7 +1129,14 @@ function updateCamera(dt: number) {
     const p = vehicle.body.translation(), r = vehicle.body.rotation(), view = progress.settings.camera, speed = Math.abs(vehicle.speed);
     q.set(r.x, r.y, r.z, r.w);
     const behind = (lookBack || pad.state.lookBack) ? -1 : 1;
-    if (view === 'bonnet') {
+    if (drivingRig && rig) {
+      const h = rig.truck.yaw;
+      const cameraOffset = new THREE.Vector3(hitchView ? 4.3 : 0, hitchView ? 3.9 : 5.4, hitchView ? .8 : 13.5);
+      cameraOffset.applyAxisAngle(THREE.Object3D.DEFAULT_UP,h);
+      camera.position.lerp(cameraOffset.add(carPosition),1-Math.exp(-dt*8));
+      if (hitchView) direction.set(rig.axle.x, .8, rig.axle.z);
+      else direction.copy(carPosition).addScaledVector(carForward,2);
+    } else if (view === 'bonnet') {
       // Just over the roof, which is taller on some cars than others.
       tmp.set(0, Math.max(.92, drivenVisual.roofHeight + .2), -.25 * behind).applyQuaternion(q).add(direction.set(p.x, p.y, p.z));
       camera.position.copy(tmp);
@@ -1188,6 +1339,10 @@ app.addEventListener('click', event => {
       else { hour = (hour + (kind === 'later' ? .5 : 23.5)) % 24; lighting.atmosphere.setHour(hour); }
       return;
     }
+    if (action === 'accept-tip' && panelKind === 'note' && progress.recovery === 'unknown') {
+      progress = advanceRecovery(progress,'lead'); persist(); setUpRig(false); closePanel(); updateObjective();
+      notify('Nell’s note is in your logbook. The Packhorse is parked by the road outside.'); return;
+    }
     if (action === 'close') { closePanel(); return; }
     if (action === 'restoration' && panelKind === 'garage' && mode === 'foot') {
       openPanel('restoration'); renderRestoration(); return;
@@ -1212,6 +1367,9 @@ app.addEventListener('click', event => {
         return;
       }
       if (action === 'restoration-start') progress = startRestoration(state, progress, car.id);
+      else if (action === 'restoration-apply-lettering' || action === 'restoration-clean-door') {
+        progress = setOrchardLettering(state, progress, car.id, action === 'restoration-apply-lettering');
+      }
       else if (button.dataset.restorationRoute === 'paint' || button.dataset.restorationRoute === 'patina') {
         const chosen = chooseRestorationRoute(state, progress, car.id, button.dataset.restorationRoute);
         progress = chosen.progress; commit(chosen.state);
@@ -1359,7 +1517,7 @@ window.addEventListener('keydown', e => {
     if (e.code === 'KeyH' && mode === 'drive' && !hornHeld) { hornHeld = true; audio.horn(true); }
   }
   // Opening a panel or the pause sheet above clears held keys; do not put this one straight back.
-  if (!paused) keys.add(e.code);
+  if (!paused && !e.repeat) keys.add(e.code);
 });
 window.addEventListener('keyup', e => {
   keys.delete(e.code);
@@ -1489,7 +1647,7 @@ async function boot() {
       const collider = world.createCollider(RAPIER.ColliderDesc.cuboid(SHELL_SOLID.w / 2, SHELL_SOLID.h / 2, SHELL_SOLID.d / 2).setTranslation(p.x, p.y + .2, p.z));
       shellViews.set(shell.id, { visual, collider });
     }
-    placeShells();
+    placeShells(); setUpRig(true);
     syncCars(); updateObjective();
     world.step();
     performance.mark('jd-ready');
@@ -1503,6 +1661,7 @@ async function boot() {
         state: structuredClone(state), progress: structuredClone(progress), mode, paused, panelKind,
         position: { ...(vehicle?.body.translation() ?? character.translation()) }, yaw, pitch,
         speed: vehicle?.speed ?? 0, steering: vehicle?.steering ?? 0, rotation: vehicle ? { ...vehicle.body.rotation() } : null,
+        rig: rig ? { driving: drivingRig, truck: {...rig.truck}, axle: {...rig.axle}, attached: rig.attached, winched: rig.winched, view: hitchView, action: drivingRig ? rigAction() : null } : null,
         activeTarget: activeTarget?.id, lapIndex: trial.index, lapComplete: trial.complete, lapElapsed: trial.elapsed,
         loop: layout.loop, roads: layout.roads, lots: layout.lots, landmark: { ...layout.landmark }, finds,
         drawCalls: renderer.info.render.calls, triangles: renderer.info.render.triangles, memory: { ...renderer.info.memory }, programs: renderer.info.programs?.length ?? 0, world: worldView.stats,

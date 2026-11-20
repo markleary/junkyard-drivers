@@ -1,4 +1,5 @@
-import { getCategoryStock, getCatalogPart, getShell, LISTINGS, PARTS, SHELLS, SHOP_CATEGORIES, UPGRADE_KINDS, type Part, type PartKind, type PartSource, type ShopCategory, type UpgradeKind } from '../game/catalog';
+import { RECOVERY_OBJECTIVE, TIP } from '../game/recovery';
+import { OWNABLE_SHELLS, getCategoryStock, getCatalogPart, getShell, LISTINGS, PARTS, SHELLS, SHOP_CATEGORIES, UPGRADE_KINDS, type Part, type PartKind, type PartSource, type ShopCategory, type UpgradeKind } from '../game/catalog';
 import { availableInventory, buildIssues, getPart, type GameState, type OwnedCar } from '../game/state';
 import { fittedUpgrades, looseUpgrades } from '../game/upgrades';
 import type { Appraisal } from '../game/dealer';
@@ -143,7 +144,7 @@ export function logbookMarkup(state: GameState, progress: Progress, finds: Find[
     return `<li class="${has ? 'held' : ''}">${icon(item.kind === 'shell' ? 'tag' : partIconName(getCatalogPart(item.itemId).kind))}<div><b>${has ? name : item.kind === 'shell' ? 'A rare shell' : `A rare ${RARE_NOUN[getCatalogPart(item.itemId).kind]}`}</b><small>${has ? 'In your collection' : item.hint}</small></div>${has ? icon('check') : ''}</li>`;
   }).join('');
   const sales = progress.sales;
-  const cars = SHELLS.map(shell => {
+  const cars = (progress.recovery === 'complete' ? OWNABLE_SHELLS : SHELLS).map(shell => {
     const owned = state.cars.some(car => car.shellId === shell.id);
     const lap = progress.bestLap[shell.id], medal = lap === undefined ? null : medalFor(shell.id, lap), times = MEDAL_TIMES[shell.id];
     const next = medal === 'gold' ? null : medal === 'silver' ? 'gold' : medal === 'bronze' ? 'silver' : 'bronze';
@@ -174,6 +175,8 @@ export function logbookMarkup(state: GameState, progress: Progress, finds: Find[
       <h3 class="logbook-heading">${icon('wrench')}<span>Customer restorations</span><small>${progress.jobs.completed.length} OF ${JOBS.length} DELIVERED</small></h3>
       <div class="commissions-record"><b>${escapeHtml(jobRank(progress))}</b><p>${activeJob(progress) ? `On the bench: ${escapeHtml(activeJob(progress)!.title)}` : 'Ready for the next commission.'}</p><button data-action="jobs">Open customer jobs ${icon('arrow')}</button></div>
     </div><div>
+      <h3 class="logbook-heading">${icon('book')}<span>Barn finds</span></h3>
+      <div class="commissions-record"><b>Bell Orchard</b><p>${progress.recovery === 'unknown' ? 'There’s a note on the counter at Holloway Auto Parts.' : TIP}</p>${progress.recovery !== 'unknown' ? `<p>${RECOVERY_OBJECTIVE[progress.recovery]}</p>` : ''}</div>
       <h3 class="logbook-heading">${icon('find')}<span>Lost &amp; found</span><small>${progress.finds.length} OF ${finds.length}</small></h3>
       <ol class="find-list">${found}</ol>
       ${rare ? `<h3 class="logbook-heading">${icon('rare')}<span>Rare salvage</span><small>${stash.filter(item => state.purchasedListings.includes(item.listingId)).length} OF ${stash.length} HELD</small></h3><ul class="rare-list">${rare}</ul>` : ''}

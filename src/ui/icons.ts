@@ -42,7 +42,7 @@ export function vehicleStamp(shellId: string): string {
     ? '<path d="m12 48 9-13 48-5 29-18h98l17 24 7 3 5 13-5 7h-16m-27 0H66m-27 0H16l-4-11Z"/><path d="m78 30 23-14h26v14H78Zm55-14h31v15h-31V16Zm37 0h22l11 16h-33V16ZM73 34v20m57-38v38m36-20 2 20m-24-16h12M103 8h86m-80-3v7m73-7v7M19 44h35m153-7h10"/>'
     : shellId === 'sprite'
       ? '<path d="m15 49 9-13 63-5 17-14h8l-4 16h53l16-5 36 9 13 13-4 9h-18m-27 0H66m-27 0H19l-4-10Z"/><path d="m91 32 15-14-4 15M111 34v20m52-21 5 21m-52-21 1-8h12l3 8m11 0 1-8h12l3 8M23 42h40m119-7h26M18 53h16m179 0h10"/>'
-      : shellId === 'courier'
+      : (shellId === 'courier' || shellId === 'orchard')
         ? '<path d="M14 49V31l8-5 37-2 13-18h135l9 28 8 4v15l-5 6h-15m-27 0H66m-27 0H18l-4-10Z"/><path d="m64 25 12-15h30v19H64Zm48-15h88l8 22h-96V10ZM59 28v26m49-44v44m9-20h89m-81-20v15m27-15v15m27-15v15m-62 8v14m-1-9h8M17 39h28m167-1h8"/>'
     : shellId === 'bison'
     ? '<path d="M13 48 19 35l62-4 24-18h49l27 19 42 6 6 13-4 8h-21m-27 0H66m-27 0H16l-3-11Z"/><path d="m87 31 20-14h19v14H87Zm45-14h20l21 15h-41V17ZM77 35v18m98-18 1 18M18 43h38m132-7h23"/>'

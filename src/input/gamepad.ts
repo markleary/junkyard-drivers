@@ -33,6 +33,8 @@ export function stickCurve(value: number, dead = .14): number {
   return Math.sign(value) * (scaled * .6 + scaled * scaled * (3 - 2 * scaled) * .4);
 }
 
+type ContinuousControl = Exclude<keyof PadState, 'connected'>;
+const CONTINUOUS_CONTROLS: ContinuousControl[] = ['moveX', 'moveY', 'lookX', 'lookY', 'steer', 'throttle', 'brake', 'handbrake', 'lookBack', 'horn', 'nitro'];
 const neutral = (): PadState => ({ connected: false, moveX: 0, moveY: 0, lookX: 0, lookY: 0, steer: 0, throttle: 0, brake: 0, handbrake: false, lookBack: false, horn: false, nitro: false });
 
 export class GamepadInput {
@@ -40,6 +42,7 @@ export class GamepadInput {
   private held = new Set<number>();
   private pressed = new Set<PadButton>();
   private index = -1;
+  private blocked = new Set<ContinuousControl>();
 
   /** Read the pad. The optional swap matches controllers whose physical X/Y labels are reversed. */
   poll(swapXY = false): PadState {
@@ -64,6 +67,11 @@ export class GamepadInput {
     state.lookBack = buttonDown(pad.buttons[4]);
     state.horn = buttonDown(pad.buttons[10]);
     state.nitro = buttonDown(pad.buttons[1]);
+    for (const control of this.blocked) {
+      const value = state[control];
+      if (Math.abs(Number(value)) < .025) this.blocked.delete(control);
+      else Object.assign(state, { [control]: typeof value === 'number' ? 0 : false });
+    }
     for (const [name, standardButton] of Object.entries(BUTTONS) as [PadButton, number][]) {
       const button = swapXY && name === 'interact' ? BUTTONS.recover
         : swapXY && name === 'recover' ? BUTTONS.interact : standardButton;
@@ -86,7 +94,18 @@ export class GamepadInput {
     void actuator.playEffect('dual-rumble', { duration: milliseconds, strongMagnitude: strong, weakMagnitude: weak }).catch(() => undefined);
   }
 
+  /** Releasing a sheet must not restart a held pedal, tool or stick. Button edges stay latched until release. */
+  clearHeld() {
+    for (const control of CONTINUOUS_CONTROLS) {
+      const value = this.state[control];
+      if (value) this.blocked.add(control);
+      Object.assign(this.state, { [control]: typeof value === 'number' ? 0 : false });
+    }
+    this.pressed.clear();
+  }
+
   reset() {
+    this.blocked.clear();
     Object.assign(this.state, neutral());
     this.held.clear(); this.pressed.clear();
   }

@@ -15,7 +15,7 @@ const RENDERS = [0xd9cfb4, 0xc9d2c0, 0xd8c79a, 0xbfcbd0, 0xe2d6c2, 0xcdb89c];
 const SIDINGS = [0xc9d6cf, 0xe2d8bf, 0xb8c9a8, 0xd9b9a0, 0xa9bcc9, 0xe6dcc4, 0xc8b06a];
 const AWNINGS = [0xa63e2e, 0x345d43, 0x24566a, 0xd9a43a, 0x7a2f3a, 0x3f7f86];
 const ROOMS = [0xffd9a0, 0xffc880, 0xfff0d0, 0xbfe0ff, 0xffb070];
-const isService = (road: Road) => road.id.includes('garage') || road.id.includes('gate');
+const isService = (road: Road) => road.id.includes('garage') || road.id.includes('gate') || road.id === 'orchard-lane';
 
 /** Which way a building should face: toward the nearest street. Yaw 0 looks along +z. */
 function facing(building: Building, roads: Road[]): number {

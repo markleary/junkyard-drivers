@@ -99,6 +99,7 @@ export function buildLandscape(ctx: SceneContext, plants: Vegetation) {
   // Meadow grass and scrub across the open ground between streets.
   const tufts = Math.round(2600 * ctx.quality.density);
   const blocked = (x: number, z: number) =>
+    (x < -54 && z > 32 && z < 88) ||
     layout.roads.some(road => Math.abs(road.a.z === road.b.z ? z - road.a.z : x - road.a.x) < road.width / 2 + 3.4 &&
       (road.a.z === road.b.z ? x > Math.min(road.a.x, road.b.x) - 6 && x < Math.max(road.a.x, road.b.x) + 6 : z > Math.min(road.a.z, road.b.z) - 6 && z < Math.max(road.a.z, road.b.z) + 6)) ||
     layout.buildings.some(building => Math.abs(x - building.x) < building.w / 2 + .8 && Math.abs(z - building.z) < building.d / 2 + .8) ||

@@ -235,7 +235,7 @@ body:not([data-screen="foot"]):not([data-screen="drive"]) #footer,
 body:not([data-screen="foot"]):not([data-screen="drive"]) #speed,
 body:not([data-screen="foot"]):not([data-screen="drive"]) #recover,
 body:not([data-screen="foot"]):not([data-screen="drive"]) #route,
-body[data-screen="drive"] #objective { display: none; }
+body[data-screen="drive"]:not([data-recovery-drive]) #objective { display: none; }
 
 /* Printed document components. Their shapes describe each real workshop task. */
 .yard-monogram { display: grid; place-items: center; width: 39px; height: 36px; flex: 0 0 39px; color: var(--paper-light); background: var(--rust); border: 1px solid #d69c7e; box-shadow: 2px 2px 0 #17232970; font: 700 25px/1 var(--display) !important; letter-spacing: -1px !important; text-shadow: none !important; transform: rotate(-3deg); }
@@ -916,3 +916,11 @@ body[data-input="touch"] .commission-checks .check-result { font-size: 9px; }
   .upcoming-commissions li > span { max-width: 108px; }
   .commission-top { align-items: flex-start; }
 }
+
+#panel.note-panel { width: min(420px, 92vw); padding: 0; background: #f3e8c6; bottom: auto; max-height: calc(100% - 110px); }
+.orchard-note { padding: clamp(18px, 4vw, 34px); color: #38382d; background: repeating-linear-gradient(transparent 0 31px, #9aada23b 31px 32px); }
+.orchard-note small { font: 500 11px 'IBM Plex Mono', monospace; letter-spacing: .08em; }
+.orchard-note h2 { margin: 1em 0 .4em; }
+.orchard-note p { font: 23px/1.4 "Bradley Hand", "Segoe Print", cursive; }
+.orchard-note .note-status { font: 16px/1.4 'IBM Plex Mono', monospace; }
+.orchard-note button { margin: 4px; }

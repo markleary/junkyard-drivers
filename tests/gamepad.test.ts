@@ -66,6 +66,19 @@ describe('controller button edges', () => {
     expect(input.state).toMatchObject({ handbrake: true, nitro: true });
   });
 
+  it('clears held steering, pedals and winch until each control is released', () => {
+    const { input, buttons, controller } = rig();
+    controller.axes[0] = 1; buttons[7].value = .8; buttons[0].pressed = true;
+    input.poll(); input.clearHeld();
+    expect(input.poll()).toMatchObject({ steer: 0, throttle: 0, handbrake: false });
+    buttons[7].value = 0; input.poll(); buttons[7].value = .6;
+    expect(input.poll()).toMatchObject({ steer: 0, throttle: .6, handbrake: false });
+    controller.axes[0] = 0; buttons[0].pressed = false; input.poll();
+    buttons[0].pressed = true;
+    expect(input.poll().handbrake).toBe(true);
+    expect(input.take('confirm')).toBe(true);
+  });
+
   it('requires release before a held physical button can invoke its newly mapped action', () => {
     const { input, buttons } = rig();
     buttons[2].pressed = true;

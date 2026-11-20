@@ -1,4 +1,4 @@
-import { DEFAULT_PAINT, PARTS, SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
+import { DEFAULT_PAINT, PARTS, OWNABLE_SHELLS, UPGRADE_KINDS, type ShellId, type UpgradeKind } from './catalog';
 import { styleFor, type FinishId, type Progress, type StripeId } from './progress';
 import { getPart, type GameState, type OwnedCar } from './state';
 import { fittedUpgrades } from './upgrades';
@@ -15,6 +15,8 @@ export interface RestorationSnapshot {
   wheels: boolean;
   tuning: UpgradeKind[];
   restored: boolean;
+  /** On a completed orchard repaint, the after photo also records the owner's door finish. */
+  orchardLettering?: boolean;
 }
 export interface RestorationRecord {
   stage: RestorationStage;
@@ -35,7 +37,7 @@ export function restorationFor(progress: Progress, carId: string): RestorationRe
 
 /** Every catalog shell can be a restoration project; there is no separate project-car class. */
 function isCatalogCar(car: OwnedCar): boolean {
-  return SHELLS.some(shell => shell.id === car.shellId && car.id === `car-${shell.id}`);
+  return OWNABLE_SHELLS.some(shell => shell.id === car.shellId && car.id === `car-${shell.id}`);
 }
 
 function ownedCar(state: GameState, carId: string): OwnedCar {
@@ -50,6 +52,7 @@ function snapshot(state: GameState, progress: Progress, car: OwnedCar, restored:
     shellId: car.shellId, paint: car.paint, ...styleFor(progress, car.id),
     enginePartId: engine?.kind === 'engine' ? engine.id : null, wheels: getPart(state, car.wheelsId)?.kind === 'wheels',
     tuning: UPGRADE_KINDS.filter(kind => !!fitted[kind]), restored,
+    ...(restored && car.shellId === 'orchard' ? { orchardLettering: false } : {}),
   };
 }
 
@@ -97,6 +100,16 @@ export function refinishRestoration(state: GameState, progress: Progress, carId:
   return put(progress, carId, { ...record, route: 'paint', stage, work: 0, after: null });
 }
 
+export function setOrchardLettering(state: GameState, progress: Progress, carId: string, enabled: boolean): Progress {
+  const car = ownedCar(state, carId);
+  const record = restorationFor(progress, carId);
+  if (car.shellId !== 'orchard' || record?.route !== 'paint' || record.stage !== 'complete' || !record.after) {
+    throw new Error('Finish painting the Bell Orchard Courier before choosing its door lettering.');
+  }
+  if ((record.after.orchardLettering ?? false) === enabled) return progress;
+  return put(progress, carId, { ...record, after: { ...record.after, orchardLettering: enabled } });
+}
+
 /** A bounded tool pass cannot spill into the next operation, even when a frame takes a long time. */
 export function workRestoration(state: GameState, progress: Progress, carId: string, amount: number): Progress {
   const car = ownedCar(state, carId), record = restorationFor(progress, carId);
@@ -119,5 +132,8 @@ export function reconcileRestorations(state: GameState, progress: Progress): Pro
 
 export function restorationSignature(progress: Progress, carId: string): string | null {
   const record = restorationFor(progress, carId);
-  return record ? JSON.stringify([record.route, record.stage, record.work]) : null;
+  if (!record) return null;
+  const signature: (string | number)[] = [record.route, record.stage, record.work];
+  if (record.after?.orchardLettering) signature.push('orchard-lettering');
+  return JSON.stringify(signature);
 }

@@ -3,7 +3,7 @@ import { DEFAULT_PAINT, SHELLS, getShell, type ShellId } from '../src/game/catal
 import { completeSale } from '../src/game/dealer';
 import { acceptJob, activeJob, assessJob, beginJobLap, jobBuildSignature, reconcileJobs, recordJobLap } from '../src/game/jobs';
 import { newProgress, parseProgress, setStyle } from '../src/game/progress';
-import { chooseRestorationRoute, reconcileRestorations, refinishRestoration, restorationFor, startRestoration, workRestoration } from '../src/game/restoration';
+import { chooseRestorationRoute, reconcileRestorations, refinishRestoration, restorationFor, restorationSignature, setOrchardLettering, startRestoration, workRestoration } from '../src/game/restoration';
 import { install, newGame, paintCar, parseSave, purchase, restoreOriginalPaint, type GameState } from '../src/game/state';
 
 const carId = 'car-estate';
@@ -18,6 +18,38 @@ function project(shellId: ShellId = 'estate'): GameState {
 const record = (progress: ReturnType<typeof newProgress>) => restorationFor(progress, carId)!;
 
 describe('hands-on restoration', () => {
+  it('saves a reversible orchard lettering choice on the finished photo and repairs older saves as clean doors', () => {
+    const state = project('orchard'), id = 'car-orchard';
+    let clean = startRestoration(state, newProgress(), id);
+    for (let i = 0; i < 5; i++) clean = workRestoration(state, clean, id, 1);
+    const { before, after } = clean.restorations[id];
+    for (const legacy of [undefined, 'true', 1]) {
+      const saved = { ...clean, restorations: { [id]: { ...clean.restorations[id], after: { ...after, orchardLettering: legacy } } } };
+      expect(parseProgress(JSON.stringify(saved)).restorations[id]).toEqual(clean.restorations[id]);
+    }
+    const lettered = setOrchardLettering(state, clean, id, true);
+    expect(lettered.restorations[id].before).toBe(before);
+    expect(lettered.restorations[id].after).toEqual({ ...after, orchardLettering: true });
+    expect(restorationSignature(lettered, id)).not.toBe(restorationSignature(clean, id));
+    const reloaded = parseProgress(JSON.stringify(lettered));
+    expect(reloaded).toEqual(lettered);
+    expect(setOrchardLettering(state, reloaded, id, true)).toBe(reloaded);
+    expect(setOrchardLettering(state, reloaded, id, false)).toEqual(clean);
+  });
+
+  it('offers replacement lettering only on a completed Bell Orchard repaint', () => {
+    const state = purchase(project('orchard'), 'shell-courier');
+    let progress = startRestoration(state, newProgress(), 'car-orchard');
+    expect(() => setOrchardLettering(state, progress, 'car-orchard', true)).toThrow(/Finish painting/);
+    progress = workRestoration(state, progress, 'car-orchard', 1);
+    progress = chooseRestorationRoute(state, progress, 'car-orchard', 'patina').progress;
+    for (let i = 0; i < 3; i++) progress = workRestoration(state, progress, 'car-orchard', 1);
+    expect(() => setOrchardLettering(state, progress, 'car-orchard', false)).toThrow(/Finish painting/);
+    progress = startRestoration(state, progress, 'car-courier');
+    for (let i = 0; i < 5; i++) progress = workRestoration(state, progress, 'car-courier', 1);
+    expect(() => setOrchardLettering(state, progress, 'car-courier', true)).toThrow(/Bell Orchard/);
+  });
+
   it('requires an owned catalog car and leaves the frozen purchase save unchanged', () => {
     const state = project(), fresh = newProgress();
     expect(restorationFor(fresh, carId)).toBeUndefined();

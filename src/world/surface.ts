@@ -1,9 +1,11 @@
+import { inCourt, ORCHARD_LANE } from './orchard';
 import { AUTO_PARTS_STORE, YARD_BOUNDS, distanceToRoad, type TownLayout } from './layout';
 
 /** What is underfoot or under the tires at a point. Drives footsteps, tire noise and dust. */
 export type GroundKind = 'asphalt' | 'gravel' | 'concrete' | 'grass';
 
 export function surfaceAt(layout: TownLayout, x: number, z: number): GroundKind {
+  if (inCourt(x, z) || (x < -25 && distanceToRoad({ x, z }, ORCHARD_LANE) < ORCHARD_LANE.width / 2)) return 'gravel';
   // Workshop floor and its apron.
   if (x > -29 && x < -11 && z > -24 && z < -1) return z < -6 || Math.abs(x + 20) < 7 ? 'concrete' : 'gravel';
   const store = AUTO_PARTS_STORE;

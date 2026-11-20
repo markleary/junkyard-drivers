@@ -1,3 +1,4 @@
+import { orchardLettering, inkOpacity } from './orchard-lettering';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -33,7 +34,7 @@ interface BodySpec {
   patina: [number, number, number];
   tire: string; spokes: number; spokeWidth: number;
 }
-const BODIES: Record<ShellId, BodySpec> = {
+const BODIES: Record<Exclude<ShellId, 'orchard'>, BodySpec> = {
   hachiro: { style: 'notchback', badge: 'HACHI', paint: '#e8d9b0', halfWidth: .91, front: -2.12, rear: 2.09, shoulder: .27, roof: .72,
     windscreenBottomZ: -.66, windscreenTopZ: -.06, rearTopZ: .76, rearBottomZ: 1.43, roofWidth: .73, nose: .16,
     doorRear: .72, seatZ: .54, pillarZ: .38, markerZ: -1.85, filler: [1.77, .09], patina: [102, 119, 116], tire: '205 / 55 R15', spokes: 8, spokeWidth: .021 },
@@ -373,7 +374,7 @@ function weathering(shellId: ShellId) {
   if (rustTextures.has(shellId)) return rustTextures.get(shellId)!;
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 512;
   const context = canvas.getContext('2d')!;
-  const base = BODIES[shellId].patina;
+  const base = BODIES[shellId === 'orchard' ? 'courier' : shellId].patina;
   // The yard finish and the working restoration skin must share their chip locations.
   let seed = bodyWeatheringSeed(shellId);
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -431,7 +432,7 @@ function tireLettering(style: ShellId) {
     });
   };
   words(style === 'veloce' ? 'HOLLOWAY  SPORT' : style === 'wren' ? 'HOLLOWAY  RALLY' : 'HOLLOWAY  RADIAL', 207, -.57, 1.14);
-  words(BODIES[style].tire, 207, 2.68, .92);
+  words(BODIES[style === 'orchard' ? 'courier' : style].tire, 207, 2.68, .92);
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 8;
   const material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, alphaTest: .15, roughness: .96, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 });
   sharedMaterials.add(material); sidewallMaterials.set(style, material); surfaceTextures.set(`sidewall-${style}`, texture);
@@ -469,11 +470,11 @@ function createWheel(style: ShellId, side: number) {
   }
   // The caliper follows the steering knuckle but does not spin with the rim.
   roundedBox(pivot, brake, [side * .09, .025, .15], [.055, .15, .065], .012);
-  const spokes = BODIES[style].spokes;
+  const spokes = BODIES[style === 'orchard' ? 'courier' : style].spokes;
   for (let i = 0; i < spokes; i++) {
     const angle = i / spokes * Math.PI * 2;
     const shape = new THREE.Shape();
-    const width = BODIES[style].spokeWidth;
+    const width = BODIES[style === 'orchard' ? 'courier' : style].spokeWidth;
     shape.moveTo(-width * .65, .047); shape.lineTo(-width, .19); shape.lineTo(-width * .65, .225);
     shape.lineTo(width * .65, .225); shape.lineTo(width, .19); shape.lineTo(width * .65, .047); shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, { depth: .025, bevelEnabled: true, bevelSegments: 1, steps: 1, bevelSize: .004, bevelThickness: .004, curveSegments: 1 });
@@ -540,7 +541,7 @@ const FINISHES: Record<PaintFinish, { metalness: number; roughness: number; clea
 
 export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVisual {
   const group = new THREE.Group(); group.name = `car-${shellId}`;
-  const spec = BODIES[shellId];
+  const spec = BODIES[shellId === 'orchard' ? 'courier' : shellId];
   const appearance: Required<Omit<CarAppearance, 'engine' | 'stripe' | 'tuning' | 'restoration'>> & { engine: FittedEngine | null; stripe: string | null; tuning: FittedTuning | null; restoration?: RestorationAppearance } = {
     paint: options.paint ?? spec.paint, restored: options.restored ?? false, wheels: options.wheels ?? false,
     finish: options.finish ?? 'gloss', stripe: options.stripe ?? null, engine: options.engine ?? null, tuning: options.tuning ?? null, restoration: options.restoration,
@@ -1073,6 +1074,8 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
   const prop = new THREE.Mesh(new THREE.CylinderGeometry(.008, .008, 1, 6), metal);
   prop.visible = false; prop.castShadow = true; group.add(prop);
 
+  const lettering = shellId === 'orchard' ? orchardLettering() : null;
+  if (lettering) group.add(lettering);
   let engineModel: THREE.Group | undefined, engineKey = '';
   let turboModel: THREE.Group | undefined, bottleModel: THREE.Group | undefined;
   const setAppearance = (next: CarAppearance) => {
@@ -1080,6 +1083,10 @@ export function createCar(shellId: ShellId, options: CarAppearance = {}): CarVis
     const finish = FINISHES[appearance.finish];
     const restoration = appearance.restoration;
     const restored = restoration ? restoration.stage === 'complete' && restoration.route === 'paint' : appearance.restored;
+    if (lettering) {
+      lettering.material.opacity = inkOpacity(restoration, restored);
+      lettering.visible = lettering.material.opacity > .005;
+    }
     paint.color.set(restored ? appearance.paint : '#ffffff');
     paint.map = restored ? null : weathering(shellId);
     paint.roughness = restored ? finish.roughness : .88;

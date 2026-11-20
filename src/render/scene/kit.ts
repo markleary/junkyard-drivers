@@ -7,7 +7,7 @@ import { surface } from '../surfaces';
 
 export interface WorldInteractable {
   id: string;
-  kind: 'workbench' | 'listing' | 'rack' | 'store' | 'dealer';
+  kind: 'note' | 'workbench' | 'listing' | 'rack' | 'store' | 'dealer';
   listingId?: string;
   position: THREE.Vector3;
   label: string;
@@ -85,7 +85,7 @@ export interface SignOptions {
   yaw?: number;
   sub?: string;
   /** Enamel board (default), a hand-painted plank, or tube lettering that lights after dark. */
-  style?: 'enamel' | 'plank' | 'neon';
+  style?: 'enamel' | 'plank' | 'neon' | 'paper';
   /** Lit colour for neon signs. */
   glow?: number;
   /** Leave off the steel backing when the sign is mounted flat on a wall. */
@@ -108,6 +108,11 @@ export function sign(ctx: SceneContext, text: string, x: number, y: number, z: n
   const ink = options.color ?? (neon ? '#ffffff' : '#ecdfc0');
   if (style === 'plank') {
     for (let i = 0; i < 5; i++) { context.fillStyle = `rgba(30,20,10,${.05 + (i % 2) * .05})`; context.fillRect(0, h * i / 5, w, 2); }
+  } else if (style === 'paper') {
+    context.strokeStyle = '#b7c4b2'; context.lineWidth = 2;
+    for (let y = h * .2; y < h; y += h * .14) {
+      context.beginPath(); context.moveTo(w*.04,y); context.lineTo(w*.96,y); context.stroke();
+    }
   } else if (!neon) {
     context.strokeStyle = ink; context.globalAlpha = .82; context.lineWidth = Math.max(4, h * .035);
     const inset = h * .08;
@@ -121,7 +126,7 @@ export function sign(ctx: SceneContext, text: string, x: number, y: number, z: n
   }
   context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillStyle = ink;
   const size = Math.min(h * (options.sub ? .44 : .6), w / Math.max(3, text.length) * 1.75);
-  context.font = `800 ${size}px ${DISPLAY}`;
+  context.font = style === 'paper' ? `italic ${size}px "Bradley Hand", cursive` : `800 ${size}px ${DISPLAY}`;
   if (neon) { context.shadowColor = ink; context.shadowBlur = h * .08; }
   context.fillText(text, w / 2, h * (options.sub ? .41 : .53));
   context.shadowBlur = 0;

@@ -7,7 +7,7 @@ import { C, lightPool, type SceneContext } from './kit';
 
 export interface GroundMarks { oil: THREE.Material; dust: THREE.Material; tracks: THREE.Material; crack: THREE.Material; leaves: THREE.Material; skid: THREE.Material }
 
-const isService = (road: Road) => road.id.includes('garage') || road.id.includes('gate');
+const isService = (road: Road) => road.id.includes('garage') || road.id.includes('gate') || road.id === 'orchard-lane';
 
 /** Flat ground, streets, kerbs and the wear that makes them look used. Physics here is unchanged from the first build. */
 export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks {
@@ -77,6 +77,10 @@ export function buildGround(ctx: SceneContext, plants: Vegetation): GroundMarks 
       return streets.length ? -Math.max(...streets.map(street => street.width)) / 2 : road.width / 2;
     };
     const before = reach(road.a), after = reach(road.b), drawn = length + before + after, shift = (after - before) / 2;
+    if (road.id === 'orchard-lane') {
+      b.box(surface('gravel'), cx - 3, .011, cz, length - 5, .036, road.width, { color: C.gravelDark, cast: false });
+      continue;
+    }
     b.box(asphalt, cx + (road.b.x - road.a.x) / length * shift, .026, cz + (road.b.z - road.a.z) / length * shift, horizontal ? drawn : road.width, .052, horizontal ? road.width : drawn,
       { color: isService(road) ? C.asphaltWorn : C.asphalt, cast: false, global: true });
     b.solidBox(cx, .026, cz, horizontal ? length + road.width : road.width, .052, horizontal ? road.width : length + road.width);
